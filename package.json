@@ -5,8 +5,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "build": "npm --prefix frontend install && npm --prefix frontend run build",
-    "postinstall": "npm --prefix backend install && npm --prefix frontend install && npm run build",
+    "build": "npm --prefix backend install && npm --prefix frontend install && npm --prefix frontend run build",
+    "postinstall": "npm --prefix backend install && npm --prefix frontend install",
     "dev": "node server.js"
   },
   "dependencies": {
@@ -18,6 +18,6 @@
     "mysql2": "^3.12.0"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   }
 }
