@@ -53,6 +53,20 @@ export default function Navbar() {
             Products
           </Link>
 
+          <Link 
+            to="/admin/login" 
+            style={{ 
+              color: location.pathname.startsWith('/admin') ? '#34d399' : '#38bdf8', 
+              textDecoration: 'none', 
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4
+            }}
+          >
+            Admin Portal
+          </Link>
+
           {/* Backend Connection Indicator */}
           <div className="status-pill">
             <span className="status-dot" style={{ backgroundColor: apiStatus === 'connected' ? '#10b981' : '#f43f5e' }}></span>
