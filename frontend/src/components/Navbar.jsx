@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Leaf, User, LogOut, Wallet, Search, ShoppingBag, ChevronDown, Sparkles, ShieldCheck } from 'lucide-react';
 import { checkHealth, getCategories, getProducts } from '../services/api';
+import './Navbar.css';
 
 export default function Navbar() {
   const [apiStatus, setApiStatus] = useState('checking');

@@ -1,19 +1,18 @@
-/* Home Page CSS matching the 3rd reference design input_file_2.png */
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400;1,600&family=Dancing+Script:wght@600;700&family=Inter:wght@400;500;600;700&display=swap');
+/* Pixel-Perfect Home Page CSS matching reference image input_file_1.png */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400;1,600&family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
   --leafora-cream-bg: #FAF7F2;
-  --leafora-card-cream: #F7F2EB;
-  --leafora-white: #FFFFFF;
+  --leafora-card-bg: #FFFFFF;
+  --leafora-card-cream: #F8F3EC;
   --leafora-bronze: #A67C52;
   --leafora-bronze-dark: #8E653E;
-  --leafora-forest: #1B3022;
   --leafora-text-dark: #1F2937;
   --leafora-text-muted: #64748B;
   --leafora-border: #EFE8DE;
 }
 
-.home-page-3rd {
+.home-page-pixel {
   width: 100%;
   background-color: var(--leafora-cream-bg);
   color: var(--leafora-text-dark);
@@ -21,9 +20,9 @@
   overflow-x: hidden;
 }
 
-/* Common Section Typography & Utility */
-.section-tag-gold {
-  font-size: 0.8rem;
+/* Typography & Subheaders */
+.section-tag-gold-pixel {
+  font-size: 0.78rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1.5px;
@@ -32,50 +31,50 @@
   display: inline-block;
 }
 
-.section-title-serif {
+.section-title-serif-pixel {
   font-family: 'Playfair Display', Georgia, serif;
-  font-size: 2.8rem;
+  font-size: 2.7rem;
   font-weight: 700;
-  color: var(--leafora-text-dark);
+  color: #1F2937;
   line-height: 1.18;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
-.section-desc {
-  font-size: 1.05rem;
+.section-desc-pixel {
+  font-size: 1rem;
   color: var(--leafora-text-muted);
-  line-height: 1.65;
-  margin-bottom: 28px;
+  line-height: 1.6;
+  margin-bottom: 24px;
 }
 
-/* Bronze Pill Button */
-.btn-bronze-pill {
+/* Bronze Button Pill */
+.btn-bronze-pill-pixel {
   display: inline-flex;
   align-items: center;
   gap: 10px;
   background-color: var(--leafora-bronze);
   color: #FFFFFF;
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   padding: 12px 28px;
   border-radius: 30px;
   border: none;
   cursor: pointer;
   text-decoration: none;
   transition: all 0.25s ease;
-  box-shadow: 0 4px 12px rgba(166, 124, 82, 0.2);
+  box-shadow: 0 4px 14px rgba(166, 124, 82, 0.25);
 }
 
-.btn-bronze-pill:hover {
+.btn-bronze-pill-pixel:hover {
   background-color: var(--leafora-bronze-dark);
   transform: translateY(-2px);
-  box-shadow: 0 6px 18px rgba(166, 124, 82, 0.3);
+  box-shadow: 0 6px 18px rgba(166, 124, 82, 0.35);
 }
 
-/* 1. HERO SECTION ("ABOUT US / Nature's Care Backed by Science") */
-.hero-section-3rd {
+/* 1. HERO SPLIT SECTION ("Glow Naturally, Live Beautifully") */
+.hero-section-pixel {
   background-color: var(--leafora-cream-bg);
-  padding: 60px 40px;
+  padding: 48px 40px 64px 40px;
   max-width: 1320px;
   margin: 0 auto;
   display: grid;
@@ -84,175 +83,51 @@
   align-items: center;
 }
 
-.hero-left-col {
-  max-width: 580px;
+.hero-left-col-pixel {
+  max-width: 560px;
 }
 
-.hero-right-col {
-  position: relative;
-  width: 100%;
-  height: 380px;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-}
-
-.hero-pedestal-img-main {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 16px;
-  box-shadow: 0 12px 30px rgba(0,0,0,0.06);
-}
-
-.hero-side-text-italic {
-  position: absolute;
-  right: -15px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-family: 'Playfair Display', serif;
-  font-style: italic;
-  font-size: 2.2rem;
-  color: #1B3022;
-  text-align: right;
-  width: 220px;
-  line-height: 1.15;
-  text-shadow: 0 2px 10px rgba(255,255,255,0.9);
-}
-
-/* 2. SECTION 2 ("OUR STORY / A Healthier Tomorrow Starts Today") */
-.story-section-3rd {
-  background-color: var(--leafora-white);
-  padding: 80px 40px;
-}
-
-.story-container {
-  max-width: 1280px;
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: 1fr 1.2fr;
-  gap: 60px;
-  align-items: center;
-}
-
-.story-model-wrapper {
-  position: relative;
-  border-radius: 16px;
-  overflow: hidden;
-}
-
-.story-model-img {
-  width: 100%;
-  height: 480px;
-  object-fit: cover;
-  border-radius: 16px;
-}
-
-/* Handwriting script overlay */
-.script-overlay-badge {
-  position: absolute;
-  top: 30px;
-  left: 24px;
-  font-family: 'Dancing Script', cursive;
-  font-size: 2.4rem;
+.hero-heading-pixel {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 3.4rem;
   font-weight: 700;
   color: #1F2937;
-  line-height: 1.1;
-  text-shadow: 0 2px 10px rgba(255,255,255,0.85);
-  max-width: 200px;
+  line-height: 1.12;
+  margin-bottom: 16px;
 }
 
-.story-right-grid {
-  display: grid;
-  grid-template-columns: 1fr 200px;
-  gap: 32px;
-  align-items: start;
-}
-
-.story-pillars-col {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.story-pillar-card {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  background-color: var(--leafora-card-cream);
-  padding: 14px 18px;
-  border-radius: 12px;
-}
-
-.pillar-icon-box {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: var(--leafora-white);
-  color: var(--leafora-bronze);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-}
-
-.pillar-info h5 {
-  font-size: 0.92rem;
-  font-weight: 700;
-  color: var(--leafora-text-dark);
-  margin-bottom: 2px;
-}
-
-.pillar-info p {
-  font-size: 0.78rem;
+.hero-subtext-pixel {
+  font-size: 1.08rem;
   color: var(--leafora-text-muted);
+  line-height: 1.65;
+  margin-bottom: 28px;
 }
 
-/* 3. SECTION 3 ("OUR VALUES / What We Stand For") */
-.values-section-3rd {
-  background-color: var(--leafora-cream-bg);
-  padding: 80px 40px;
-}
-
-.values-container {
-  max-width: 1280px;
-  margin: 0 auto;
-}
-
-.values-header {
-  margin-bottom: 40px;
-}
-
-.values-main-layout {
-  display: grid;
-  grid-template-columns: 1fr 340px;
-  gap: 40px;
-  align-items: center;
-}
-
-.values-cards-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
-}
-
-.value-item-card {
-  background-color: var(--leafora-white);
-  border: 1px solid var(--leafora-border);
-  border-radius: 14px;
-  padding: 24px 20px;
-  text-align: center;
+/* 3 Bottom Benefit Pills */
+.hero-pills-row-pixel {
   display: flex;
-  flex-direction: column;
-  align-items: center;
+  flex-wrap: wrap;
   gap: 12px;
-  box-shadow: 0 4px 14px rgba(0,0,0,0.02);
+  margin-top: 36px;
 }
 
-.value-icon-circle-lg {
-  width: 52px;
-  height: 52px;
+.pill-item-pixel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--leafora-card-bg);
+  border: 1px solid var(--leafora-border);
+  padding: 8px 16px;
+  border-radius: 30px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #334155;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+}
+
+.pill-icon-circle-pixel {
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   background: var(--leafora-card-cream);
   color: var(--leafora-bronze);
@@ -261,216 +136,413 @@
   justify-content: center;
 }
 
-.value-item-card h4 {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.15rem;
-  font-weight: 600;
-  color: var(--leafora-text-dark);
-}
-
-.value-item-card p {
-  font-size: 0.85rem;
-  color: var(--leafora-text-muted);
-  line-height: 1.5;
-}
-
-.values-right-banner {
+/* Hero Right Column: Warm Sunlit Model Photo */
+.hero-right-col-pixel {
   position: relative;
-  border-radius: 16px;
+  width: 100%;
+  height: 480px;
+  border-radius: 20px;
   overflow: hidden;
-  height: 260px;
+  box-shadow: 0 16px 36px rgba(0,0,0,0.06);
 }
 
-.values-leaf-img {
+.hero-model-img-pixel {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.values-leaf-callout {
+.hero-italic-side-callout-pixel {
   position: absolute;
-  bottom: 24px;
-  right: 20px;
+  right: 24px;
+  top: 50%;
+  transform: translateY(-50%);
   font-family: 'Playfair Display', serif;
   font-style: italic;
-  font-size: 1.5rem;
+  font-size: 2.2rem;
   color: #1F2937;
   text-align: right;
-  line-height: 1.2;
-  text-shadow: 0 2px 8px rgba(255,255,255,0.9);
+  width: 210px;
+  line-height: 1.15;
+  text-shadow: 0 2px 12px rgba(255,255,255,0.95);
+  border-top: 1px solid rgba(166, 124, 82, 0.4);
+  padding-top: 12px;
 }
 
-/* 4. SECTION 4 ("A More Sustainable Future") */
-.sustainability-section-3rd {
-  background-color: var(--leafora-card-cream);
-  padding: 80px 40px;
+/* 2. SHOP BY CATEGORY (8 CIRCULAR PILLS) */
+.category-section-pixel {
+  background-color: var(--leafora-card-bg);
+  padding: 60px 40px;
+  border-top: 1px solid var(--leafora-border);
+  border-bottom: 1px solid var(--leafora-border);
 }
 
-.sustainability-grid {
-  max-width: 1280px;
+.category-container-pixel {
+  max-width: 1320px;
   margin: 0 auto;
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 40px;
+}
+
+.category-flex-header-pixel {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 32px;
+}
+
+.link-view-all-pixel {
+  color: var(--leafora-bronze);
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-decoration: none;
+  display: flex;
   align-items: center;
+  gap: 4px;
 }
 
-.sustain-center-img-wrap {
-  width: 100%;
-  height: 320px;
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.06);
-}
-
-.sustain-center-img-wrap img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.sustain-right-pillars {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.eco-pillar-row {
-  display: flex;
-  align-items: flex-start;
+.category-pills-grid-pixel {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
   gap: 16px;
 }
 
-.eco-pillar-row h5 {
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: var(--leafora-text-dark);
-  margin-bottom: 4px;
-}
-
-.eco-pillar-row p {
-  font-size: 0.82rem;
-  color: var(--leafora-text-muted);
-}
-
-/* 5. SECTION 5 ("JOIN OUR JOURNEY / Let's Create a Healthier, More Radiant World Together") */
-.journey-banner-section {
-  background-color: var(--leafora-forest);
-  padding: 70px 40px;
-  color: #FFFFFF;
-  position: relative;
-  overflow: hidden;
-}
-
-.journey-container {
-  max-width: 1280px;
-  margin: 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 40px;
-}
-
-.journey-left-content {
-  max-width: 650px;
-}
-
-.journey-tag {
-  font-size: 0.8rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  color: #D4AF37;
-  margin-bottom: 12px;
-}
-
-.journey-title {
-  font-family: 'Playfair Display', serif;
-  font-size: 2.6rem;
-  font-weight: 700;
-  color: #FFFFFF;
-  line-height: 1.2;
-  margin-bottom: 24px;
-}
-
-.journey-pillars-row {
-  display: flex;
-  align-items: center;
-  gap: 40px;
-}
-
-.journey-pillar-item {
+.category-pill-card-pixel {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  text-align: center;
+  gap: 12px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 0.25s ease;
 }
 
-.journey-pillar-icon {
-  width: 48px;
-  height: 48px;
+.category-pill-card-pixel:hover {
+  transform: translateY(-4px);
+}
+
+.category-circle-box-pixel {
+  width: 90px;
+  height: 90px;
   border-radius: 50%;
-  background: rgba(255,255,255,0.1);
+  background: var(--leafora-card-cream);
+  border: 1px solid var(--leafora-border);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #FFFFFF;
+  overflow: hidden;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+  transition: all 0.25s ease;
 }
 
-.journey-pillar-item span {
-  font-size: 0.85rem;
+.category-pill-card-pixel:hover .category-circle-box-pixel {
+  border-color: var(--leafora-bronze);
+  box-shadow: 0 8px 18px rgba(166, 124, 82, 0.2);
+}
+
+.category-circle-box-pixel img {
+  width: 65px;
+  height: 65px;
+  object-fit: contain;
+}
+
+.category-pill-name-pixel {
+  font-size: 0.88rem;
   font-weight: 600;
-  color: #E2E8F0;
+  color: var(--leafora-text-dark);
+  text-align: center;
 }
 
-/* 6. CLEAN WHITE FOOTER MATCHING 3RD IMAGE */
-.footer-3rd {
-  background-color: var(--leafora-white);
-  border-top: 1px solid var(--leafora-border);
-  padding: 40px 40px 24px 40px;
+/* 3. BESTSELLERS GRID (4 PRODUCT CARDS + 1 TALL GOLDEN PROMO CARD) */
+.bestsellers-section-pixel {
+  background-color: var(--leafora-cream-bg);
+  padding: 80px 40px;
+}
+
+.bestsellers-container-pixel {
+  max-width: 1320px;
+  margin: 0 auto;
+}
+
+.bestseller-layout-grid-pixel {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr) 290px;
+  gap: 20px;
+  margin-top: 36px;
+}
+
+/* Individual Product Card */
+.product-card-pixel {
+  background: var(--leafora-card-bg);
+  border: 1px solid var(--leafora-border);
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.25s ease;
+}
+
+.product-card-pixel:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 24px rgba(166, 124, 82, 0.1);
+  border-color: #E2D5C5;
+}
+
+.product-img-wrap-pixel {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  background: #F8F4EE;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.product-img-wrap-pixel img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.product-brand-pixel {
+  font-size: 0.75rem;
+  color: var(--leafora-text-muted);
+  font-weight: 500;
+}
+
+.product-title-pixel {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--leafora-text-dark);
+  line-height: 1.3;
+  margin: 2px 0 6px 0;
+}
+
+.product-stars-pixel {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+  color: var(--leafora-text-muted);
+  margin-bottom: 10px;
+}
+
+.product-bottom-row-pixel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+
+.product-price-pixel {
+  font-size: 1.1rem;
+  font-weight: 700;
   color: var(--leafora-text-dark);
 }
 
-.footer-top-row {
-  max-width: 1280px;
+.btn-icon-cart-pixel {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background-color: var(--leafora-bronze);
+  color: #FFFFFF;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.btn-icon-cart-pixel:hover {
+  background-color: var(--leafora-bronze-dark);
+}
+
+/* Tall Golden Promo Card (Exact Match to Reference Image) */
+.tall-golden-promo-card-pixel {
+  background: linear-gradient(135deg, #B38B59 0%, #947040 100%);
+  border-radius: 14px;
+  padding: 36px 24px;
+  color: #FFFFFF;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 12px 28px rgba(148, 112, 64, 0.25);
+}
+
+.promo-title-gold-pixel {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.65rem;
+  font-weight: 700;
+  line-height: 1.25;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 24px;
+}
+
+.btn-gold-white-pixel {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #FFFFFF;
+  color: #947040;
+  font-weight: 700;
+  font-size: 0.88rem;
+  padding: 12px 22px;
+  border-radius: 30px;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  width: fit-content;
+  transition: transform 0.2s ease;
+}
+
+.btn-gold-white-pixel:hover {
+  transform: translateY(-2px);
+}
+
+/* 4. VALUE PROPOSITIONS BAR */
+.value-props-bar-pixel {
+  background-color: var(--leafora-card-cream);
+  border-top: 1px solid var(--leafora-border);
+  border-bottom: 1px solid var(--leafora-border);
+  padding: 40px;
+}
+
+.value-props-row-pixel {
+  max-width: 1320px;
   margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+}
+
+.value-prop-item-pixel {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.prop-icon-circle-pixel {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--leafora-card-bg);
+  color: var(--leafora-bronze);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+}
+
+.prop-info-pixel h4 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--leafora-text-dark);
+  margin-bottom: 2px;
+}
+
+.prop-info-pixel p {
+  font-size: 0.8rem;
+  color: var(--leafora-text-muted);
+}
+
+/* 5. BRAND STORY BANNER ("Skincare That Cares") */
+.brand-story-section-pixel {
+  background-color: var(--leafora-cream-bg);
+  padding: 80px 40px;
+}
+
+.brand-story-banner-pixel {
+  max-width: 1320px;
+  margin: 0 auto;
+  background-color: var(--leafora-card-cream);
+  border: 1px solid var(--leafora-border);
+  border-radius: 20px;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 1fr 1.2fr 280px;
+  align-items: center;
+}
+
+.story-left-pixel {
+  padding: 48px 40px;
+}
+
+.story-center-img-pixel {
+  width: 100%;
+  height: 340px;
+  object-fit: cover;
+}
+
+.story-right-pixel {
+  padding: 40px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+  border-left: 1px solid var(--leafora-border);
+}
+
+.vertical-tags-pixel {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--leafora-bronze);
+  line-height: 1.6;
+}
+
+/* 6. CLEAN FOOTER MATCHING REFERENCE IMAGE */
+.footer-pixel {
+  background-color: var(--leafora-card-bg);
+  border-top: 1px solid var(--leafora-border);
+  padding: 48px 40px 24px 40px;
+  color: var(--leafora-text-dark);
+}
+
+.footer-inner-pixel {
+  max-width: 1320px;
+  margin: 0 auto;
+}
+
+.footer-top-row-pixel {
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
   gap: 24px;
-  padding-bottom: 32px;
+  padding-bottom: 36px;
   border-bottom: 1px solid var(--leafora-border);
 }
 
-.footer-brand-logo {
+.footer-nav-list-pixel {
   display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.footer-nav-links {
-  display: flex;
-  gap: 28px;
+  gap: 32px;
   list-style: none;
   padding: 0;
   margin: 0;
 }
 
-.footer-nav-links a {
+.footer-nav-list-pixel a {
   color: var(--leafora-text-dark);
   text-decoration: none;
-  font-size: 0.9rem;
+  font-size: 0.92rem;
   font-weight: 500;
 }
 
-.footer-social-row {
+.footer-social-row-pixel {
   display: flex;
   gap: 12px;
 }
 
-.social-circle-btn {
+.social-circle-btn-pixel {
   width: 36px;
   height: 36px;
   border-radius: 50%;
@@ -480,52 +552,52 @@
   align-items: center;
   justify-content: center;
   text-decoration: none;
-  transition: all 0.2s ease;
+  transition: background 0.2s ease;
 }
 
-.social-circle-btn:hover {
+.social-circle-btn-pixel:hover {
   background: var(--leafora-bronze);
   color: #FFFFFF;
 }
 
-.footer-bottom-row {
-  max-width: 1280px;
-  margin: 20px auto 0 auto;
+.footer-bottom-copy-pixel {
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
   gap: 16px;
+  padding-top: 24px;
   font-size: 0.82rem;
   color: var(--leafora-text-muted);
 }
 
 /* RESPONSIVE BREAKPOINTS */
-@media (max-width: 1100px) {
-  .values-cards-grid {
+@media (max-width: 1200px) {
+  .category-pills-grid-pixel {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .bestseller-layout-grid-pixel {
     grid-template-columns: repeat(2, 1fr);
   }
 
-  .sustainability-grid {
-    grid-template-columns: 1fr;
+  .tall-golden-promo-card-pixel {
+    grid-column: span 2;
+    height: 260px;
   }
 }
 
 @media (max-width: 900px) {
-  .hero-section-3rd, .story-container, .values-main-layout, .journey-container {
+  .hero-section-pixel, .brand-story-banner-pixel {
     grid-template-columns: 1fr;
     text-align: center;
   }
 
-  .story-right-grid {
-    grid-template-columns: 1fr;
+  .hero-right-col-pixel {
+    height: 340px;
   }
 
-  .hero-right-col {
-    justify-content: center;
-  }
-
-  .hero-side-text-italic {
+  .hero-italic-side-callout-pixel {
     position: relative;
     right: 0;
     top: 0;
@@ -534,7 +606,34 @@
     width: auto;
   }
 
-  .journey-pillars-row {
-    justify-content: center;
+  .value-props-row-pixel {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .footer-top-row-pixel {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
+@media (max-width: 600px) {
+  .category-pills-grid-pixel {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .bestseller-layout-grid-pixel {
+    grid-template-columns: 1fr;
+  }
+
+  .tall-golden-promo-card-pixel {
+    grid-column: span 1;
+  }
+
+  .hero-heading-pixel {
+    font-size: 2.3rem;
+  }
+
+  .value-props-row-pixel {
+    grid-template-columns: 1fr;
   }
 }

@@ -1,287 +1,328 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
-  ArrowRight, Leaf, ShieldCheck, Heart, Users, Award, 
-  Sparkles, Globe, Share2, MessageCircle 
+  ArrowRight, Leaf, ShieldCheck, Heart, ShoppingBag, Star, 
+  ChevronRight, Sparkles, Globe, Share2, MessageCircle, CheckCircle2
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import './Home.css';
 
+// 8 Circular Categories data matching reference image
+const CIRCULAR_CATEGORIES = [
+  { id: 'cleansers', name: 'Cleansers', icon: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=300&q=80' },
+  { id: 'moisturizers', name: 'Moisturizers', icon: 'https://images.unsplash.com/photo-1608248597263-0057e57b4522?auto=format&fit=crop&w=300&q=80' },
+  { id: 'serums', name: 'Serums', icon: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=300&q=80' },
+  { id: 'masks', name: 'Face Masks', icon: 'https://images.unsplash.com/photo-1571781926291-c477ebfd024b?auto=format&fit=crop&w=300&q=80' },
+  { id: 'sunscreen', name: 'Sunscreens', icon: 'https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?auto=format&fit=crop&w=300&q=80' },
+  { id: 'eyecare', name: 'Eye Care', icon: 'https://images.unsplash.com/photo-1601049541289-9b1b7bbbfe19?auto=format&fit=crop&w=300&q=80' },
+  { id: 'bodycare', name: 'Body Care', icon: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=300&q=80' },
+  { id: 'oils', name: 'Face Oils', icon: 'https://images.unsplash.com/photo-1608248597263-0057e57b4522?auto=format&fit=crop&w=300&q=80' }
+];
+
+// 4 Bestseller Products matching reference image
+const BESTSELLER_PRODUCTS = [
+  {
+    id: 1,
+    name: 'Gentle Foaming Face Wash',
+    brand: 'Leafora',
+    price: 18.00,
+    rating: 4.9,
+    reviews: 124,
+    image: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=500&q=80'
+  },
+  {
+    id: 2,
+    name: 'Vitamin C Brightening Serum',
+    brand: 'Leafora',
+    price: 28.00,
+    rating: 4.8,
+    reviews: 98,
+    image: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=500&q=80'
+  },
+  {
+    id: 3,
+    name: 'Hydra Glow Moisturizer',
+    brand: 'Leafora',
+    price: 24.00,
+    rating: 5.0,
+    reviews: 156,
+    image: 'https://images.unsplash.com/photo-1608248597263-0057e57b4522?auto=format&fit=crop&w=500&q=80'
+  },
+  {
+    id: 4,
+    name: 'Daily Sunscreen SPF 50+',
+    brand: 'Leafora',
+    price: 22.00,
+    rating: 4.9,
+    reviews: 112,
+    image: 'https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?auto=format&fit=crop&w=500&q=80'
+  }
+];
+
 export default function Home() {
+  const [toastMsg, setToastMsg] = useState(null);
+
+  const showToast = (msg) => {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg(null), 3000);
+  };
+
   return (
-    <div className="home-page-3rd">
+    <div className="home-page-pixel">
 
-      {/* 1. HERO SECTION ("ABOUT US / Nature's Care Backed by Science") */}
-      <section className="hero-section-3rd">
-        <div className="hero-left-col">
-          <span className="section-tag-gold">ABOUT US</span>
-          <h1 className="section-title-serif">
-            Nature’s Care <br />
-            Backed by Science
+      {/* Floating Toast Notification */}
+      {toastMsg && (
+        <div className="toast-banner" style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 999 }}>
+          <CheckCircle2 size={18} />
+          <span>{toastMsg}</span>
+        </div>
+      )}
+
+      {/* 1. HERO SPLIT SECTION ("Glow Naturally, Live Beautifully") */}
+      <section className="hero-section-pixel">
+        <div className="hero-left-col-pixel">
+          <span className="section-tag-gold-pixel">NATURAL CARE • REAL RESULTS</span>
+          <h1 className="hero-heading-pixel">
+            Glow Naturally <br />
+            Live Beautifully
           </h1>
-          <p className="section-desc">
-            We believe in skincare that is pure, effective and kind to you — and to the planet.
+          <p className="hero-subtext-pixel">
+            Pure ingredients. Proven science. Skincare that brings out your natural glow.
           </p>
-          <a href="#our-story" className="btn-bronze-pill">
-            Our Story <ArrowRight size={16} />
-          </a>
+
+          <Link to="/shop" className="btn-bronze-pill-pixel">
+            Shop Now <ArrowRight size={16} />
+          </Link>
+
+          {/* 3 Bottom Benefit Pills Row */}
+          <div className="hero-pills-row-pixel">
+            <div className="pill-item-pixel">
+              <div className="pill-icon-circle-pixel">🍃</div>
+              <span>Natural Ingredients</span>
+            </div>
+
+            <div className="pill-item-pixel">
+              <div className="pill-icon-circle-pixel">🧪</div>
+              <span>Dermatologist Tested</span>
+            </div>
+
+            <div className="pill-item-pixel">
+              <div className="pill-icon-circle-pixel">🤎</div>
+              <span>Safe & Gentle for All Skin Types</span>
+            </div>
+          </div>
         </div>
 
-        <div className="hero-right-col">
+        {/* Hero Right Column: Warm Sunlit Smiling Skincare Model Image */}
+        <div className="hero-right-col-pixel">
           <img 
-            src="https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?auto=format&fit=crop&w=900&q=80" 
-            alt="Leafora Skincare Pedestal" 
-            className="hero-pedestal-img-main"
+            src="https://images.unsplash.com/photo-1512290900676-26c2a4d48dc1?auto=format&fit=crop&w=1000&q=80" 
+            alt="Smiling Skincare Model with Cream" 
+            className="hero-model-img-pixel"
           />
-          <div className="hero-side-text-italic">
-            Pure Skincare Brighter Tomorrows
+          <div className="hero-italic-side-callout-pixel">
+            Skincare today for a brighter tomorrow
           </div>
         </div>
       </section>
 
-      {/* 2. SECTION 2 ("OUR STORY / A Healthier Tomorrow Starts Today") */}
-      <section className="story-section-3rd" id="our-story">
-        <div className="story-container">
-          
-          {/* Left Model Photo with Handwriting Overlay */}
-          <div className="story-model-wrapper">
-            <img 
-              src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80" 
-              alt="Healthy Skin Happier You Model" 
-              className="story-model-img"
-            />
-            <div className="script-overlay-badge">
-              Healthy Skin <br />
-              Happier You
-            </div>
-          </div>
-
-          {/* Right Narrative Content & 4 Value Icons */}
-          <div className="story-right-grid">
+      {/* 2. SHOP BY CATEGORY (8 CIRCULAR PILLS) */}
+      <section className="category-section-pixel">
+        <div className="category-container-pixel">
+          <div className="category-flex-header-pixel">
             <div>
-              <span className="section-tag-gold">OUR STORY</span>
-              <h2 className="section-title-serif">
-                A Healthier Tomorrow Starts Today
-              </h2>
-              <p className="section-desc">
-                <strong>Leafora Life Sciences</strong> was born from a simple belief — that <em>nature</em> and science together can create healthier, radiant skin for everyone.
-              </p>
-              <p className="section-desc">
-                We are passionate about formulating skincare essentials using pure, high-quality ingredients, backed by dermatological science. Our mission is to make clean, effective and safe skincare accessible to all, so you can feel confident in your skin, every single day.
-              </p>
+              <span className="section-tag-gold-pixel">EXPLORE OUR RANGE</span>
+              <h2 className="section-title-serif-pixel" style={{ margin: 0 }}>Shop by Category</h2>
             </div>
-
-            {/* 4 Vertical Pillar Cards */}
-            <div className="story-pillars-col">
-              <div className="story-pillar-card">
-                <div className="pillar-icon-box"><Leaf size={20} /></div>
-                <div className="pillar-info">
-                  <h5>100%</h5>
-                  <p>Clean Ingredients</p>
-                </div>
-              </div>
-
-              <div className="story-pillar-card">
-                <div className="pillar-icon-box"><ShieldCheck size={20} /></div>
-                <div className="pillar-info">
-                  <h5>Dermatologist</h5>
-                  <p>Tested & Approved</p>
-                </div>
-              </div>
-
-              <div className="story-pillar-card">
-                <div className="pillar-icon-box"><Heart size={20} /></div>
-                <div className="pillar-info">
-                  <h5>Trusted by</h5>
-                  <p>50K+ Customers</p>
-                </div>
-              </div>
-
-              <div className="story-pillar-card">
-                <div className="pillar-icon-box"><Users size={20} /></div>
-                <div className="pillar-info">
-                  <h5>A Greener</h5>
-                  <p>Tomorrow</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </section>
-
-      {/* 3. SECTION 3 ("OUR VALUES / What We Stand For") */}
-      <section className="values-section-3rd">
-        <div className="values-container">
-          <div className="values-header">
-            <span className="section-tag-gold">OUR VALUES</span>
-            <h2 className="section-title-serif">What We Stand For</h2>
-          </div>
-
-          <div className="values-main-layout">
-            {/* 4 Column Value Cards */}
-            <div className="values-cards-grid">
-              <div className="value-item-card">
-                <div className="value-icon-circle-lg"><Leaf size={24} /></div>
-                <h4>Purity</h4>
-                <p>Clean, natural ingredients with no harsh chemicals.</p>
-              </div>
-
-              <div className="value-item-card">
-                <div className="value-icon-circle-lg"><ShieldCheck size={24} /></div>
-                <h4>Science</h4>
-                <p>Formulations backed by research and dermatology.</p>
-              </div>
-
-              <div className="value-item-card">
-                <div className="value-icon-circle-lg"><Heart size={24} /></div>
-                <h4>Care</h4>
-                <p>Safe, gentle and effective for every skin type.</p>
-              </div>
-
-              <div className="value-item-card">
-                <div className="value-icon-circle-lg"><Sparkles size={24} /></div>
-                <h4>Sustainability</h4>
-                <p>Kind to your skin and the planet.</p>
-              </div>
-            </div>
-
-            {/* Right Side Leaf Banner */}
-            <div className="values-right-banner">
-              <img 
-                src="https://images.unsplash.com/photo-1608248597263-0057e57b4522?auto=format&fit=crop&w=700&q=80" 
-                alt="Good for You Good for the Planet" 
-                className="values-leaf-img"
-              />
-              <div className="values-leaf-callout">
-                Good for You.<br />Good for the Planet.
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 4. SECTION 4 ("A More Sustainable Future") */}
-      <section className="sustainability-section-3rd">
-        <div className="sustainability-grid">
-          <div>
-            <h2 className="section-title-serif">
-              A More Sustainable Future
-            </h2>
-            <p className="section-desc">
-              We are committed to reducing our environmental footprint with eco-friendly packaging, responsibly sourced ingredients and sustainable practices. Because beautiful skin should never come at the cost of our planet.
-            </p>
-            <Link to="/shop" className="btn-bronze-pill">
-              Our Sustainability <ArrowRight size={16} />
+            <Link to="/shop" className="link-view-all-pixel">
+              View All Categories <ChevronRight size={16} />
             </Link>
           </div>
 
-          {/* Center Visual: Plant seedling in hands */}
-          <div className="sustain-center-img-wrap">
+          <div className="category-pills-grid-pixel">
+            {CIRCULAR_CATEGORIES.map(cat => (
+              <Link key={cat.id} to="/shop" className="category-pill-card-pixel">
+                <div className="category-circle-box-pixel">
+                  <img src={cat.icon} alt={cat.name} />
+                </div>
+                <span className="category-pill-name-pixel">{cat.name}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 3. BESTSELLERS GRID (4 PRODUCT CARDS + 1 TALL GOLDEN PROMO CARD) */}
+      <section className="bestsellers-section-pixel">
+        <div className="bestsellers-container-pixel">
+          <div className="category-flex-header-pixel">
+            <div>
+              <span className="section-tag-gold-pixel">OUR BEST SELLERS</span>
+              <h2 className="section-title-serif-pixel">Loved by Many, Made for You</h2>
+              <p className="section-desc-pixel" style={{ margin: 0 }}>
+                Discover our most popular skincare essentials for healthy, radiant skin.
+              </p>
+            </div>
+            <Link to="/shop" className="link-view-all-pixel">
+              View All Products <ChevronRight size={16} />
+            </Link>
+          </div>
+
+          {/* Grid Layout: 4 Product Cards + 1 Tall Golden Promo Card */}
+          <div className="bestseller-layout-grid-pixel">
+            {BESTSELLER_PRODUCTS.map(item => (
+              <div key={item.id} className="product-card-pixel">
+                <div className="product-img-wrap-pixel">
+                  <img src={item.image} alt={item.name} />
+                </div>
+                <div>
+                  <span className="product-brand-pixel">{item.brand}</span>
+                  <h3 className="product-title-pixel">{item.name}</h3>
+                  <div className="product-stars-pixel">
+                    {[...Array(5)].map((_, i) => <Star key={i} size={12} fill="#A67C52" color="#A67C52" />)}
+                    <span>({item.reviews})</span>
+                  </div>
+                </div>
+
+                <div className="product-bottom-row-pixel">
+                  <span className="product-price-pixel">${Number(item.price).toFixed(2)}</span>
+                  <button 
+                    className="btn-icon-cart-pixel"
+                    onClick={() => showToast(`Added "${item.name}" to your bag!`)}
+                  >
+                    <ShoppingBag size={15} />
+                  </button>
+                </div>
+              </div>
+            ))}
+
+            {/* TALL GOLDEN PROMO CARD (EXACT MATCH TO REFERENCE IMAGE) */}
+            <div className="tall-golden-promo-card-pixel">
+              <h3 className="promo-title-gold-pixel">
+                NATURE MEETS SCIENCE FOR HEALTHY RADIANT SKIN
+              </h3>
+
+              <Link to="/shop" className="btn-gold-white-pixel">
+                Shop Collection <ArrowRight size={14} />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 4. VALUE PROPOSITIONS BAR */}
+      <section className="value-props-bar-pixel">
+        <div className="value-props-row-pixel">
+          <div className="value-prop-item-pixel">
+            <div className="prop-icon-circle-pixel"><Leaf size={22} /></div>
+            <div className="prop-info-pixel">
+              <h4>Clean Ingredients</h4>
+              <p>No harsh chemicals</p>
+            </div>
+          </div>
+
+          <div className="value-prop-item-pixel">
+            <div className="prop-icon-circle-pixel"><Heart size={22} /></div>
+            <div className="prop-info-pixel">
+              <h4>Cruelty Free</h4>
+              <p>Kind to animals</p>
+            </div>
+          </div>
+
+          <div className="value-prop-item-pixel">
+            <div className="prop-icon-circle-pixel"><Sparkles size={22} /></div>
+            <div className="prop-info-pixel">
+              <h4>Sustainable</h4>
+              <p>Better for tomorrow</p>
+            </div>
+          </div>
+
+          <div className="value-prop-item-pixel">
+            <div className="prop-icon-circle-pixel"><ShieldCheck size={22} /></div>
+            <div className="prop-info-pixel">
+              <h4>Trusted Quality</h4>
+              <p>Dermatologist approved</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 5. BRAND STORY BANNER ("Skincare That Cares") */}
+      <section className="brand-story-section-pixel">
+        <div className="brand-story-banner-pixel">
+          <div className="story-left-pixel">
+            <h2 className="section-title-serif-pixel">Skincare That Cares</h2>
+            <p className="section-desc-pixel">
+              Good for your skin. Good for the planet.
+            </p>
+            <Link to="/shop" className="btn-bronze-pill-pixel">
+              Learn Our Story <ArrowRight size={16} />
+            </Link>
+          </div>
+
+          {/* Center Product Pedestal Image */}
+          <div>
             <img 
-              src="https://images.unsplash.com/photo-1617897903246-719242758050?auto=format&fit=crop&w=800&q=80" 
-              alt="Hands holding young plant seedling" 
+              src="https://images.unsplash.com/photo-1608248597263-0057e57b4522?auto=format&fit=crop&w=800&q=80" 
+              alt="Skincare That Cares Product Lineup" 
+              className="story-center-img-pixel"
             />
           </div>
 
-          {/* Right 3 Eco Pillars */}
-          <div className="sustain-right-pillars">
-            <div className="eco-pillar-row">
-              <div className="pillar-icon-box"><Globe size={20} /></div>
-              <div>
-                <h5>Eco-Friendly Packaging</h5>
-                <p>Thoughtful, minimal, recyclable.</p>
-              </div>
+          {/* Right Brand Panel */}
+          <div className="story-right-pixel">
+            <div className="vertical-tags-pixel">
+              PURE INGREDIENTS<br />
+              REAL RESULTS<br />
+              A BRIGHTER YOU
             </div>
 
-            <div className="eco-pillar-row">
-              <div className="pillar-icon-box"><Leaf size={20} /></div>
-              <div>
-                <h5>Sustainably Sourced</h5>
-                <p>Ingredients you can trust.</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12 }}>
+              <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#A67C52', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+                <Leaf size={16} />
               </div>
-            </div>
-
-            <div className="eco-pillar-row">
-              <div className="pillar-icon-box"><Sparkles size={20} /></div>
-              <div>
-                <h5>A Cleaner Tomorrow</h5>
-                <p>Skincare for a brighter, greener future.</p>
-              </div>
+              <span style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.2rem', fontWeight: 700, color: '#1F2937' }}>
+                LeafOra
+              </span>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 5. SECTION 5 ("JOIN OUR JOURNEY / Let's Create a Healthier, More Radiant World Together") */}
-      <section className="journey-banner-section">
-        <div className="journey-container">
-          <div className="journey-left-content">
-            <span className="journey-tag">JOIN OUR JOURNEY</span>
-            <h2 className="journey-title">
-              Let's Create a Healthier, More Radiant World Together
-            </h2>
-            <Link to="/shop" className="btn-bronze-pill">
-              Shop Now <ArrowRight size={16} />
-            </Link>
-          </div>
-
-          {/* Right 3 Pillars */}
-          <div className="journey-pillars-row">
-            <div className="journey-pillar-item">
-              <div className="journey-pillar-icon"><Leaf size={24} /></div>
-              <span>Better Skin</span>
+      {/* 6. CLEAN FOOTER MATCHING REFERENCE IMAGE */}
+      <footer className="footer-pixel">
+        <div className="footer-inner-pixel">
+          <div className="footer-top-row-pixel">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ width: 38, height: 38, borderRadius: '50%', backgroundColor: '#A67C52', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+                <Leaf size={20} />
+              </div>
+              <span style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.45rem', fontWeight: 700, color: '#1F2937' }}>
+                LeafOra <span style={{ fontSize: '0.65rem', display: 'block', textTransform: 'uppercase', letterSpacing: 1.2, color: '#A67C52' }}>LIFE SCIENCES</span>
+              </span>
             </div>
 
-            <div className="journey-pillar-item">
-              <div className="journey-pillar-icon"><Heart size={24} /></div>
-              <span>Happier People</span>
+            <ul className="footer-nav-list-pixel">
+              <li><Link to="/">Home</Link></li>
+              <li><Link to="/shop">Shop</Link></li>
+              <li><Link to="/shop">Skincare</Link></li>
+              <li><Link to="/shop">About Us</Link></li>
+              <li><Link to="/shop">Contact</Link></li>
+            </ul>
+
+            <div className="footer-social-row-pixel">
+              <a href="https://instagram.com" className="social-circle-btn-pixel"><Globe size={16} /></a>
+              <a href="https://facebook.com" className="social-circle-btn-pixel"><Share2 size={16} /></a>
+              <a href="https://pinterest.com" className="social-circle-btn-pixel"><MessageCircle size={16} /></a>
             </div>
+          </div>
 
-            <div className="journey-pillar-item">
-              <div className="journey-pillar-icon"><Globe size={24} /></div>
-              <span>A Greener Planet</span>
+          <div className="footer-bottom-copy-pixel">
+            <div>
+              © 2025 LeafOra Life Sciences. All rights reserved.
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 6. CLEAN WHITE FOOTER MATCHING 3RD REFERENCE IMAGE */}
-      <footer className="footer-3rd">
-        <div className="footer-top-row">
-          <div className="footer-brand-logo">
-            <div style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#A67C52', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
-              <Leaf size={20} />
+            <div>
+              Skincare for a Healthier You | Made with ♥ for a Better Tomorrow
             </div>
-            <span style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.4rem', fontWeight: 700, color: '#1F2937' }}>
-              LeafOra <span style={{ fontSize: '0.65rem', display: 'block', textTransform: 'uppercase', letterSpacing: 1, color: '#A67C52' }}>Life Sciences</span>
-            </span>
-          </div>
-
-          <ul className="footer-nav-links">
-            <li><Link to="/">Home</Link></li>
-            <li><Link to="/shop">Shop</Link></li>
-            <li><Link to="/shop">Skincare</Link></li>
-            <li><a href="#our-story">About Us</a></li>
-            <li><a href="#contact">Contact</a></li>
-          </ul>
-
-          <div className="footer-social-row">
-            <a href="https://instagram.com" className="social-circle-btn"><Globe size={16} /></a>
-            <a href="https://facebook.com" className="social-circle-btn"><Share2 size={16} /></a>
-            <a href="https://pinterest.com" className="social-circle-btn"><MessageCircle size={16} /></a>
-          </div>
-
-          <div style={{ fontSize: '0.85rem', color: '#64748B', fontWeight: 500 }}>
-            Pure Ingredients | Real Results | A Brighter Tomorrow
-          </div>
-        </div>
-
-        <div className="footer-bottom-row">
-          <div>
-            © {new Date().getFullYear()} Leafora Life Sciences. All rights reserved.
-          </div>
-          <div>
-            Skincare for a Healthier You | Made with ♥ for a Better Tomorrow
           </div>
         </div>
       </footer>
