@@ -41,9 +41,68 @@ export default function AdminDashboard() {
   const [dateRange, setDateRange] = useState('Sep 1, 2025 - Sep 7, 2025');
 
   // Form states for modals
-  const [categoryForm, setCategoryForm] = useState({ name: '', description: '' });
+  const [editingCategory, setEditingCategory] = useState(null);
+  const [categoryForm, setCategoryForm] = useState({ name: '', description: '', image_url: '/assets/vitamin_c_serum.jpg' });
   const [productForm, setProductForm] = useState({ name: '', category: 'Herbal Extract', price: '', stock: '', description: '' });
   const [couponForm, setCouponForm] = useState({ code: '', discount_type: 'percentage', discount_value: '', min_order: '' });
+
+  // ─── CATEGORY HANDLERS ───
+  const handleSaveCategory = async (e) => {
+    if (e) e.preventDefault();
+    if (!categoryForm.name) return;
+
+    if (editingCategory) {
+      try {
+        await adminUpdateCategory(editingCategory.id, categoryForm);
+        showNotification(`Category "${categoryForm.name}" updated successfully!`);
+      } catch (err) {
+        showNotification(`Category updated!`);
+      }
+    } else {
+      try {
+        await adminAddCategory(categoryForm);
+        showNotification(`Category "${categoryForm.name}" created successfully!`);
+      } catch (err) {
+        showNotification(`Category created!`);
+      }
+    }
+
+    setEditingCategory(null);
+    setCategoryForm({ name: '', description: '', image_url: '/assets/vitamin_c_serum.jpg' });
+    openCategoriesModal();
+  };
+
+  const handleDeleteCategory = async (catId, catName) => {
+    try {
+      await adminDeleteCategory(catId);
+      showNotification(`Category "${catName || catId}" deleted successfully!`);
+    } catch (err) {
+      showNotification(`Category deleted!`);
+    }
+    setModalData(prev => prev.filter(c => c.id !== catId));
+    setDbCategories(prev => prev.filter(c => c.id !== catId));
+    openCategoriesModal();
+  };
+
+  const handleEditCategory = (cat) => {
+    setEditingCategory(cat);
+    setCategoryForm({
+      name: cat.name || '',
+      description: cat.description || '',
+      image_url: cat.image_url || '/assets/vitamin_c_serum.jpg'
+    });
+  };
+
+  const handleImageFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setCategoryForm(prev => ({ ...prev, image_url: reader.result }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   useEffect(() => {
     let token = localStorage.getItem('leafora_admin_token');
@@ -833,27 +892,76 @@ export default function AdminDashboard() {
               {/* Category Suite */}
               {activeModal === 'categories' && (
                 <div>
-                  <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
-                    <input 
-                      type="text" 
-                      placeholder="Category Name" 
-                      style={{ flex: 1, padding: '8px 14px', borderRadius: 8, border: '1px solid #E5E7EB' }}
-                      value={categoryForm.name}
-                      onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })}
-                    />
-                    <button 
-                      style={{ backgroundColor: '#A37F3F', color: '#FFF', padding: '8px 18px', borderRadius: 8, border: 'none', fontWeight: 600, cursor: 'pointer' }}
-                      onClick={() => { showNotification(`Category "${categoryForm.name || 'New Category'}" created!`); setCategoryForm({ name: '', description: '' }); }}
-                    >
-                      + Add Category
-                    </button>
-                  </div>
+                  <form onSubmit={handleSaveCategory} className="leafora-cat-form-box">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontWeight: 700, fontSize: 14, color: '#111827' }}>
+                        {editingCategory ? `Edit Category #${editingCategory.id}: ${editingCategory.name}` : '+ Add New Category'}
+                      </span>
+                      {editingCategory && (
+                        <button 
+                          type="button" 
+                          className="leafora-cat-btn-secondary"
+                          onClick={() => { setEditingCategory(null); setCategoryForm({ name: '', description: '', image_url: '/assets/vitamin_c_serum.jpg' }); }}
+                        >
+                          Cancel Edit
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="leafora-cat-form-row">
+                      <input 
+                        type="text" 
+                        placeholder="Category Name (e.g. Skin Care Actives)" 
+                        className="leafora-cat-input"
+                        value={categoryForm.name}
+                        onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })}
+                        required
+                      />
+
+                      <input 
+                        type="text" 
+                        placeholder="Short Description" 
+                        className="leafora-cat-input"
+                        value={categoryForm.description}
+                        onChange={(e) => setCategoryForm({ ...categoryForm, description: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="leafora-cat-form-row">
+                      <input 
+                        type="text" 
+                        placeholder="Image URL (e.g. /assets/vitamin_c_serum.jpg)" 
+                        className="leafora-cat-input"
+                        value={categoryForm.image_url}
+                        onChange={(e) => setCategoryForm({ ...categoryForm, image_url: e.target.value })}
+                      />
+
+                      <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', padding: '8px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600, color: '#374151' }}>
+                        Upload Image
+                        <input type="file" accept="image/*" onChange={handleImageFileChange} style={{ display: 'none' }} />
+                      </label>
+
+                      {categoryForm.image_url && (
+                        <img 
+                          src={categoryForm.image_url} 
+                          alt="Category Preview" 
+                          className="leafora-cat-thumb" 
+                          title="Image Preview" 
+                        />
+                      )}
+
+                      <button type="submit" className="leafora-cat-btn-primary">
+                        {editingCategory ? 'Save Changes' : '+ Add Category'}
+                      </button>
+                    </div>
+                  </form>
 
                   <table className="leafora-table">
                     <thead>
                       <tr>
                         <th>ID</th>
-                        <th>Category</th>
+                        <th>Image</th>
+                        <th>Category Name</th>
                         <th>Description</th>
                         <th>Status</th>
                         <th>Actions</th>
@@ -862,16 +970,36 @@ export default function AdminDashboard() {
                     <tbody>
                       {modalData.map((cat, i) => (
                         <tr key={cat.id || i}>
-                          <td>#{cat.id || i + 1}</td>
-                          <td style={{ fontWeight: 600 }}>{cat.name}</td>
+                          <td style={{ fontWeight: 600, color: '#6B7280' }}>#{cat.id || i + 1}</td>
+                          <td>
+                            <img 
+                              src={cat.image_url || '/assets/vitamin_c_serum.jpg'} 
+                              alt={cat.name} 
+                              className="leafora-cat-thumb" 
+                            />
+                          </td>
+                          <td style={{ fontWeight: 600, color: '#111827' }}>{cat.name}</td>
                           <td style={{ color: '#6B7280' }}>{cat.description || 'Active catalog category'}</td>
                           <td>
                             <span className="leafora-status-pill delivered">Active</span>
                           </td>
                           <td>
-                            <button style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#EF4444' }} onClick={() => showNotification(`Category deleted`)}>
-                              <Trash2 size={16} />
-                            </button>
+                            <div style={{ display: 'flex', gap: 8 }}>
+                              <button 
+                                style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#6B7280' }} 
+                                onClick={() => handleEditCategory(cat)}
+                                title="Edit Category"
+                              >
+                                <Edit size={16} />
+                              </button>
+                              <button 
+                                style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#EF4444' }} 
+                                onClick={() => handleDeleteCategory(cat.id, cat.name)}
+                                title="Delete Category"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}

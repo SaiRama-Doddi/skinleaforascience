@@ -853,3 +853,75 @@
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* Category Management Form & Thumbnail Styles */
+.leafora-cat-thumb {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid #EFECE6;
+  background-color: #FAF8F5;
+}
+
+.leafora-cat-form-box {
+  background-color: #FAF8F5;
+  border: 1px solid #EFECE6;
+  border-radius: 12px;
+  padding: 18px;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.leafora-cat-form-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.leafora-cat-input {
+  flex: 1;
+  padding: 9px 14px;
+  border-radius: 8px;
+  border: 1px solid #E5E7EB;
+  font-size: 13px;
+  color: #111827;
+  outline: none;
+  background-color: #FFFFFF;
+}
+
+.leafora-cat-input:focus {
+  border-color: #A37F3F;
+}
+
+.leafora-cat-btn-primary {
+  background-color: #A87B34;
+  color: #FFFFFF;
+  border: none;
+  padding: 9px 18px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background-color 0.2s ease;
+}
+
+.leafora-cat-btn-primary:hover {
+  background-color: #936A2A;
+}
+
+.leafora-cat-btn-secondary {
+  background-color: #E5E7EB;
+  color: #374151;
+  border: none;
+  padding: 9px 14px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+}
