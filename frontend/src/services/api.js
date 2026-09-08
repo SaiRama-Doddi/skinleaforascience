@@ -44,33 +44,61 @@ export const adminGetAnalytics = () => api.get('/admin/analytics');
 export const adminUploadImage = (imageData) => api.post('/admin/upload', { image_data: imageData });
 
 // Category Controls
-export const adminGetCategories = () => api.get('/admin/categories');
+export const adminGetCategories = (params) => api.get('/admin/categories', { params });
 export const adminAddCategory = (data) => api.post('/admin/categories', data);
 export const adminUpdateCategory = (id, data) => api.put(`/admin/categories/${id}`, data);
-export const adminDeleteCategory = (id) => api.delete(`/admin/categories/${id}`);
+export const adminDeleteCategory = (id, force = false) => api.delete(`/admin/categories/${id}${force ? '?force=true' : ''}`);
+export const adminRestoreCategory = (id) => api.post(`/admin/categories/${id}/restore`);
+export const adminBulkCategoryStatus = (ids, action) => api.post('/admin/categories/bulk-status', { ids, action });
+export const adminReorderCategories = (orders) => api.post('/admin/categories/reorder', { orders });
+export const adminExportCategoriesUrl = '/api/admin/categories/export';
+export const adminImportCategoriesCsv = (data) => api.post('/admin/categories/import', data);
 
 // Product Controls
-export const adminGetProducts = () => api.get('/admin/products');
+export const adminGetProducts = (params) => api.get('/admin/products', { params });
 export const adminAddProduct = (data) => api.post('/admin/products', data);
 export const adminUpdateProduct = (id, data) => api.put(`/admin/products/${id}`, data);
-export const adminDeleteProduct = (id) => api.delete(`/admin/products/${id}`);
+export const adminDeleteProduct = (id, force = false) => api.delete(`/admin/products/${id}${force ? '?force=true' : ''}`);
+export const adminRestoreProduct = (id) => api.post(`/admin/products/${id}/restore`);
 export const adminDuplicateProduct = (id) => api.post(`/admin/products/${id}/duplicate`);
 export const adminBulkUploadProducts = (items) => api.post('/admin/products/bulk-upload', { items });
+export const adminBulkProductAction = (ids, action, extra = {}) => api.post('/admin/products/bulk-action', { ids, action, ...extra });
+export const adminExportProductsUrl = '/api/admin/products/export';
+export const adminImportProductsCsv = (data) => api.post('/admin/products/import', data);
 export const adminNotifyVendor = (id) => api.post(`/admin/products/${id}/notify-vendor`);
 
 // Order Controls
-export const adminGetOrders = () => api.get('/admin/orders');
-export const adminUpdateOrderStatus = (id, status, shipping_partner) =>
-  api.put(`/admin/orders/${id}/status`, { status, shipping_partner });
+export const adminGetOrders = (params) => api.get('/admin/orders', { params });
+export const adminGetOrderDetails = (id) => api.get(`/admin/orders/${id}`);
+export const adminUpdateOrderDetails = (id, data) => api.put(`/admin/orders/${id}`, data);
+export const adminUpdateOrderStatus = (id, status, shipping_partner) => api.put(`/admin/orders/${id}/status`, { status, shipping_partner });
+export const adminCancelOrder = (id, reason) => api.post(`/admin/orders/${id}/cancel`, { reason });
+export const adminRefundOrder = (id, amount, reason) => api.post(`/admin/orders/${id}/refund`, { amount, reason });
+export const adminReturnOrder = (id, reason) => api.post(`/admin/orders/${id}/return`, { reason });
+export const adminExchangeOrder = (id, exchange_notes) => api.post(`/admin/orders/${id}/exchange`, { exchange_notes });
+export const adminAddOrderTimeline = (id, data) => api.post(`/admin/orders/${id}/timeline`, data);
+export const adminBulkOrdersAction = (ids, action, extra = {}) => api.post('/admin/orders/bulk-action', { ids, action, ...extra });
+export const adminExportOrdersUrl = '/api/admin/orders/export';
 
 // Customer Controls
-export const adminGetCustomers = () => api.get('/admin/customers');
+export const adminGetCustomers = (params) => api.get('/admin/customers', { params });
+export const adminGetCustomerDetails = (id) => api.get(`/admin/customers/${id}`);
 export const adminUpdateCustomer = (id, data) => api.put(`/admin/customers/${id}`, data);
+export const adminUpdateCustomerStatus = (id, status) => api.put(`/admin/customers/${id}/status`, { status });
+export const adminUpdateCustomerWalletPoints = (id, data) => api.put(`/admin/customers/${id}/wallet-points`, data);
+export const adminDeleteCustomer = (id, force = false) => api.delete(`/admin/customers/${id}${force ? '?force=true' : ''}`);
+export const adminRestoreCustomer = (id) => api.post(`/admin/customers/${id}/restore`);
 export const adminExportCustomersUrl = '/api/admin/customers/export';
 
 // Revenue & Payments Controls
-export const adminGetPayments = () => api.get('/admin/payments');
-export const adminIssueRefund = (id) => api.post(`/admin/payments/${id}/refund`);
+export const adminGetPayments = (params) => api.get('/admin/payments', { params });
+export const adminGetPaymentGatewaysConfig = () => api.get('/admin/payments/gateways');
+export const adminUpdatePaymentGatewayConfig = (data) => api.put('/admin/payments/gateways', data);
+export const adminIssueRefund = (id, data = {}) => api.post(`/admin/payments/${id}/refund`, data);
+export const adminRetryFailedPayment = (id) => api.post(`/admin/payments/${id}/retry`);
+export const adminMarkCodCollected = (id) => api.post(`/admin/payments/${id}/mark-cod-collected`);
+export const adminGetPaymentRefundsLog = () => api.get('/admin/payments/refunds-log');
+export const adminGetPaymentSettlements = () => api.get('/admin/payments/settlements');
 export const adminExportRevenueUrl = '/api/admin/revenue/export';
 
 // Reviews Controls
@@ -83,8 +111,42 @@ export const adminGetReferrals = () => api.get('/admin/referrals');
 export const adminUpdateReferralStatus = (id, status) => api.put(`/admin/referrals/${id}`, { status });
 
 // Coupons Controls
-export const adminGetCoupons = () => api.get('/admin/coupons');
+export const adminGetCoupons = (params) => api.get('/admin/coupons', { params });
+export const adminGetCouponDetails = (id) => api.get(`/admin/coupons/${id}`);
+export const adminCreateCoupon = (data) => api.post('/admin/coupons', data);
 export const adminAddCoupon = (data) => api.post('/admin/coupons', data);
-export const adminUpdateCouponStatus = (id, status) => api.put(`/admin/coupons/${id}`, { status });
+export const adminUpdateCoupon = (id, data) => api.put(`/admin/coupons/${id}`, data);
+export const adminUpdateCouponStatus = (id, is_active) => api.post(`/admin/coupons/${id}/status`, { is_active });
+export const adminDeleteCoupon = (id, force = false) => api.delete(`/admin/coupons/${id}?force=${force}`);
+export const adminRestoreCoupon = (id) => api.post(`/admin/coupons/${id}/restore`);
+export const adminBulkGenerateCoupons = (data) => api.post('/admin/coupons/bulk-generate', data);
+export const adminGetCouponAnalytics = () => api.get('/admin/coupons/analytics');
+export const adminGetCouponUsageHistory = (params) => api.get('/admin/coupons/usage-history', { params });
+export const adminExportCouponsUrl = `${API_BASE_URL}/admin/coupons/export`;
+
+// Shiprocket Shipping Management Controls
+export const adminGetShiprocketConfig = () => api.get('/admin/shiprocket/config');
+export const adminUpdateShiprocketConfig = (data) => api.put('/admin/shiprocket/config', data);
+
+export const adminGetShiprocketPickupLocations = () => api.get('/admin/shiprocket/pickup-locations');
+export const adminAddShiprocketPickupLocation = (data) => api.post('/admin/shiprocket/pickup-locations', data);
+export const adminUpdateShiprocketPickupLocation = (id, data) => api.put(`/admin/shiprocket/pickup-locations/${id}`, data);
+export const adminDeleteShiprocketPickupLocation = (id) => api.delete(`/admin/shiprocket/pickup-locations/${id}`);
+
+export const adminCalculateShippingRates = (data) => api.post('/admin/shiprocket/calculate-rates', data);
+
+export const adminGetShiprocketShipments = (params) => api.get('/admin/shiprocket/shipments', { params });
+export const adminGenerateShiprocketAwb = (data) => api.post('/admin/shiprocket/generate-awb', data);
+export const adminScheduleShiprocketPickup = (id, data) => api.post(`/admin/shiprocket/shipments/${id}/schedule-pickup`, data);
+export const adminGenerateShiprocketLabel = (id) => api.get(`/admin/shiprocket/shipments/${id}/label`);
+export const adminCancelShiprocketShipment = (id) => api.post(`/admin/shiprocket/shipments/${id}/cancel`);
+export const adminTrackShiprocketShipment = (id) => api.get(`/admin/shiprocket/shipments/${id}/track`);
+
+export const adminGetShiprocketNdr = () => api.get('/admin/shiprocket/ndr');
+export const adminResolveShiprocketNdr = (id, data) => api.post(`/admin/shiprocket/ndr/${id}/resolve`, data);
+
+export const adminGetShiprocketManifests = () => api.get('/admin/shiprocket/manifests');
+export const adminGenerateShiprocketManifest = (data) => api.post('/admin/shiprocket/generate-manifest', data);
 
 export default api;
+
