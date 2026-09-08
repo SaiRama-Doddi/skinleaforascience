@@ -4,18 +4,19 @@ import {
   ChevronRight, Sparkles, Globe, Share2, MessageCircle, CheckCircle2
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import heroImg from '../assets/hero.png';
 import './Home.css';
 
-// 8 Circular Categories data matching reference image
+// 8 Circular Categories data using robust local assets & high-reliability botanical icons
 const CIRCULAR_CATEGORIES = [
-  { id: 'cleansers', name: 'Cleansers', icon: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=300&q=80' },
-  { id: 'moisturizers', name: 'Moisturizers', icon: 'https://images.unsplash.com/photo-1608248597263-0057e57b4522?auto=format&fit=crop&w=300&q=80' },
-  { id: 'serums', name: 'Serums', icon: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=300&q=80' },
-  { id: 'masks', name: 'Face Masks', icon: 'https://images.unsplash.com/photo-1571781926291-c477ebfd024b?auto=format&fit=crop&w=300&q=80' },
-  { id: 'sunscreen', name: 'Sunscreens', icon: 'https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?auto=format&fit=crop&w=300&q=80' },
-  { id: 'eyecare', name: 'Eye Care', icon: 'https://images.unsplash.com/photo-1601049541289-9b1b7bbbfe19?auto=format&fit=crop&w=300&q=80' },
-  { id: 'bodycare', name: 'Body Care', icon: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=300&q=80' },
-  { id: 'oils', name: 'Face Oils', icon: 'https://images.unsplash.com/photo-1608248597263-0057e57b4522?auto=format&fit=crop&w=300&q=80' }
+  { id: 'cleansers', name: 'Cleansers', icon: '/assets/face_wash.jpg' },
+  { id: 'moisturizers', name: 'Moisturizers', icon: '/assets/hydra_glow_moisturizer.jpg' },
+  { id: 'serums', name: 'Serums', icon: '/assets/vitamin_c_serum.jpg' },
+  { id: 'masks', name: 'Face Masks', icon: '/assets/night_cream.jpg' },
+  { id: 'sunscreen', name: 'Sunscreens', icon: '/assets/sunscreen_spf50.jpg' },
+  { id: 'eyecare', name: 'Eye Care', icon: '/assets/vitamin_c_serum.jpg' },
+  { id: 'bodycare', name: 'Body Care', icon: '/assets/face_wash.jpg' },
+  { id: 'oils', name: 'Face Oils', icon: '/assets/hydra_glow_moisturizer.jpg' }
 ];
 
 // 4 Bestseller Products matching reference image
@@ -27,7 +28,7 @@ const BESTSELLER_PRODUCTS = [
     price: 18.00,
     rating: 4.9,
     reviews: 124,
-    image: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=500&q=80'
+    image: '/assets/face_wash.jpg'
   },
   {
     id: 2,
@@ -36,7 +37,7 @@ const BESTSELLER_PRODUCTS = [
     price: 28.00,
     rating: 4.8,
     reviews: 98,
-    image: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=500&q=80'
+    image: '/assets/vitamin_c_serum.jpg'
   },
   {
     id: 3,
@@ -45,7 +46,7 @@ const BESTSELLER_PRODUCTS = [
     price: 24.00,
     rating: 5.0,
     reviews: 156,
-    image: 'https://images.unsplash.com/photo-1608248597263-0057e57b4522?auto=format&fit=crop&w=500&q=80'
+    image: '/assets/hydra_glow_moisturizer.jpg'
   },
   {
     id: 4,
@@ -54,7 +55,7 @@ const BESTSELLER_PRODUCTS = [
     price: 22.00,
     rating: 4.9,
     reviews: 112,
-    image: 'https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?auto=format&fit=crop&w=500&q=80'
+    image: '/assets/sunscreen_spf50.jpg'
   }
 ];
 
@@ -77,53 +78,43 @@ export default function Home() {
         </div>
       )}
 
-      {/* 1. HERO SPLIT SECTION ("Glow Naturally, Live Beautifully") */}
-      <section className="hero-section-pixel">
-        <div className="hero-left-col-pixel">
-          <span className="section-tag-gold-pixel">NATURAL CARE • REAL RESULTS</span>
-          <h1 className="hero-heading-pixel">
-            Glow Naturally <br />
-            Live Beautifully
-          </h1>
-          <p className="hero-subtext-pixel">
-            Pure ingredients. Proven science. Skincare that brings out your natural glow.
-          </p>
+      {/* 1. HERO SECTION WITH HERO.PNG AS BACKGROUND BANNER */}
+      <div className="hero-banner-container-pixel">
+        <section className="hero-section-pixel" style={{ backgroundImage: `url(${heroImg})` }}>
+          <div className="hero-left-col-pixel">
+            <span className="section-tag-gold-pixel">NATURAL CARE • REAL RESULTS</span>
+            <h1 className="hero-heading-pixel">
+              Glow Naturally <br />
+              Live Beautifully
+            </h1>
+            <p className="hero-subtext-pixel">
+              Pure ingredients. Proven science. Skincare that brings out your natural glow.
+            </p>
 
-          <Link to="/shop" className="btn-bronze-pill-pixel">
-            Shop Now <ArrowRight size={16} />
-          </Link>
+            <Link to="/shop" className="btn-bronze-pill-pixel">
+              Shop Now <ArrowRight size={16} />
+            </Link>
 
-          {/* 3 Bottom Benefit Pills Row */}
-          <div className="hero-pills-row-pixel">
-            <div className="pill-item-pixel">
-              <div className="pill-icon-circle-pixel">🍃</div>
-              <span>Natural Ingredients</span>
-            </div>
+            {/* 3 Bottom Benefit Pills Row */}
+            <div className="hero-pills-row-pixel">
+              <div className="pill-item-pixel">
+                <div className="pill-icon-circle-pixel">🍃</div>
+                <span>Natural Ingredients</span>
+              </div>
 
-            <div className="pill-item-pixel">
-              <div className="pill-icon-circle-pixel">🧪</div>
-              <span>Dermatologist Tested</span>
-            </div>
+              <div className="pill-item-pixel">
+                <div className="pill-icon-circle-pixel">🧪</div>
+                <span>Dermatologist Tested</span>
+              </div>
 
-            <div className="pill-item-pixel">
-              <div className="pill-icon-circle-pixel">🤎</div>
-              <span>Safe & Gentle for All Skin Types</span>
+              <div className="pill-item-pixel">
+                <div className="pill-icon-circle-pixel">🤎</div>
+                <span>Safe & Gentle for All Skin Types</span>
+              </div>
             </div>
           </div>
-        </div>
-
-        {/* Hero Right Column: Warm Sunlit Smiling Skincare Model Image */}
-        <div className="hero-right-col-pixel">
-          <img 
-            src="https://images.unsplash.com/photo-1512290900676-26c2a4d48dc1?auto=format&fit=crop&w=1000&q=80" 
-            alt="Smiling Skincare Model with Cream" 
-            className="hero-model-img-pixel"
-          />
-          <div className="hero-italic-side-callout-pixel">
-            Skincare today for a brighter tomorrow
-          </div>
-        </div>
-      </section>
+        </section>
+      </div>
 
       {/* 2. SHOP BY CATEGORY (8 CIRCULAR PILLS) */}
       <section className="category-section-pixel">
@@ -142,7 +133,14 @@ export default function Home() {
             {CIRCULAR_CATEGORIES.map(cat => (
               <Link key={cat.id} to="/shop" className="category-pill-card-pixel">
                 <div className="category-circle-box-pixel">
-                  <img src={cat.icon} alt={cat.name} />
+                  <img 
+                    src={cat.icon} 
+                    alt={cat.name} 
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = '/assets/face_wash.jpg';
+                    }}
+                  />
                 </div>
                 <span className="category-pill-name-pixel">{cat.name}</span>
               </Link>
@@ -197,13 +195,22 @@ export default function Home() {
 
             {/* TALL GOLDEN PROMO CARD (EXACT MATCH TO REFERENCE IMAGE) */}
             <div className="tall-golden-promo-card-pixel">
-              <h3 className="promo-title-gold-pixel">
-                NATURE MEETS SCIENCE FOR HEALTHY RADIANT SKIN
-              </h3>
+              <img 
+                src="/assets/leafora_golden_promo.jpg" 
+                alt="Nature Meets Science Promo Background"
+                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.25, zIndex: 1 }} 
+              />
+              <div style={{ position: 'relative', zIndex: 2 }}>
+                <h3 className="promo-title-gold-pixel">
+                  NATURE MEETS SCIENCE FOR HEALTHY RADIANT SKIN
+                </h3>
+              </div>
 
-              <Link to="/shop" className="btn-gold-white-pixel">
-                Shop Collection <ArrowRight size={14} />
-              </Link>
+              <div style={{ position: 'relative', zIndex: 2 }}>
+                <Link to="/shop" className="btn-gold-white-pixel">
+                  Shop Collection <ArrowRight size={14} />
+                </Link>
+              </div>
             </div>
           </div>
         </div>
@@ -262,7 +269,7 @@ export default function Home() {
           {/* Center Product Pedestal Image */}
           <div>
             <img 
-              src="https://images.unsplash.com/photo-1608248597263-0057e57b4522?auto=format&fit=crop&w=800&q=80" 
+              src="/assets/leafora_golden_promo.jpg" 
               alt="Skincare That Cares Product Lineup" 
               className="story-center-img-pixel"
             />
