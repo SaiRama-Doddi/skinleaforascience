@@ -252,9 +252,10 @@ const getCategories = async (req, res) => {
 
     query += ' ORDER BY c.display_order ASC, c.id DESC';
     const [rows] = await pool.query(query, params);
-    return res.status(200).json({ success: true, data: rows.length > 0 ? rows : inMemoryCategories });
+    return res.status(200).json({ success: true, data: rows });
   } catch (error) {
-    return res.status(200).json({ success: true, data: inMemoryCategories });
+    console.error('Error fetching categories from database:', error.message);
+    return res.status(200).json({ success: true, data: [] });
   }
 };
 

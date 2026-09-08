@@ -411,13 +411,15 @@ const initDb = async () => {
     const [cats] = await pool.query('SELECT COUNT(*) as cnt FROM categories');
     if (cats[0].cnt === 0) {
       await pool.query(`
-        INSERT INTO categories (name, slug, description, is_active) VALUES
-        ('Herbal Extracts', 'herbal-extracts', 'Pharma-grade pure herbal extracts', 1),
-        ('Supplements', 'supplements', 'Natural bio-vital nutraceuticals', 1),
-        ('Biotech Formulations', 'biotech-formulations', 'Active science solutions', 1),
-        ('Skin Care actives', 'skin-care-actives', 'Pure skin wellness bio-compounds', 1);
+        INSERT INTO categories (id, parent_id, level, name, slug, description, is_active, is_featured, is_trending, display_order) VALUES
+        (1, NULL, 'category', 'Herbal Extracts', 'herbal-extracts', 'Pharma-grade pure herbal extracts', 1, 1, 1, 1),
+        (2, NULL, 'category', 'Supplements', 'supplements', 'Natural bio-vital nutraceuticals', 1, 1, 0, 2),
+        (3, NULL, 'category', 'Biotech Formulations', 'biotech-formulations', 'Active science solutions', 1, 0, 1, 3),
+        (4, NULL, 'category', 'Skin Care actives', 'skin-care-actives', 'Pure skin wellness bio-compounds', 1, 1, 1, 4),
+        (5, 4, 'sub_category', 'Facial Serums', 'facial-serums', 'Concentrated serum actives', 1, 1, 0, 5),
+        (6, 5, 'child_category', 'Vitamin C Serums', 'vitamin-c-serums', 'Botanical Vitamin C radiance serums', 1, 1, 1, 6);
       `);
-      console.log('🌱 Seeded default categories');
+      console.log('🌱 Seeded default categories including sub & child categories');
     }
 
     // ─── SEED DEFAULT PRODUCTS IF EMPTY ───
