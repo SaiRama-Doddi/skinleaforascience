@@ -1,0 +1,857 @@
+/* Premium Organic Botanical Product Details Styling matching reference image */
+:root {
+  --leafora-bg: #FAF7F2;
+  --leafora-card-bg: #FFFFFF;
+  --leafora-bronze: #A67C52;
+  --leafora-bronze-hover: #8E653E;
+  --leafora-green: #2D5A27;
+  --leafora-text-dark: #2D3748;
+  --leafora-text-muted: #64748B;
+  --leafora-border: #EFE8DE;
+  --leafora-gold: #D4AF37;
+  --leafora-sale-red: #C53030;
+}
+
+.details-container {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 24px 20px 80px 20px;
+  background-color: var(--leafora-bg);
+  min-height: 100vh;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  color: var(--leafora-text-dark);
+}
+
+/* Breadcrumbs */
+.details-breadcrumbs {
+  font-size: 0.85rem;
+  color: var(--leafora-text-muted);
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.details-breadcrumbs a {
+  color: var(--leafora-text-muted);
+  text-decoration: none;
+}
+
+.details-breadcrumbs span.current {
+  color: var(--leafora-bronze);
+  font-weight: 500;
+}
+
+/* 1. TOP HERO TWO-COLUMN LAYOUT */
+.pdp-hero-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  align-items: start;
+  margin-bottom: 48px;
+}
+
+/* 2. LEFT GALLERY COLUMN */
+.gallery-wrapper {
+  display: flex;
+  gap: 16px;
+}
+
+.gallery-thumbnails-col {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 84px;
+  flex-shrink: 0;
+}
+
+.thumb-item {
+  width: 84px;
+  height: 84px;
+  border-radius: 10px;
+  border: 1.5px solid var(--leafora-border);
+  overflow: hidden;
+  cursor: pointer;
+  background: #FFFFFF;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.thumb-item.active, .thumb-item:hover {
+  border-color: var(--leafora-bronze);
+  box-shadow: 0 4px 10px rgba(166, 124, 82, 0.15);
+}
+
+.thumb-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.thumb-video-badge {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+}
+
+/* Large Main Image Display */
+.main-img-container {
+  position: relative;
+  flex: 1;
+  height: 540px;
+  background: #F7F4EE;
+  border: 1px solid var(--leafora-border);
+  border-radius: 16px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.main-img-display {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.main-img-container:hover .main-img-display {
+  transform: scale(1.1); /* Zoom Image Effect */
+}
+
+/* Circular Seal Badge Top Left */
+.natural-seal-badge {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  border: 1px dashed var(--leafora-bronze);
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(4px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: #1A2E22;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  z-index: 3;
+  line-height: 1.1;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+}
+
+/* Wishlist Heart Top Right */
+.pdp-wishlist-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  border: 1px solid var(--leafora-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748B;
+  cursor: pointer;
+  z-index: 3;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+  transition: all 0.2s ease;
+}
+
+.pdp-wishlist-btn:hover, .pdp-wishlist-btn.active {
+  color: #E53E3E;
+  transform: scale(1.1);
+}
+
+/* Gallery Navigation Arrows */
+.nav-arrow-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--leafora-border);
+  color: var(--leafora-text-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 3;
+  transition: all 0.2s ease;
+}
+
+.nav-arrow-btn:hover {
+  background: #FFFFFF;
+  color: var(--leafora-bronze);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+}
+
+.nav-arrow-left { left: 16px; }
+.nav-arrow-right { right: 16px; }
+
+/* Corner Callout Text inside Image */
+.img-corner-callout {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: 1.4rem;
+  color: #1A2E22;
+  text-shadow: 0 2px 8px rgba(255,255,255,0.9);
+  z-index: 3;
+}
+
+/* 3. RIGHT PRODUCT DETAILS & BUY COLUMN */
+.pdp-buy-col {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.pdp-top-badge {
+  display: inline-block;
+  background: var(--leafora-bronze);
+  color: #FFFFFF;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  width: fit-content;
+}
+
+.pdp-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.3rem;
+  font-weight: 700;
+  color: #1A2E22;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.pdp-subtitle {
+  font-size: 1.05rem;
+  color: var(--leafora-text-muted);
+  margin-top: -8px;
+}
+
+/* Rating Row */
+.pdp-rating-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.88rem;
+  color: var(--leafora-text-muted);
+}
+
+.pdp-rating-row .stars {
+  display: flex;
+  gap: 2px;
+}
+
+.btn-write-review {
+  background: none;
+  border: none;
+  color: var(--leafora-bronze);
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+/* Price Row */
+.pdp-price-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pdp-price-current {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--leafora-text-dark);
+}
+
+.pdp-price-original {
+  font-size: 1.15rem;
+  color: #94A3B8;
+  text-decoration: line-through;
+}
+
+.pdp-discount-badge {
+  background: #E6F4EA;
+  color: var(--leafora-green);
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.pdp-description {
+  font-size: 0.95rem;
+  color: #475569;
+  line-height: 1.65;
+}
+
+/* 5 Benefit Circles Row */
+.benefit-circles-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  padding: 16px 0;
+  border-top: 1px solid var(--leafora-border);
+  border-bottom: 1px solid var(--leafora-border);
+}
+
+.benefit-circle-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+}
+
+.circle-icon-box {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #F4EBE1;
+  color: var(--leafora-bronze);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+}
+
+.circle-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #334155;
+  line-height: 1.2;
+}
+
+/* Quantity & Variant Row */
+.quantity-action-row {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.quantity-stepper {
+  display: flex;
+  align-items: center;
+  background: #FFFFFF;
+  border: 1px solid var(--leafora-border);
+  border-radius: 8px;
+  overflow: hidden;
+  height: 46px;
+}
+
+.btn-step {
+  width: 38px;
+  height: 100%;
+  background: #F8F4EE;
+  border: none;
+  font-size: 1.1rem;
+  color: var(--leafora-text-dark);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+}
+
+.btn-step:hover {
+  background: #EFE8DE;
+}
+
+.step-value {
+  width: 44px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.btn-pdp-add-cart {
+  flex: 1;
+  height: 46px;
+  background: var(--leafora-bronze);
+  color: #FFFFFF;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background 0.2s ease;
+}
+
+.btn-pdp-add-cart:hover {
+  background: var(--leafora-bronze-hover);
+}
+
+.btn-pdp-buy-now {
+  width: 100%;
+  height: 46px;
+  background: #FFFFFF;
+  border: 1.5px solid var(--leafora-bronze);
+  color: var(--leafora-bronze);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-pdp-buy-now:hover {
+  background: var(--leafora-bronze);
+  color: #FFFFFF;
+}
+
+/* Trust Badges Bar */
+.trust-badges-bar {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  background: #F8F4EE;
+  padding: 14px 18px;
+  border-radius: 10px;
+}
+
+.trust-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.trust-item-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--leafora-text-dark);
+}
+
+.trust-item-sub {
+  font-size: 0.72rem;
+  color: var(--leafora-text-muted);
+}
+
+/* Delivery Date Checker Box */
+.delivery-checker-box {
+  background: #FFFFFF;
+  border: 1px solid var(--leafora-border);
+  border-radius: 10px;
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pincode-input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.pincode-input-row input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid var(--leafora-border);
+  border-radius: 6px;
+  outline: none;
+  font-size: 0.85rem;
+}
+
+.btn-check-pincode {
+  padding: 8px 16px;
+  background: #1A2E22;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.delivery-result-text {
+  font-size: 0.82rem;
+  color: var(--leafora-green);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* 4. MIDDLE TABBED INFORMATION SECTION */
+.pdp-tabs-section {
+  background: #FFFFFF;
+  border: 1px solid var(--leafora-border);
+  border-radius: 16px;
+  padding: 32px;
+  margin-bottom: 48px;
+}
+
+.tab-headers-row {
+  display: flex;
+  gap: 32px;
+  border-bottom: 1.5px solid var(--leafora-border);
+  margin-bottom: 32px;
+}
+
+.tab-header-btn {
+  background: none;
+  border: none;
+  padding-bottom: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #64748B;
+  cursor: pointer;
+  position: relative;
+  transition: color 0.2s ease;
+}
+
+.tab-header-btn:hover {
+  color: var(--leafora-bronze);
+}
+
+.tab-header-btn.active {
+  color: var(--leafora-bronze);
+}
+
+.tab-header-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1.5px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--leafora-bronze);
+  border-radius: 3px 3px 0 0;
+}
+
+/* Tab Content Layout (Specs Table + Right Promo Banner) */
+.tab-details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+}
+
+.tab-left-content h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.4rem;
+  color: #1A2E22;
+  margin-bottom: 12px;
+}
+
+.tab-left-content p {
+  color: #475569;
+  font-size: 0.92rem;
+  line-height: 1.65;
+  margin-bottom: 24px;
+}
+
+/* Specs Table */
+.specs-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.specs-table td {
+  padding: 10px 14px;
+  font-size: 0.88rem;
+  border-bottom: 1px solid #F1F5F9;
+}
+
+.specs-table tr td:first-child {
+  font-weight: 600;
+  color: #64748B;
+  width: 35%;
+}
+
+.specs-table tr td:last-child {
+  color: var(--leafora-text-dark);
+}
+
+/* Tab Right Promo Banner */
+.tab-promo-banner {
+  background: #FDF9F5;
+  border: 1px solid #F3E9DD;
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.promo-banner-img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.promo-banner-content {
+  padding: 24px;
+  text-align: center;
+}
+
+.promo-banner-content h4 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.5rem;
+  font-style: italic;
+  color: #1A2E22;
+  margin-bottom: 20px;
+}
+
+.promo-three-icons {
+  display: flex;
+  justify-content: space-around;
+}
+
+.promo-icon-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+/* 5. REVIEWS & RATINGS TAB CONTENT */
+.reviews-breakdown-box {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 36px;
+  margin-bottom: 32px;
+  padding: 24px;
+  background: #FDF9F5;
+  border-radius: 12px;
+}
+
+.overall-score-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid var(--leafora-border);
+  padding-right: 24px;
+}
+
+.big-score {
+  font-size: 3.2rem;
+  font-weight: 700;
+  color: var(--leafora-text-dark);
+  line-height: 1;
+}
+
+.rating-bars-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  justify-content: center;
+}
+
+.rating-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.85rem;
+  color: #64748B;
+}
+
+.bar-bg {
+  flex: 1;
+  height: 8px;
+  background: #E2E8F0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  background: var(--leafora-bronze);
+  border-radius: 4px;
+}
+
+/* Customer Reviews List */
+.reviews-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.review-card {
+  padding: 20px;
+  border: 1px solid var(--leafora-border);
+  border-radius: 12px;
+  background: #FFFFFF;
+}
+
+.review-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.reviewer-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.reviewer-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.reviewer-name {
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: var(--leafora-text-dark);
+}
+
+.verified-badge {
+  font-size: 0.72rem;
+  color: var(--leafora-green);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* 6. FAQS ACCORDION SECTION */
+.faqs-section {
+  margin-bottom: 48px;
+}
+
+.faqs-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.faq-card {
+  background: #FFFFFF;
+  border: 1px solid var(--leafora-border);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.faq-question-btn {
+  width: 100%;
+  padding: 16px 20px;
+  background: none;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: var(--leafora-text-dark);
+  cursor: pointer;
+  text-align: left;
+}
+
+.faq-answer-content {
+  padding: 0 20px 16px 20px;
+  font-size: 0.9rem;
+  color: #475569;
+  line-height: 1.6;
+}
+
+/* 7. "YOU MAY ALSO LIKE" RELATED PRODUCTS GRID */
+.related-products-section {
+  margin-bottom: 48px;
+}
+
+.related-products-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+  margin-top: 24px;
+}
+
+/* VIDEO PREVIEW MODAL */
+.video-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(6px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.video-modal-box {
+  width: 720px;
+  max-width: 90vw;
+  background: #000000;
+  border-radius: 16px;
+  overflow: hidden;
+  position: relative;
+}
+
+/* RESPONSIVE BREAKPOINTS */
+@media (max-width: 1100px) {
+  .related-products-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .pdp-hero-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .gallery-wrapper {
+    flex-direction: column-reverse;
+  }
+
+  .gallery-thumbnails-col {
+    flex-direction: row;
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .tab-details-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .benefit-circles-row {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .main-img-container {
+    height: 360px;
+  }
+
+  .related-products-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .pdp-title {
+    font-size: 1.8rem;
+  }
+}

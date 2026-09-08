@@ -1,8 +1,10 @@
 import axios from 'axios';
 
+export const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+
 // Create configured Axios instance
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: API_BASE_URL,
   timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
@@ -201,5 +203,4 @@ export const userResetPassword = (data) => api.post('/auth/reset-password', data
 export const userGetCurrentUser = () => api.get('/auth/me');
 
 export default api;
-
 
