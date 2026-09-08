@@ -255,3 +255,81 @@
 .mega-column ul li a:hover {
   color: var(--nav-bronze);
 }
+
+/* MOBILE HAMBURGER BUTTON & RESPONSIVE NAV STYLES */
+.mobile-menu-toggle-btn {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--nav-text-dark);
+  cursor: pointer;
+  padding: 4px;
+}
+
+@media (max-width: 992px) {
+  .mobile-menu-toggle-btn {
+    display: flex;
+    align-items: center;
+  }
+
+  .nav-search-box {
+    width: 180px;
+  }
+
+  .nav-search-box:focus-within {
+    width: 200px;
+  }
+
+  .nav-links {
+    position: fixed;
+    top: 90px;
+    left: 0;
+    right: 0;
+    background: #FFFFFF;
+    border-bottom: 1px solid var(--nav-border);
+    flex-direction: column;
+    padding: 20px;
+    gap: 16px;
+    box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+    transform: translateY(-150%);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    z-index: 999;
+  }
+
+  .nav-links.mobile-open {
+    transform: translateY(0);
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .mega-menu-inner {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+}
+
+@media (max-width: 600px) {
+  .top-announcement-bar {
+    font-size: 0.75rem;
+    padding: 6px 12px;
+  }
+
+  .brand-title {
+    font-size: 1.25rem;
+  }
+
+  .brand-subtitle {
+    font-size: 0.55rem;
+  }
+
+  .nav-search-box {
+    display: none; /* Can be toggled or compact on mobile */
+  }
+
+  .leafora-main-navbar {
+    padding: 10px 14px;
+  }
+}
+

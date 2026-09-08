@@ -30,7 +30,7 @@ import {
   Tag, Star, Megaphone, BarChart2, Settings, Search, Bell, Calendar,
   ChevronDown, ArrowUpRight, Plus, RefreshCw, LogOut, Edit, Trash2,
   CheckCircle2, Download, Send, Eye, ShieldAlert, FileSpreadsheet, Copy,
-  X, Layers, ShoppingBag, ArrowRight, ArrowUp, ArrowDown, Upload, RotateCcw,
+  X, Layers, ShoppingBag, ArrowRight, ArrowUp, ArrowDown, Upload, RotateCcw, Menu,
   Sparkles, TrendingUp, Image, FolderTree, Globe, FileText, ChevronRight, SlidersHorizontal,
   AlertTriangle, XCircle, Warehouse, Boxes, Clock, Filter, DollarSign, Percent,
   Wallet, Award, MapPin, Gift, Heart, Lock, Unlock, Ban, UserCheck, UserX, ShieldCheck, Mail, Phone,
@@ -41,6 +41,7 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [analytics, setAnalytics] = useState(null);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   
   // Real Database State Arrays
   const [dbOrders, setDbOrders] = useState([]);
@@ -2646,11 +2647,16 @@ export default function AdminDashboard() {
 
   return (
     <div className="leafora-admin-app">
+      {/* ─── MOBILE SIDEBAR OVERLAY ─── */}
+      {isMobileSidebarOpen && (
+        <div className="leafora-sidebar-overlay" onClick={() => setIsMobileSidebarOpen(false)} />
+      )}
+
       {/* ─── SIDEBAR NAVIGATION ─── */}
-      <aside className="leafora-sidebar">
+      <aside className={`leafora-sidebar ${isMobileSidebarOpen ? 'mobile-open' : ''}`}>
         <div>
           {/* LeafOra Gold Brand Logo */}
-          <div className="leafora-brand" onClick={() => setActiveTab('dashboard')}>
+          <div className="leafora-brand" onClick={() => { setActiveTab('dashboard'); setIsMobileSidebarOpen(false); }}>
             <svg className="leafora-brand-logo-icon" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
               <defs>
                 <linearGradient id="leafGoldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -2675,84 +2681,84 @@ export default function AdminDashboard() {
           <ul className="leafora-nav-list">
             <li 
               className={`leafora-nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
-              onClick={() => setActiveTab('dashboard')}
+              onClick={() => { setActiveTab('dashboard'); setIsMobileSidebarOpen(false); }}
             >
               <LayoutDashboard className="leafora-nav-icon" />
               <span>Dashboard</span>
             </li>
             <li 
               className={`leafora-nav-item ${activeTab === 'categories' ? 'active' : ''}`}
-              onClick={() => setActiveTab('categories')}
+              onClick={() => { setActiveTab('categories'); setIsMobileSidebarOpen(false); }}
             >
               <Grid className="leafora-nav-icon" />
               <span>Categories</span>
             </li>
             <li 
               className={`leafora-nav-item ${activeTab === 'products' ? 'active' : ''}`}
-              onClick={() => setActiveTab('products')}
+              onClick={() => { setActiveTab('products'); setIsMobileSidebarOpen(false); }}
             >
               <Package className="leafora-nav-icon" />
               <span>Products</span>
             </li>
             <li 
               className={`leafora-nav-item ${activeTab === 'orders' ? 'active' : ''}`}
-              onClick={() => setActiveTab('orders')}
+              onClick={() => { setActiveTab('orders'); setIsMobileSidebarOpen(false); }}
             >
               <ShoppingCart className="leafora-nav-icon" />
               <span>Orders</span>
             </li>
             <li 
               className={`leafora-nav-item ${activeTab === 'shiprocket' ? 'active' : ''}`}
-              onClick={() => setActiveTab('shiprocket')}
+              onClick={() => { setActiveTab('shiprocket'); setIsMobileSidebarOpen(false); }}
             >
               <Truck className="leafora-nav-icon" />
               <span>Shiprocket</span>
             </li>
             <li 
               className={`leafora-nav-item ${activeTab === 'payments' ? 'active' : ''}`}
-              onClick={() => setActiveTab('payments')}
+              onClick={() => { setActiveTab('payments'); setIsMobileSidebarOpen(false); }}
             >
               <CreditCard className="leafora-nav-icon" />
               <span>Payments</span>
             </li>
             <li 
               className={`leafora-nav-item ${activeTab === 'users' ? 'active' : ''}`}
-              onClick={() => setActiveTab('users')}
+              onClick={() => { setActiveTab('users'); setIsMobileSidebarOpen(false); }}
             >
               <Users className="leafora-nav-icon" />
               <span>Users</span>
             </li>
             <li 
               className={`leafora-nav-item ${activeTab === 'coupons' ? 'active' : ''}`}
-              onClick={() => setActiveTab('coupons')}
+              onClick={() => { setActiveTab('coupons'); setIsMobileSidebarOpen(false); }}
             >
               <Tag className="leafora-nav-icon" />
               <span>Coupons</span>
             </li>
             <li 
               className={`leafora-nav-item ${activeTab === 'reviews' ? 'active' : ''}`}
-              onClick={() => setActiveTab('reviews')}
+              onClick={() => { setActiveTab('reviews'); setIsMobileSidebarOpen(false); }}
             >
               <Star className="leafora-nav-icon" />
               <span>Reviews</span>
             </li>
             <li 
               className={`leafora-nav-item ${activeTab === 'marketing' ? 'active' : ''}`}
-              onClick={() => setActiveTab('marketing')}
+              onClick={() => { setActiveTab('marketing'); setIsMobileSidebarOpen(false); }}
             >
               <Megaphone className="leafora-nav-icon" />
               <span>Marketing</span>
             </li>
             <li 
               className={`leafora-nav-item ${activeTab === 'reports' ? 'active' : ''}`}
-              onClick={() => setActiveTab('reports')}
+              onClick={() => { setActiveTab('reports'); setIsMobileSidebarOpen(false); }}
             >
               <BarChart2 className="leafora-nav-icon" />
               <span>Reports</span>
             </li>
             <li 
               className={`leafora-nav-item ${activeTab === 'settings' ? 'active' : ''}`}
-              onClick={() => setActiveTab('settings')}
+              onClick={() => { setActiveTab('settings'); setIsMobileSidebarOpen(false); }}
             >
               <Settings className="leafora-nav-icon" />
               <span>Settings</span>
@@ -2777,15 +2783,24 @@ export default function AdminDashboard() {
       <main className="leafora-main-wrapper">
         {/* Top Header Bar */}
         <header className="leafora-top-header">
-          <div className="leafora-search-box">
-            <Search className="leafora-search-icon" />
-            <input 
-              type="text" 
-              className="leafora-search-input" 
-              placeholder="Search anything (products, orders, users...)"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%' }}>
+            <button 
+              className="leafora-admin-mobile-toggle"
+              onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+              title="Toggle Sidebar Menu"
+            >
+              <Menu size={20} />
+            </button>
+            <div className="leafora-search-box">
+              <Search className="leafora-search-icon" />
+              <input 
+                type="text" 
+                className="leafora-search-input" 
+                placeholder="Search anything (products, orders, users...)"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
           </div>
 
           <div className="leafora-header-right">

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Leaf, User, LogOut, Wallet, Search, ShoppingBag, ChevronDown, Sparkles, ShieldCheck } from 'lucide-react';
+import { Leaf, User, LogOut, Wallet, Search, ShoppingBag, ChevronDown, Sparkles, ShieldCheck, Menu, X } from 'lucide-react';
 import { checkHealth, getCategories, getProducts } from '../services/api';
 import './Navbar.css';
 
@@ -12,11 +12,13 @@ export default function Navbar() {
   const [searchResults, setSearchResults] = useState([]);
   const [showMegaMenu, setShowMegaMenu] = useState(false);
   const [categories, setCategories] = useState([]);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const location = useLocation();
   const navigate = useNavigate();
 
   useEffect(() => {
+    setIsMobileMenuOpen(false);
     checkHealth()
       .then((res) => setApiStatus(res?.success ? 'connected' : 'offline'))
       .catch(() => setApiStatus('offline'));
@@ -74,23 +76,34 @@ export default function Navbar() {
       <header className="leafora-main-navbar">
         <div className="navbar-inner">
           
-          {/* BRAND LOGO */}
-          <Link to="/" className="brand-logo">
-            <div className="logo-emblem">
-              <Leaf size={20} fill="#FFFFFF" />
-            </div>
-            <div>
-              <span className="brand-title">LeafOra</span>
-              <span className="brand-subtitle">LIFE SCIENCES</span>
-            </div>
-          </Link>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            {/* Mobile Hamburger Toggle Button */}
+            <button 
+              className="mobile-menu-toggle-btn"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label="Toggle Navigation Menu"
+            >
+              {isMobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+            </button>
+
+            {/* BRAND LOGO */}
+            <Link to="/" className="brand-logo">
+              <div className="logo-emblem">
+                <Leaf size={20} fill="#FFFFFF" />
+              </div>
+              <div>
+                <span className="brand-title">LeafOra</span>
+                <span className="brand-subtitle">LIFE SCIENCES</span>
+              </div>
+            </Link>
+          </div>
 
           {/* MAIN NAV LINKS WITH MEGA MENU HOVER */}
-          <nav className="nav-links">
-            <Link to="/" className={`nav-item ${location.pathname === '/' ? 'active' : ''}`}>
+          <nav className={`nav-links ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
+            <Link to="/" className={`nav-item ${location.pathname === '/' ? 'active' : ''}`} onClick={() => setIsMobileMenuOpen(false)}>
               Home
             </Link>
-            <Link to="/products" className={`nav-item ${location.pathname === '/products' ? 'active' : ''}`}>
+            <Link to="/products" className={`nav-item ${location.pathname === '/products' ? 'active' : ''}`} onClick={() => setIsMobileMenuOpen(false)}>
               Shop
             </Link>
             <div 
@@ -101,9 +114,9 @@ export default function Navbar() {
             >
               <span>Skincare</span> <ChevronDown size={14} />
             </div>
-            <Link to="/products" className="nav-item">Best Sellers</Link>
-            <a href="#about" className="nav-item">About Us</a>
-            <a href="#contact" className="nav-item">Contact</a>
+            <Link to="/products" className="nav-item" onClick={() => setIsMobileMenuOpen(false)}>Best Sellers</Link>
+            <a href="#about" className="nav-item" onClick={() => setIsMobileMenuOpen(false)}>About Us</a>
+            <a href="#contact" className="nav-item" onClick={() => setIsMobileMenuOpen(false)}>Contact</a>
           </nav>
 
           {/* SEARCH BAR */}

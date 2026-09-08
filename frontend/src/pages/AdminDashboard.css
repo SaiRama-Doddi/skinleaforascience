@@ -1801,5 +1801,111 @@ tr.selected-row {
   border-color: #FECACA;
 }
 
+/* ─── MOBILE RESPONSIVE STYLES FOR ADMIN DASHBOARD ─── */
+.leafora-admin-mobile-toggle {
+  display: none;
+  background: #F5F4F0;
+  border: 1px solid #E7E4DD;
+  border-radius: 8px;
+  padding: 8px;
+  color: #1F2937;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+}
+
+.leafora-sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 95;
+}
+
+.leafora-table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 1200px) {
+  .leafora-metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .leafora-quick-actions-row {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 1024px) {
+  .leafora-admin-mobile-toggle {
+    display: flex;
+  }
+
+  .leafora-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 100;
+    box-shadow: 10px 0 25px rgba(0,0,0,0.15);
+  }
+
+  .leafora-sidebar.mobile-open {
+    transform: translateX(0);
+  }
+
+  .leafora-top-header {
+    padding: 0 16px;
+  }
+
+  .leafora-content {
+    padding: 16px;
+  }
+
+  .leafora-charts-row {
+    grid-template-columns: 1fr;
+  }
+
+  .leafora-tables-row {
+    grid-template-columns: 1fr;
+  }
+
+  .leafora-search-box {
+    width: 100%;
+  }
+
+  .leafora-admin-info {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .leafora-metrics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .leafora-quick-actions-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .leafora-dashboard-head {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .leafora-page-title {
+    font-size: 20px;
+  }
+
+  .leafora-action-text {
+    font-size: 11px;
+  }
+}
+
+
 
 
