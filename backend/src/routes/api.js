@@ -16,8 +16,9 @@ router.get('/products/:id', getProductById);
 router.post('/admin/send-otp', adminController.sendOtp);
 router.post('/admin/verify-otp', adminController.verifyOtp);
 
-// ─── ADMIN DASHBOARD ANALYTICS ───
+// ─── ADMIN DASHBOARD ANALYTICS & UPLOADS ───
 router.get('/admin/analytics', adminController.getAnalytics);
+router.post('/admin/upload', adminController.uploadImage);
 
 // ─── ADMIN CATEGORY CONTROL ───
 router.get('/admin/categories', adminController.getCategories);

@@ -41,6 +41,7 @@ export const adminVerifyOtp = (email, otp) => api.post('/admin/verify-otp', { em
 
 // Admin Analytics & Controls API
 export const adminGetAnalytics = () => api.get('/admin/analytics');
+export const adminUploadImage = (imageData) => api.post('/admin/upload', { image_data: imageData });
 
 // Category Controls
 export const adminGetCategories = () => api.get('/admin/categories');

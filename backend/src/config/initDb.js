@@ -50,9 +50,30 @@ const initDb = async () => {
         stock INT DEFAULT 0,
         description TEXT,
         image_url VARCHAR(500),
+        images TEXT,
         is_active TINYINT(1) DEFAULT 1,
         is_featured TINYINT(1) DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // Ensure images column exists if table was already created earlier
+    try {
+      await pool.query('ALTER TABLE products ADD COLUMN images TEXT AFTER image_url');
+    } catch (e) {
+      // Column may already exist
+    }
+
+    // 4b. Product Images Relational Table (up to 5 images per product)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS product_images (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        product_id INT NOT NULL,
+        image_url TEXT NOT NULL,
+        is_primary TINYINT(1) DEFAULT 0,
+        display_order INT DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_product_id (product_id)
       );
     `);
 

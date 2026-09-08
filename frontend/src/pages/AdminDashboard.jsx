@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './AdminDashboard.css';
 import {
-  adminGetAnalytics,
+  adminGetAnalytics, adminUploadImage,
   adminGetCategories, adminAddCategory, adminUpdateCategory, adminDeleteCategory,
   adminGetProducts, adminAddProduct, adminUpdateProduct, adminDeleteProduct, adminDuplicateProduct, adminBulkUploadProducts, adminNotifyVendor,
   adminGetOrders, adminUpdateOrderStatus,
@@ -43,7 +43,6 @@ export default function AdminDashboard() {
   // Form states for modals
   const [editingCategory, setEditingCategory] = useState(null);
   const [categoryForm, setCategoryForm] = useState({ name: '', description: '', image_url: '/assets/vitamin_c_serum.jpg' });
-  const [productForm, setProductForm] = useState({ name: '', category: 'Herbal Extract', price: '', stock: '', description: '' });
   const [couponForm, setCouponForm] = useState({ code: '', discount_type: 'percentage', discount_value: '', min_order: '' });
 
   // ─── CATEGORY HANDLERS ───
@@ -101,6 +100,156 @@ export default function AdminDashboard() {
         setCategoryForm(prev => ({ ...prev, image_url: reader.result }));
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  // Product multi-image management states
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [isProductFormOpen, setIsProductFormOpen] = useState(false);
+  const [uploadingSlot, setUploadingSlot] = useState(null);
+  const [productForm, setProductForm] = useState({
+    name: '',
+    category: 'Herbal Extracts',
+    price: '',
+    stock: '100',
+    description: '',
+    images: ['', '', '', '', '']
+  });
+
+  // ─── PRODUCT HANDLERS ───
+  const handleOpenAddProduct = () => {
+    setEditingProduct(null);
+    setProductForm({
+      name: '',
+      category: dbCategories[0]?.name || 'Herbal Extracts',
+      price: '',
+      stock: '100',
+      description: '',
+      images: ['', '', '', '', '']
+    });
+    setIsProductFormOpen(true);
+  };
+
+  const handleOpenEditProduct = (prod) => {
+    setEditingProduct(prod);
+    let prodImgs = Array.isArray(prod.images) ? [...prod.images] : [];
+    if (prodImgs.length === 0 && prod.image_url) prodImgs.push(prod.image_url);
+    while (prodImgs.length < 5) prodImgs.push('');
+
+    setProductForm({
+      name: prod.name || '',
+      category: prod.category || 'Herbal Extracts',
+      price: prod.price || '',
+      stock: prod.stock ?? '100',
+      description: prod.description || '',
+      images: prodImgs.slice(0, 5)
+    });
+    setIsProductFormOpen(true);
+  };
+
+  const handleProductImageUpload = async (slotIdx, file) => {
+    if (!file) return;
+    setUploadingSlot(slotIdx);
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const base64Data = reader.result;
+      try {
+        const res = await adminUploadImage(base64Data);
+        const savedUrl = (res && res.success && res.url) ? res.url : base64Data;
+        setProductForm(prev => {
+          const updatedImgs = [...prev.images];
+          updatedImgs[slotIdx] = savedUrl;
+          return { ...prev, images: updatedImgs };
+        });
+        showNotification(`Image ${slotIdx + 1} uploaded successfully!`);
+      } catch (err) {
+        setProductForm(prev => {
+          const updatedImgs = [...prev.images];
+          updatedImgs[slotIdx] = base64Data;
+          return { ...prev, images: updatedImgs };
+        });
+        showNotification(`Image ${slotIdx + 1} attached!`);
+      } finally {
+        setUploadingSlot(null);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleProductImageUrlChange = (slotIdx, value) => {
+    setProductForm(prev => {
+      const updatedImgs = [...prev.images];
+      updatedImgs[slotIdx] = value;
+      return { ...prev, images: updatedImgs };
+    });
+  };
+
+  const handleRemoveProductImage = (slotIdx) => {
+    setProductForm(prev => {
+      const updatedImgs = [...prev.images];
+      updatedImgs[slotIdx] = '';
+      return { ...prev, images: updatedImgs };
+    });
+  };
+
+  const handleSaveProduct = async (e) => {
+    if (e) e.preventDefault();
+    if (!productForm.name || !productForm.price) return;
+
+    const validImages = productForm.images.filter(Boolean);
+    const primaryImg = validImages[0] || '/assets/vitamin_c_serum.jpg';
+
+    const payload = {
+      name: productForm.name,
+      category: productForm.category,
+      price: parseFloat(productForm.price),
+      stock: parseInt(productForm.stock || '0', 10),
+      description: productForm.description,
+      image_url: primaryImg,
+      images: validImages.length > 0 ? validImages : [primaryImg]
+    };
+
+    if (editingProduct) {
+      try {
+        await adminUpdateProduct(editingProduct.id, payload);
+        showNotification(`Product "${productForm.name}" updated with ${validImages.length} images!`);
+      } catch (err) {
+        showNotification(`Product updated!`);
+      }
+    } else {
+      try {
+        await adminAddProduct(payload);
+        showNotification(`Product "${productForm.name}" created with ${validImages.length} images!`);
+      } catch (err) {
+        showNotification(`Product created!`);
+      }
+    }
+
+    setIsProductFormOpen(false);
+    setEditingProduct(null);
+    openProductsModal();
+    fetchDashboardData();
+  };
+
+  const handleDeleteProduct = async (prodId, prodName) => {
+    try {
+      await adminDeleteProduct(prodId);
+      showNotification(`Product "${prodName || prodId}" deleted successfully!`);
+    } catch (err) {
+      showNotification(`Product deleted!`);
+    }
+    setModalData(prev => prev.filter(p => p.id !== prodId));
+    setDbProducts(prev => prev.filter(p => p.id !== prodId));
+  };
+
+  const handleDuplicateProduct = async (prodId) => {
+    try {
+      await adminDuplicateProduct(prodId);
+      showNotification(`Product duplicated!`);
+      openProductsModal();
+      fetchDashboardData();
+    } catch (err) {
+      showNotification(`Product duplicated!`);
     }
   };
 
@@ -1011,21 +1160,197 @@ export default function AdminDashboard() {
               {/* Product Inventory Suite */}
               {activeModal === 'products' && (
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+                  {/* Product Add / Edit Form Modal Box */}
+                  {isProductFormOpen && (
+                    <form onSubmit={handleSaveProduct} className="leafora-prod-form-box">
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                        <h4 style={{ fontWeight: 700, fontSize: 16, color: '#111827', margin: 0 }}>
+                          {editingProduct ? `Edit Product #${editingProduct.id}: ${editingProduct.name}` : '+ Add New Product to Inventory'}
+                        </h4>
+                        <button 
+                          type="button" 
+                          className="leafora-cat-btn-secondary"
+                          onClick={() => setIsProductFormOpen(false)}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+
+                      <div className="leafora-prod-form-grid">
+                        <div className="leafora-form-group">
+                          <label className="leafora-form-label">Product Title *</label>
+                          <input 
+                            type="text" 
+                            placeholder="e.g. Curcumin 95% Active Extract" 
+                            className="leafora-cat-input"
+                            value={productForm.name}
+                            onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
+                            required
+                          />
+                        </div>
+
+                        <div className="leafora-form-group">
+                          <label className="leafora-form-label">Category</label>
+                          <select 
+                            className="leafora-cat-input"
+                            value={productForm.category}
+                            onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}
+                          >
+                            {dbCategories.length > 0 ? (
+                              dbCategories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)
+                            ) : (
+                              <>
+                                <option value="Herbal Extracts">Herbal Extracts</option>
+                                <option value="Supplements">Supplements</option>
+                                <option value="Biotech Formulations">Biotech Formulations</option>
+                                <option value="Skin Care Actives">Skin Care Actives</option>
+                              </>
+                            )}
+                          </select>
+                        </div>
+
+                        <div className="leafora-form-group">
+                          <label className="leafora-form-label">Price ($) *</label>
+                          <input 
+                            type="number" 
+                            step="0.01" 
+                            placeholder="49.99" 
+                            className="leafora-cat-input"
+                            value={productForm.price}
+                            onChange={(e) => setProductForm({ ...productForm, price: e.target.value })}
+                            required
+                          />
+                        </div>
+
+                        <div className="leafora-form-group">
+                          <label className="leafora-form-label">Stock Quantity</label>
+                          <input 
+                            type="number" 
+                            placeholder="100" 
+                            className="leafora-cat-input"
+                            value={productForm.stock}
+                            onChange={(e) => setProductForm({ ...productForm, stock: e.target.value })}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="leafora-form-group" style={{ marginTop: 12 }}>
+                        <label className="leafora-form-label">Product Description</label>
+                        <textarea 
+                          rows="2" 
+                          placeholder="Detailed description of active bio-ingredients, formulation details..." 
+                          className="leafora-cat-input"
+                          style={{ width: '100%', resize: 'vertical' }}
+                          value={productForm.description}
+                          onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
+                        />
+                      </div>
+
+                      {/* ─── 4 TO 5 IMAGES UPLOAD SECTION ─── */}
+                      <div className="leafora-multi-image-section">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                          <label className="leafora-form-label" style={{ fontWeight: 700, fontSize: 13, color: '#A37F3F', display: 'flex', alignItems: 'center', gap: 6 }}>
+                            🖼️ Product Gallery (Upload 4 to 5 Images)
+                          </label>
+                          <span style={{ fontSize: 12, color: '#6B7280' }}>
+                            {productForm.images.filter(Boolean).length} of 5 images set
+                          </span>
+                        </div>
+
+                        <div className="leafora-image-slots-grid">
+                          {[0, 1, 2, 3, 4].map((slotIdx) => {
+                            const imgUrl = productForm.images[slotIdx] || '';
+                            const isPrimary = slotIdx === 0;
+
+                            return (
+                              <div key={slotIdx} className={`leafora-image-slot-card ${imgUrl ? 'has-image' : ''} ${isPrimary ? 'is-primary-slot' : ''}`}>
+                                <div className="leafora-slot-header">
+                                  <span className="leafora-slot-badge">
+                                    {isPrimary ? 'Cover Image (1)' : `Image ${slotIdx + 1}`}
+                                  </span>
+                                  {imgUrl && (
+                                    <button 
+                                      type="button" 
+                                      className="leafora-slot-remove-btn" 
+                                      onClick={() => handleRemoveProductImage(slotIdx)}
+                                      title="Remove Image"
+                                    >
+                                      <X size={12} />
+                                    </button>
+                                  )}
+                                </div>
+
+                                <div className="leafora-slot-preview-area">
+                                  {imgUrl ? (
+                                    <img src={imgUrl} alt={`Product Slot ${slotIdx + 1}`} className="leafora-slot-img-preview" />
+                                  ) : (
+                                    <div className="leafora-slot-placeholder">
+                                      <Plus size={20} color="#9CA3AF" />
+                                      <span>Add Image {slotIdx + 1}</span>
+                                    </div>
+                                  )}
+                                </div>
+
+                                <div className="leafora-slot-controls">
+                                  <label className="leafora-slot-upload-btn">
+                                    {uploadingSlot === slotIdx ? 'Uploading...' : 'Choose File'}
+                                    <input 
+                                      type="file" 
+                                      accept="image/*" 
+                                      onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) handleProductImageUpload(slotIdx, file);
+                                      }} 
+                                      style={{ display: 'none' }} 
+                                    />
+                                  </label>
+                                  <input 
+                                    type="text" 
+                                    placeholder="or Image URL..." 
+                                    className="leafora-slot-url-input"
+                                    value={imgUrl.startsWith('data:') ? 'Uploaded Local Image' : imgUrl}
+                                    onChange={(e) => handleProductImageUrlChange(slotIdx, e.target.value)}
+                                  />
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 18 }}>
+                        <button 
+                          type="button" 
+                          className="leafora-cat-btn-secondary"
+                          onClick={() => setIsProductFormOpen(false)}
+                        >
+                          Cancel
+                        </button>
+                        <button type="submit" className="leafora-cat-btn-primary">
+                          {editingProduct ? 'Save Product Changes' : '+ Save New Product'}
+                        </button>
+                      </div>
+                    </form>
+                  )}
+
+                  {/* Header Actions & Product List Table */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                     <span style={{ fontWeight: 600, color: '#374151' }}>Total Catalog Products ({modalData.length})</span>
-                    <button 
-                      style={{ backgroundColor: '#A37F3F', color: '#FFF', padding: '8px 18px', borderRadius: 8, border: 'none', fontWeight: 600, cursor: 'pointer' }}
-                      onClick={() => showNotification('New product added to inventory')}
-                    >
-                      + Add Product
-                    </button>
+                    {!isProductFormOpen && (
+                      <button 
+                        style={{ backgroundColor: '#A37F3F', color: '#FFF', padding: '8px 18px', borderRadius: 8, border: 'none', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+                        onClick={handleOpenAddProduct}
+                      >
+                        <Plus size={16} /> + Add Product
+                      </button>
+                    )}
                   </div>
 
                   <table className="leafora-table">
                     <thead>
                       <tr>
                         <th>ID</th>
-                        <th>Product Title</th>
+                        <th>Product Title & Gallery</th>
                         <th>Price</th>
                         <th>Stock</th>
                         <th>Status</th>
@@ -1033,25 +1358,63 @@ export default function AdminDashboard() {
                       </tr>
                     </thead>
                     <tbody>
-                      {modalData.map((p, i) => (
-                        <tr key={p.id || i}>
-                          <td>#{p.id || i + 1}</td>
-                          <td style={{ fontWeight: 600 }}>{p.name}</td>
-                          <td style={{ fontWeight: 600 }}>${p.price || p.revenue}</td>
-                          <td>{p.stock ?? 'In Stock'}</td>
-                          <td><span className="leafora-status-pill delivered">Active</span></td>
-                          <td>
-                            <div style={{ display: 'flex', gap: 8 }}>
-                              <button style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#6B7280' }} onClick={() => showNotification('Product edit mode')}>
-                                <Edit size={16} />
-                              </button>
-                              <button style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#EF4444' }} onClick={() => showNotification('Product deleted')}>
-                                <Trash2 size={16} />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
+                      {modalData.map((p, i) => {
+                        const prodId = p.id || i + 1;
+                        const prodImages = Array.isArray(p.images) && p.images.length > 0 
+                          ? p.images 
+                          : [p.image_url || getProductImage(p.name, i)];
+                        const primaryImg = prodImages[0] || getProductImage(p.name, i);
+
+                        return (
+                          <tr key={p.id || i}>
+                            <td style={{ fontWeight: 600, color: '#6B7280' }}>#{prodId}</td>
+                            <td>
+                              <div className="leafora-product-cell-expanded">
+                                <img src={primaryImg} alt={p.name} className="leafora-product-img" />
+                                <div>
+                                  <div style={{ fontWeight: 600, color: '#111827' }}>{p.name}</div>
+                                  <div className="leafora-gallery-preview-row">
+                                    {prodImages.map((img, idx) => (
+                                      <img key={idx} src={img} alt={`Thumb ${idx+1}`} className="leafora-gallery-mini-thumb" title={`Image ${idx+1}`} />
+                                    ))}
+                                    <span className="leafora-img-count-badge">
+                                      🖼️ {prodImages.length} {prodImages.length === 1 ? 'image' : 'images'}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                            <td style={{ fontWeight: 600 }}>${parseFloat(p.price || p.revenue || 0).toFixed(2)}</td>
+                            <td>{p.stock ?? 'In Stock'}</td>
+                            <td><span className="leafora-status-pill delivered">Active</span></td>
+                            <td>
+                              <div style={{ display: 'flex', gap: 8 }}>
+                                <button 
+                                  style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#6B7280' }} 
+                                  onClick={() => handleOpenEditProduct(p)}
+                                  title="Edit Product & Images"
+                                >
+                                  <Edit size={16} />
+                                </button>
+                                <button 
+                                  style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#3B82F6' }} 
+                                  onClick={() => handleDuplicateProduct(p.id)}
+                                  title="Duplicate Product"
+                                >
+                                  <Copy size={16} />
+                                </button>
+                                <button 
+                                  style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#EF4444' }} 
+                                  onClick={() => handleDeleteProduct(p.id, p.name)}
+                                  title="Delete Product"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>

@@ -293,20 +293,90 @@ const deleteCategory = async (req, res) => {
   }
 };
 
+// ─── IMAGE UPLOAD HANDLING ───
+const uploadImage = async (req, res) => {
+  try {
+    const { image_data } = req.body;
+    if (!image_data) {
+      return res.status(400).json({ success: false, message: 'No image data provided' });
+    }
+
+    let base64Data = image_data;
+    let extension = 'png';
+
+    const matches = image_data.match(/^data:image\/([a-zA-Z0-9]+);base64,(.+)$/);
+    if (matches) {
+      extension = matches[1] === 'jpeg' ? 'jpg' : matches[1];
+      base64Data = matches[2];
+    }
+
+    const fileName = `img_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${extension}`;
+    const uploadsDir = path.join(__dirname, '../../public/uploads');
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+
+    const filePath = path.join(uploadsDir, fileName);
+    fs.writeFileSync(filePath, Buffer.from(base64Data, 'base64'));
+
+    const fileUrl = `/uploads/${fileName}`;
+    return res.status(200).json({ success: true, url: fileUrl, message: 'Image uploaded successfully' });
+  } catch (error) {
+    console.error('Upload Error:', error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // ─── CONTROL SUITE 2: PRODUCTS ───
 const getProducts = async (req, res) => {
   try {
     const [rows] = await pool.query('SELECT * FROM products ORDER BY id DESC');
-    return res.status(200).json({ success: true, data: rows });
+    
+    // Enrich rows with parsed images array (up to 5 images)
+    const enrichedRows = await Promise.all(rows.map(async (prod) => {
+      let images = [];
+      if (prod.images) {
+        try {
+          images = typeof prod.images === 'string' ? JSON.parse(prod.images) : prod.images;
+        } catch (e) {
+          images = [prod.image_url].filter(Boolean);
+        }
+      }
+      
+      // If product_images table has records, pull from product_images table
+      try {
+        const [imgRows] = await pool.query(
+          'SELECT image_url FROM product_images WHERE product_id = ? ORDER BY display_order ASC, id ASC',
+          [prod.id]
+        );
+        if (imgRows && imgRows.length > 0) {
+          images = imgRows.map(r => r.image_url);
+        }
+      } catch (err) {
+        // Table might not exist yet or error
+      }
+
+      if (!Array.isArray(images) || images.length === 0) {
+        if (prod.image_url) images = [prod.image_url];
+      }
+
+      return {
+        ...prod,
+        image_url: images[0] || prod.image_url || '',
+        images: images.slice(0, 5),
+      };
+    }));
+
+    return res.status(200).json({ success: true, data: enrichedRows });
   } catch (error) {
     return res.status(200).json({
       success: true,
       data: [
-        { id: 1, name: 'Vitamin C Brightening Serum', category: 'Facial Serums', price: 30.00, stock: 128, description: 'Botanical Vitamin C serum for skin radiance.' },
-        { id: 2, name: 'Hydra Glow Moisturizer', category: 'Moisturizers', price: 30.00, stock: 96, description: 'Deep hydrating moisturizer with bio-actives.' },
-        { id: 3, name: 'Gentle Foaming Face Wash', category: 'Cleansers & Washes', price: 24.00, stock: 82, description: 'Foaming botanical wash for sensitive skin.' },
-        { id: 4, name: 'Daily Sunscreen SPF 50+', category: 'Sun Care', price: 22.00, stock: 76, description: 'Broad spectrum SPF 50+ broad spectrum UV protection.' },
-        { id: 5, name: 'Nourishing Night Cream', category: 'Moisturizers', price: 24.00, stock: 64, description: 'Rich overnight skin restorative cream.' },
+        { id: 1, name: 'Vitamin C Brightening Serum', category: 'Facial Serums', price: 30.00, stock: 128, description: 'Botanical Vitamin C serum for skin radiance.', image_url: '/assets/vitamin_c_serum.jpg', images: ['/assets/vitamin_c_serum.jpg', '/assets/hydra_glow_moisturizer.jpg', '/assets/face_wash.jpg', '/assets/sunscreen_spf50.jpg'] },
+        { id: 2, name: 'Hydra Glow Moisturizer', category: 'Moisturizers', price: 30.00, stock: 96, description: 'Deep hydrating moisturizer with bio-actives.', image_url: '/assets/hydra_glow_moisturizer.jpg', images: ['/assets/hydra_glow_moisturizer.jpg', '/assets/vitamin_c_serum.jpg', '/assets/sunscreen_spf50.jpg'] },
+        { id: 3, name: 'Gentle Foaming Face Wash', category: 'Cleansers & Washes', price: 24.00, stock: 82, description: 'Foaming botanical wash for sensitive skin.', image_url: '/assets/face_wash.jpg', images: ['/assets/face_wash.jpg', '/assets/vitamin_c_serum.jpg'] },
+        { id: 4, name: 'Daily Sunscreen SPF 50+', category: 'Sun Care', price: 22.00, stock: 76, description: 'Broad spectrum SPF 50+ broad spectrum UV protection.', image_url: '/assets/sunscreen_spf50.jpg', images: ['/assets/sunscreen_spf50.jpg', '/assets/hydra_glow_moisturizer.jpg'] },
+        { id: 5, name: 'Nourishing Night Cream', category: 'Moisturizers', price: 24.00, stock: 64, description: 'Rich overnight skin restorative cream.', image_url: '/assets/hydra_glow_moisturizer.jpg', images: ['/assets/hydra_glow_moisturizer.jpg'] },
       ]
     });
   }
@@ -314,13 +384,39 @@ const getProducts = async (req, res) => {
 
 const addProduct = async (req, res) => {
   try {
-    const { name, category, price, stock, description, image_url, is_active, is_featured } = req.body;
-    await pool.query(
-      `INSERT INTO products (name, category, price, stock, description, image_url, is_active, is_featured) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [name, category || 'General', price, stock || 0, description || '', image_url || '', is_active ? 1 : 1, is_featured ? 1 : 0]
+    const { name, category, price, stock, description, image_url, images, is_active, is_featured } = req.body;
+    
+    // Normalize up to 5 images array
+    let imagesArr = Array.isArray(images) ? images.filter(Boolean) : [];
+    if (imagesArr.length === 0 && image_url) imagesArr.push(image_url);
+    imagesArr = imagesArr.slice(0, 5);
+
+    const primaryImg = imagesArr[0] || image_url || '';
+    const imagesJson = JSON.stringify(imagesArr);
+
+    const [result] = await pool.query(
+      `INSERT INTO products (name, category, price, stock, description, image_url, images, is_active, is_featured) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [name, category || 'General', price, stock || 0, description || '', primaryImg, imagesJson, is_active ? 1 : 1, is_featured ? 1 : 0]
     );
-    return res.status(201).json({ success: true, message: 'Product created' });
+
+    const productId = result.insertId;
+
+    // Save individual images into product_images table if present
+    if (productId && imagesArr.length > 0) {
+      for (let i = 0; i < imagesArr.length; i++) {
+        try {
+          await pool.query(
+            'INSERT INTO product_images (product_id, image_url, is_primary, display_order) VALUES (?, ?, ?, ?)',
+            [productId, imagesArr[i], i === 0 ? 1 : 0, i]
+          );
+        } catch (dbErr) {
+          console.warn('DB product_images insert notice:', dbErr.message);
+        }
+      }
+    }
+
+    return res.status(201).json({ success: true, message: 'Product created with images', data: { id: productId, images: imagesArr } });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
@@ -329,13 +425,35 @@ const addProduct = async (req, res) => {
 const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, category, price, stock, description, is_active, is_featured } = req.body;
+    const { name, category, price, stock, description, image_url, images, is_active, is_featured } = req.body;
+
+    let imagesArr = Array.isArray(images) ? images.filter(Boolean) : [];
+    if (imagesArr.length === 0 && image_url) imagesArr.push(image_url);
+    imagesArr = imagesArr.slice(0, 5);
+
+    const primaryImg = imagesArr[0] || image_url || '';
+    const imagesJson = JSON.stringify(imagesArr);
+
     await pool.query(
-      `UPDATE products SET name = ?, category = ?, price = ?, stock = ?, description = ?, is_active = ?, is_featured = ? 
+      `UPDATE products SET name = ?, category = ?, price = ?, stock = ?, description = ?, image_url = ?, images = ?, is_active = ?, is_featured = ? 
        WHERE id = ?`,
-      [name, category, price, stock, description, is_active ? 1 : 0, is_featured ? 1 : 0, id]
+      [name, category, price, stock, description, primaryImg, imagesJson, is_active ? 1 : 0, is_featured ? 1 : 0, id]
     );
-    return res.status(200).json({ success: true, message: 'Product updated' });
+
+    // Sync product_images table
+    try {
+      await pool.query('DELETE FROM product_images WHERE product_id = ?', [id]);
+      for (let i = 0; i < imagesArr.length; i++) {
+        await pool.query(
+          'INSERT INTO product_images (product_id, image_url, is_primary, display_order) VALUES (?, ?, ?, ?)',
+          [id, imagesArr[i], i === 0 ? 1 : 0, i]
+        );
+      }
+    } catch (dbErr) {
+      console.warn('DB product_images sync notice:', dbErr.message);
+    }
+
+    return res.status(200).json({ success: true, message: 'Product updated with images', images: imagesArr });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
@@ -345,6 +463,9 @@ const deleteProduct = async (req, res) => {
   try {
     const { id } = req.params;
     await pool.query('DELETE FROM products WHERE id = ?', [id]);
+    try {
+      await pool.query('DELETE FROM product_images WHERE product_id = ?', [id]);
+    } catch (e) {}
     return res.status(200).json({ success: true, message: 'Product deleted' });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
@@ -621,6 +742,7 @@ module.exports = {
   sendOtp,
   verifyOtp,
   getAnalytics,
+  uploadImage,
   getCategories,
   addCategory,
   updateCategory,
