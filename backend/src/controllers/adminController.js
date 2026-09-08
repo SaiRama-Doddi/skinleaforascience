@@ -208,9 +208,7 @@ let inMemoryCategories = [
   { id: 1, parent_id: null, level: 'category', name: 'Herbal Extracts', slug: 'herbal-extracts', description: 'Pharma-grade pure herbal extracts', image_url: '/assets/sunscreen_spf50.jpg', icon_url: '', banner_url: '', meta_title: 'Herbal Extracts | Leafora', meta_description: 'Organic botanical extracts', meta_keywords: 'herbal, extracts', is_active: 1, is_featured: 1, is_trending: 1, display_order: 1, deleted_at: null },
   { id: 2, parent_id: null, level: 'category', name: 'Supplements', slug: 'supplements', description: 'Natural bio-vital nutraceuticals', image_url: '/assets/face_wash.jpg', icon_url: '', banner_url: '', meta_title: 'Nutraceutical Supplements', meta_description: 'Bio-vital supplements', meta_keywords: 'supplements, bio', is_active: 1, is_featured: 1, is_trending: 0, display_order: 2, deleted_at: null },
   { id: 3, parent_id: null, level: 'category', name: 'Biotech Formulations', slug: 'biotech-formulations', description: 'Active science solutions', image_url: '/assets/hydra_glow_moisturizer.jpg', icon_url: '', banner_url: '', meta_title: 'Biotech Formulations', meta_description: 'Advanced active science', meta_keywords: 'biotech, formulas', is_active: 1, is_featured: 0, is_trending: 1, display_order: 3, deleted_at: null },
-  { id: 4, parent_id: null, level: 'category', name: 'Skin Care Actives', slug: 'skin-care-actives', description: 'Pure skin wellness bio-compounds', image_url: '/assets/vitamin_c_serum.jpg', icon_url: '', banner_url: '', meta_title: 'Skin Care Actives', meta_description: 'Pure skin bio-compounds', meta_keywords: 'skincare, actives', is_active: 1, is_featured: 1, is_trending: 1, display_order: 4, deleted_at: null },
-  { id: 5, parent_id: 4, level: 'sub_category', name: 'Facial Serums', slug: 'facial-serums', description: 'Concentrated serum actives', image_url: '/assets/vitamin_c_serum.jpg', icon_url: '', banner_url: '', meta_title: 'Facial Serums', meta_description: 'Concentrated skin serums', meta_keywords: 'serums, facial', is_active: 1, is_featured: 1, is_trending: 0, display_order: 5, deleted_at: null },
-  { id: 6, parent_id: 5, level: 'child_category', name: 'Vitamin C Serums', slug: 'vitamin-c-serums', description: 'Botanical Vitamin C radiance serums', image_url: '/assets/vitamin_c_serum.jpg', icon_url: '', banner_url: '', meta_title: 'Vitamin C Serums', meta_description: 'Botanical vitamin c', meta_keywords: 'vitamin c, serum', is_active: 1, is_featured: 1, is_trending: 1, display_order: 6, deleted_at: null }
+  { id: 4, parent_id: null, level: 'category', name: 'Skin Care Actives', slug: 'skin-care-actives', description: 'Pure skin wellness bio-compounds', image_url: '/assets/vitamin_c_serum.jpg', icon_url: '', banner_url: '', meta_title: 'Skin Care Actives', meta_description: 'Pure skin bio-compounds', meta_keywords: 'skincare, actives', is_active: 1, is_featured: 1, is_trending: 1, display_order: 4, deleted_at: null }
 ];
 
 const getCategories = async (req, res) => {
@@ -252,10 +250,10 @@ const getCategories = async (req, res) => {
 
     query += ' ORDER BY c.display_order ASC, c.id DESC';
     const [rows] = await pool.query(query, params);
-    return res.status(200).json({ success: true, data: rows });
+    return res.status(200).json({ success: true, data: rows.length > 0 ? rows : inMemoryCategories });
   } catch (error) {
-    console.error('Error fetching categories from database:', error.message);
-    return res.status(200).json({ success: true, data: [] });
+    console.warn('DB Category Fetch Notice (using seed fallback):', error.message);
+    return res.status(200).json({ success: true, data: inMemoryCategories });
   }
 };
 
