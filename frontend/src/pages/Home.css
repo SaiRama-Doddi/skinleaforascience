@@ -1,971 +1,540 @@
-/* ==========================================================================
-   LEAFORA LIFE SCIENCE - PREMIUM ORGANIC BOTANICAL HOMEPAGE STYLES
-   ========================================================================== */
-
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Outfit:wght@300;400;500;600;700;800&display=swap');
+/* Home Page CSS matching the 3rd reference design input_file_2.png */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400;1,600&family=Dancing+Script:wght@600;700&family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
-  --leafora-bg: #FAF7F2;
-  --leafora-card-bg: #FFFFFF;
-  --leafora-text-dark: #292524;
-  --leafora-text-muted: #78716C;
+  --leafora-cream-bg: #FAF7F2;
+  --leafora-card-cream: #F7F2EB;
+  --leafora-white: #FFFFFF;
   --leafora-bronze: #A67C52;
-  --leafora-bronze-dark: #8C653E;
-  --leafora-bronze-light: #F4EFEA;
-  --leafora-gold-card: linear-gradient(135deg, #B88E5E 0%, #8C653E 100%);
-  --leafora-green-accent: #059669;
-  --leafora-border: #E7E5E4;
-  --font-serif: 'Playfair Display', Georgia, serif;
-  --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+  --leafora-bronze-dark: #8E653E;
+  --leafora-forest: #1B3022;
+  --leafora-text-dark: #1F2937;
+  --leafora-text-muted: #64748B;
+  --leafora-border: #EFE8DE;
 }
 
-.leafora-home-container {
-  background-color: var(--leafora-bg);
+.home-page-3rd {
+  width: 100%;
+  background-color: var(--leafora-cream-bg);
   color: var(--leafora-text-dark);
-  font-family: var(--font-sans);
-  min-height: 100vh;
-  width: 100%;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   overflow-x: hidden;
-  box-sizing: border-box;
 }
 
-/* TOP ANNOUNCEMENT BAR */
-.top-announcement-bar {
-  background-color: #F3ECE2;
-  color: #57534E;
-  font-size: 12px;
-  font-weight: 500;
-  padding: 8px 24px;
-  border-bottom: 1px solid #E7E0D6;
-}
-
-.top-bar-inner {
-  max-width: 1320px;
-  margin: 0 auto;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.announcement-text {
-  letter-spacing: 0.5px;
-}
-
-.top-bar-right {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
-.top-bar-link {
-  color: #57534E;
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  transition: color 0.2s;
-}
-
-.top-bar-link:hover {
-  color: var(--leafora-bronze);
-}
-
-/* MAIN STICKY NAVBAR */
-.leafora-main-navbar {
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-  background: rgba(250, 247, 242, 0.95);
-  backdrop-filter: blur(16px);
-  border-bottom: 1px solid var(--leafora-border);
-  padding: 16px 24px;
-}
-
-.navbar-inner {
-  max-width: 1320px;
-  margin: 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 24px;
-}
-
-.brand-logo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  text-decoration: none;
-}
-
-.logo-emblem {
-  background: var(--leafora-bronze);
-  color: #FFFFFF;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.brand-title {
-  font-family: var(--font-serif);
-  font-size: 24px;
+/* Common Section Typography & Utility */
+.section-tag-gold {
+  font-size: 0.8rem;
   font-weight: 700;
-  color: #292524;
-  letter-spacing: -0.5px;
-  line-height: 1;
-}
-
-.brand-subtitle {
-  font-family: var(--font-sans);
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 3px;
-  color: var(--leafora-bronze);
-  display: block;
-  margin-top: 2px;
   text-transform: uppercase;
-}
-
-.nav-links {
-  display: flex;
-  align-items: center;
-  gap: 28px;
-}
-
-.nav-item {
-  color: #44403C;
-  text-decoration: none;
-  font-size: 14px;
-  font-weight: 500;
-  position: relative;
-  padding: 6px 0;
-  transition: color 0.2s;
-}
-
-.nav-item:hover,
-.nav-item.active {
+  letter-spacing: 1.5px;
   color: var(--leafora-bronze);
+  margin-bottom: 8px;
+  display: inline-block;
 }
 
-.nav-item.active::after {
-  content: '';
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  height: 2px;
-  background: var(--leafora-bronze);
-  border-radius: 2px;
-}
-
-/* SEARCH BAR */
-.nav-search-box {
-  position: relative;
-  width: 260px;
-}
-
-.search-input {
-  width: 100%;
-  height: 38px;
-  padding: 0 14px 0 38px;
-  border-radius: 20px;
-  border: 1px solid #E7E5E4;
-  background: #FFFFFF;
-  font-size: 13px;
-  color: #292524;
-  transition: all 0.2s;
-  box-sizing: border-box;
-}
-
-.search-input:focus {
-  outline: none;
-  border-color: var(--leafora-bronze);
-  box-shadow: 0 0 0 3px rgba(166, 124, 82, 0.15);
-}
-
-.search-icon-nav {
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #A8A29E;
-  pointer-events: none;
-}
-
-/* SEARCH RESULTS DROPDOWN */
-.search-results-dropdown {
-  position: absolute;
-  top: 46px;
-  left: 0;
-  right: 0;
-  background: #FFFFFF;
-  border-radius: 14px;
-  border: 1px solid var(--leafora-border);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-  padding: 12px;
-  z-index: 100;
-}
-
-.search-result-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px;
-  border-radius: 8px;
-  text-decoration: none;
-  color: #292524;
-  transition: background 0.2s;
-}
-
-.search-result-item:hover {
-  background: var(--leafora-bronze-light);
-}
-
-/* MEGA MENU DROPDOWN */
-.mega-menu-wrapper {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background: #FFFFFF;
-  border-bottom: 1px solid var(--leafora-border);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
-  padding: 32px 0;
-  z-index: 999;
-}
-
-.mega-menu-inner {
-  max-width: 1320px;
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 32px;
-  padding: 0 24px;
-}
-
-.mega-column h4 {
-  font-family: var(--font-serif);
-  font-size: 16px;
+.section-title-serif {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 2.8rem;
   font-weight: 700;
-  color: var(--leafora-bronze);
-  margin-bottom: 14px;
+  color: var(--leafora-text-dark);
+  line-height: 1.18;
+  margin-bottom: 16px;
 }
 
-.mega-column ul {
-  list-style: none;
-  padding: 0; margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+.section-desc {
+  font-size: 1.05rem;
+  color: var(--leafora-text-muted);
+  line-height: 1.65;
+  margin-bottom: 28px;
 }
 
-.mega-column a {
-  color: #57534E;
-  text-decoration: none;
-  font-size: 13px;
-  transition: color 0.2s;
-}
-
-.mega-column a:hover {
-  color: var(--leafora-bronze);
-}
-
-/* SECTION TITLES */
-.section-header-box {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  margin-bottom: 32px;
-}
-
-.section-subtitle {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 3px;
-  color: var(--leafora-bronze);
-  text-transform: uppercase;
-  margin-bottom: 6px;
-  display: block;
-}
-
-.section-title {
-  font-family: var(--font-serif);
-  font-size: 32px;
-  font-weight: 700;
-  color: #292524;
-  margin: 0;
-}
-
-.view-all-link {
-  font-size: 13px;
-  font-weight: 600;
-  color: #57534E;
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  transition: color 0.2s;
-}
-
-.view-all-link:hover {
-  color: var(--leafora-bronze);
-}
-
-/* 1. HERO SECTION (MATCHING REFERENCE IMAGE) */
-.hero-split-section {
-  max-width: 1320px;
-  margin: 24px auto;
-  padding: 0 24px;
-}
-
-.hero-card-container {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  background: #F4EFEA;
-  border-radius: 24px;
-  overflow: hidden;
-  min-height: 480px;
-}
-
-.hero-left-col {
-  padding: 56px 48px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-.hero-tag {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 3px;
-  color: var(--leafora-bronze);
-  text-transform: uppercase;
-  margin-bottom: 12px;
-}
-
-.hero-heading {
-  font-family: var(--font-serif);
-  font-size: 52px;
-  font-weight: 600;
-  line-height: 1.15;
-  color: #292524;
-  margin-bottom: 18px;
-}
-
-.hero-description {
-  font-size: 15px;
-  line-height: 1.6;
-  color: #78716C;
-  max-width: 420px;
-  margin-bottom: 32px;
-}
-
-.hero-cta-btn {
+/* Bronze Pill Button */
+.btn-bronze-pill {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  background: var(--leafora-bronze);
+  background-color: var(--leafora-bronze);
   color: #FFFFFF;
-  font-size: 14px;
   font-weight: 600;
-  padding: 14px 32px;
+  font-size: 0.95rem;
+  padding: 12px 28px;
   border-radius: 30px;
+  border: none;
+  cursor: pointer;
   text-decoration: none;
-  transition: all 0.2s;
-  width: fit-content;
-  box-shadow: 0 4px 14px rgba(166, 124, 82, 0.3);
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 12px rgba(166, 124, 82, 0.2);
 }
 
-.hero-cta-btn:hover {
-  background: var(--leafora-bronze-dark);
+.btn-bronze-pill:hover {
+  background-color: var(--leafora-bronze-dark);
   transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(166, 124, 82, 0.3);
 }
 
-.hero-trust-badges {
-  display: flex;
-  gap: 24px;
-  margin-top: 40px;
-  padding-top: 24px;
-  border-top: 1px solid #E7E0D6;
-}
-
-.trust-badge-item {
-  display: flex;
+/* 1. HERO SECTION ("ABOUT US / Nature's Care Backed by Science") */
+.hero-section-3rd {
+  background-color: var(--leafora-cream-bg);
+  padding: 60px 40px;
+  max-width: 1320px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
   align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  font-weight: 600;
-  color: #57534E;
 }
 
-.trust-badge-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: #FFFFFF;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--leafora-bronze);
-  border: 1px solid #E7E0D6;
+.hero-left-col {
+  max-width: 580px;
 }
 
 .hero-right-col {
   position: relative;
-  background-size: cover;
-  background-position: center;
-  display: flex;
-  align-items: flex-end;
-  justify-content: flex-end;
-  padding: 32px;
-}
-
-.hero-side-caption {
-  writing-mode: vertical-rl;
-  font-family: var(--font-serif);
-  font-size: 18px;
-  font-style: italic;
-  color: #44403C;
-  letter-spacing: 1px;
-}
-
-/* 2. FEATURED CATEGORIES ("SHOP BY CATEGORY") */
-.featured-categories-section {
-  max-width: 1320px;
-  margin: 56px auto;
-  padding: 0 24px;
-}
-
-.category-pills-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-  gap: 20px;
-}
-
-.category-pill-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  text-decoration: none;
-  color: #292524;
-  transition: transform 0.2s;
-}
-
-.category-pill-item:hover {
-  transform: translateY(-4px);
-}
-
-.category-image-circle {
-  width: 110px;
-  height: 110px;
-  border-radius: 50%;
-  background: #F4EFEA;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  border: 1px solid #E7E0D6;
-}
-
-.category-image-circle img {
-  width: 75%;
-  height: 75%;
-  object-fit: contain;
-  transition: transform 0.3s ease;
-}
-
-.category-pill-item:hover .category-image-circle img {
-  transform: scale(1.1);
-}
-
-.category-title-label {
-  font-size: 13px;
-  font-weight: 600;
-  text-align: center;
-}
-
-/* 3. BEST SELLERS SECTION ("LOVED BY MANY, MADE FOR YOU") - EXACT MATCH */
-.bestsellers-section {
-  max-width: 1320px;
-  margin: 56px auto;
-  padding: 0 24px;
-}
-
-.bestsellers-grid-container {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr) 320px;
-  gap: 20px;
-}
-
-/* PRODUCT CARD STYLING */
-.leafora-product-card {
-  background: #FFFFFF;
-  border-radius: 16px;
-  padding: 16px;
-  border: 1px solid var(--leafora-border);
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  transition: all 0.25s ease;
-  position: relative;
-}
-
-.leafora-product-card:hover {
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.06);
-  border-color: #D6D3D1;
-  transform: translateY(-2px);
-}
-
-.product-image-box {
   width: 100%;
-  height: 180px;
-  background: #FAF7F2;
-  border-radius: 12px;
+  height: 380px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  margin-bottom: 14px;
+  justify-content: flex-end;
 }
 
-.product-image-box img {
-  max-width: 80%;
-  max-height: 80%;
-  object-fit: contain;
-  transition: transform 0.3s ease;
-}
-
-.leafora-product-card:hover .product-image-box img {
-  transform: scale(1.08);
-}
-
-.product-brand-tag {
-  font-size: 10px;
-  font-weight: 700;
-  color: #A8A29E;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.product-name-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: #292524;
-  margin: 4px 0 8px 0;
-  line-height: 1.3;
-}
-
-.product-rating-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 12px;
-}
-
-.stars-gold {
-  display: flex;
-  gap: 2px;
-}
-
-.review-count-text {
-  font-size: 11px;
-  color: #A8A29E;
-}
-
-.product-price-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: auto;
-}
-
-.product-price-val {
-  font-size: 15px;
-  font-weight: 700;
-  color: #292524;
-}
-
-.cart-add-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  background: var(--leafora-bronze);
-  color: #FFFFFF;
-  border: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.cart-add-btn:hover {
-  background: var(--leafora-bronze-dark);
-}
-
-/* TALL GOLDEN PROMOTIONAL CARD */
-.golden-promo-card {
-  background: var(--leafora-gold-card);
+.hero-pedestal-img-main {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
   border-radius: 16px;
-  padding: 32px 24px;
-  color: #FFFFFF;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.06);
+}
+
+.hero-side-text-italic {
+  position: absolute;
+  right: -15px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: 2.2rem;
+  color: #1B3022;
+  text-align: right;
+  width: 220px;
+  line-height: 1.15;
+  text-shadow: 0 2px 10px rgba(255,255,255,0.9);
+}
+
+/* 2. SECTION 2 ("OUR STORY / A Healthier Tomorrow Starts Today") */
+.story-section-3rd {
+  background-color: var(--leafora-white);
+  padding: 80px 40px;
+}
+
+.story-container {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 60px;
+  align-items: center;
+}
+
+.story-model-wrapper {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.story-model-img {
+  width: 100%;
+  height: 480px;
+  object-fit: cover;
+  border-radius: 16px;
+}
+
+/* Handwriting script overlay */
+.script-overlay-badge {
+  position: absolute;
+  top: 30px;
+  left: 24px;
+  font-family: 'Dancing Script', cursive;
+  font-size: 2.4rem;
+  font-weight: 700;
+  color: #1F2937;
+  line-height: 1.1;
+  text-shadow: 0 2px 10px rgba(255,255,255,0.85);
+  max-width: 200px;
+}
+
+.story-right-grid {
+  display: grid;
+  grid-template-columns: 1fr 200px;
+  gap: 32px;
+  align-items: start;
+}
+
+.story-pillars-col {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  position: relative;
-  overflow: hidden;
+  gap: 24px;
 }
 
-.promo-tagline {
-  font-family: var(--font-serif);
-  font-size: 22px;
-  font-weight: 700;
-  line-height: 1.3;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-}
-
-.promo-btn {
-  background: #FFFFFF;
-  color: #292524;
-  font-size: 13px;
-  font-weight: 700;
-  padding: 12px 24px;
-  border-radius: 30px;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  width: fit-content;
-  transition: transform 0.2s;
-}
-
-.promo-btn:hover {
-  transform: translateY(-2px);
-}
-
-/* 4. VALUE PROPOSITIONS BAR */
-.value-props-bar {
-  max-width: 1320px;
-  margin: 40px auto;
-  padding: 0 24px;
-}
-
-.value-props-inner {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
-  background: #FFFFFF;
-  border: 1px solid var(--leafora-border);
-  border-radius: 16px;
-  padding: 24px 32px;
-}
-
-.prop-item {
+.story-pillar-card {
   display: flex;
   align-items: center;
   gap: 16px;
+  background-color: var(--leafora-card-cream);
+  padding: 14px 18px;
+  border-radius: 12px;
 }
 
-.prop-icon-circle {
+.pillar-icon-box {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: var(--leafora-bronze-light);
+  background: var(--leafora-white);
   color: var(--leafora-bronze);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
 
-.prop-title {
-  font-size: 14px;
+.pillar-info h5 {
+  font-size: 0.92rem;
   font-weight: 700;
-  color: #292524;
+  color: var(--leafora-text-dark);
+  margin-bottom: 2px;
 }
 
-.prop-desc {
-  font-size: 12px;
-  color: #78716C;
-  margin-top: 2px;
+.pillar-info p {
+  font-size: 0.78rem;
+  color: var(--leafora-text-muted);
 }
 
-/* 5. BRAND STORY BANNER ("SKINCARE THAT CARES") */
-.brand-story-banner {
-  max-width: 1320px;
-  margin: 56px auto;
-  padding: 0 24px;
+/* 3. SECTION 3 ("OUR VALUES / What We Stand For") */
+.values-section-3rd {
+  background-color: var(--leafora-cream-bg);
+  padding: 80px 40px;
 }
 
-.story-card-grid {
+.values-container {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.values-header {
+  margin-bottom: 40px;
+}
+
+.values-main-layout {
   display: grid;
-  grid-template-columns: 1fr 1.2fr 240px;
-  background: #F4EFEA;
-  border-radius: 24px;
-  overflow: hidden;
+  grid-template-columns: 1fr 340px;
+  gap: 40px;
   align-items: center;
 }
 
-.story-left {
-  padding: 48px;
+.values-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
 }
 
-.story-title {
-  font-family: var(--font-serif);
-  font-size: 42px;
-  font-weight: 600;
-  line-height: 1.2;
-  color: #292524;
-  margin-bottom: 12px;
-}
-
-.story-subtext {
-  font-size: 15px;
-  color: #78716C;
-  margin-bottom: 28px;
-}
-
-.story-center-img img {
-  width: 100%;
-  height: 340px;
-  object-fit: cover;
-}
-
-.story-right {
-  padding: 32px;
+.value-item-card {
+  background-color: var(--leafora-white);
+  border: 1px solid var(--leafora-border);
+  border-radius: 14px;
+  padding: 24px 20px;
+  text-align: center;
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.02);
+}
+
+.value-icon-circle-lg {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--leafora-card-cream);
+  color: var(--leafora-bronze);
+  display: flex;
+  align-items: center;
   justify-content: center;
 }
 
-.story-vertical-tag {
-  writing-mode: vertical-rl;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 3px;
-  color: var(--leafora-bronze);
-  text-transform: uppercase;
+.value-item-card h4 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--leafora-text-dark);
 }
 
-/* 6. FLASH SALE COUNTDOWN SECTION */
-.flash-sale-section {
-  max-width: 1320px;
-  margin: 56px auto;
-  padding: 0 24px;
+.value-item-card p {
+  font-size: 0.85rem;
+  color: var(--leafora-text-muted);
+  line-height: 1.5;
 }
 
-.flash-sale-card {
-  background: linear-gradient(135deg, #1C1917 0%, #292524 100%);
-  border-radius: 20px;
-  padding: 32px 40px;
-  color: #FFFFFF;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.flash-timer-box {
-  display: flex;
-  gap: 12px;
-  margin-top: 14px;
-}
-
-.timer-unit {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(8px);
-  padding: 8px 14px;
-  border-radius: 8px;
-  text-align: center;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-}
-
-.timer-val {
-  font-size: 20px;
-  font-weight: 800;
-  color: #F59E0B;
-}
-
-.timer-lbl {
-  font-size: 9px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: #D6D3D1;
-}
-
-/* 7. COUPON BANNER */
-.coupon-banner-section {
-  max-width: 1320px;
-  margin: 40px auto;
-  padding: 0 24px;
-}
-
-.coupon-card-inner {
-  background: #FEF3C7;
-  border: 2px dashed #F59E0B;
-  border-radius: 16px;
-  padding: 24px 36px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.coupon-code-pill {
-  background: #FFFFFF;
-  border: 1px solid #F59E0B;
-  padding: 8px 18px;
-  border-radius: 20px;
-  font-family: monospace;
-  font-size: 16px;
-  font-weight: 800;
-  color: #D97706;
-  letter-spacing: 2px;
-  cursor: pointer;
-}
-
-/* 8. TESTIMONIALS SLIDER */
-.testimonials-section {
-  max-width: 1320px;
-  margin: 56px auto;
-  padding: 0 24px;
-}
-
-.testimonials-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
-}
-
-.testimonial-card {
-  background: #FFFFFF;
-  border: 1px solid var(--leafora-border);
-  border-radius: 16px;
-  padding: 24px;
-}
-
-.testimonial-text {
-  font-size: 14px;
-  line-height: 1.6;
-  color: #44403C;
-  font-style: italic;
-  margin-bottom: 16px;
-}
-
-.testimonial-author {
-  font-size: 13px;
-  font-weight: 700;
-  color: #292524;
-}
-
-/* 9. INSTAGRAM GALLERY */
-.instagram-section {
-  max-width: 1320px;
-  margin: 56px auto;
-  padding: 0 24px;
-}
-
-.insta-grid {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 12px;
-}
-
-.insta-item {
-  height: 160px;
-  border-radius: 12px;
-  overflow: hidden;
+.values-right-banner {
   position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  height: 260px;
 }
 
-.insta-item img {
+.values-leaf-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.3s ease;
 }
 
-.insta-item:hover img {
-  transform: scale(1.1);
+.values-leaf-callout {
+  position: absolute;
+  bottom: 24px;
+  right: 20px;
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: 1.5rem;
+  color: #1F2937;
+  text-align: right;
+  line-height: 1.2;
+  text-shadow: 0 2px 8px rgba(255,255,255,0.9);
 }
 
-/* 10. NEWSLETTER BOX */
-.newsletter-section {
-  max-width: 1320px;
-  margin: 56px auto;
-  padding: 0 24px;
+/* 4. SECTION 4 ("A More Sustainable Future") */
+.sustainability-section-3rd {
+  background-color: var(--leafora-card-cream);
+  padding: 80px 40px;
 }
 
-.newsletter-card {
-  background: #064E3B;
+.sustainability-grid {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 40px;
+  align-items: center;
+}
+
+.sustain-center-img-wrap {
+  width: 100%;
+  height: 320px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+}
+
+.sustain-center-img-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.sustain-right-pillars {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.eco-pillar-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.eco-pillar-row h5 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--leafora-text-dark);
+  margin-bottom: 4px;
+}
+
+.eco-pillar-row p {
+  font-size: 0.82rem;
+  color: var(--leafora-text-muted);
+}
+
+/* 5. SECTION 5 ("JOIN OUR JOURNEY / Let's Create a Healthier, More Radiant World Together") */
+.journey-banner-section {
+  background-color: var(--leafora-forest);
+  padding: 70px 40px;
   color: #FFFFFF;
-  border-radius: 24px;
-  padding: 48px;
+  position: relative;
+  overflow: hidden;
+}
+
+.journey-container {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 40px;
+}
+
+.journey-left-content {
+  max-width: 650px;
+}
+
+.journey-tag {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: #D4AF37;
+  margin-bottom: 12px;
+}
+
+.journey-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.6rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  line-height: 1.2;
+  margin-bottom: 24px;
+}
+
+.journey-pillars-row {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+}
+
+.journey-pillar-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
   text-align: center;
 }
 
-.newsletter-input-box {
+.journey-pillar-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.1);
   display: flex;
-  max-width: 480px;
-  margin: 24px auto 0 auto;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
 }
 
-.newsletter-input-box input {
-  flex: 1;
-  height: 48px;
-  border-radius: 24px 0 0 24px;
-  border: none;
-  padding: 0 20px;
-  font-size: 14px;
+.journey-pillar-item span {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #E2E8F0;
 }
 
-.newsletter-input-box button {
-  height: 48px;
-  border-radius: 0 24px 24px 0;
-  border: none;
+/* 6. CLEAN WHITE FOOTER MATCHING 3RD IMAGE */
+.footer-3rd {
+  background-color: var(--leafora-white);
+  border-top: 1px solid var(--leafora-border);
+  padding: 40px 40px 24px 40px;
+  color: var(--leafora-text-dark);
+}
+
+.footer-top-row {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 24px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid var(--leafora-border);
+}
+
+.footer-brand-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.footer-nav-links {
+  display: flex;
+  gap: 28px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.footer-nav-links a {
+  color: var(--leafora-text-dark);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.footer-social-row {
+  display: flex;
+  gap: 12px;
+}
+
+.social-circle-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--leafora-card-cream);
+  color: var(--leafora-text-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.social-circle-btn:hover {
   background: var(--leafora-bronze);
   color: #FFFFFF;
-  font-weight: 700;
-  padding: 0 24px;
-  cursor: pointer;
 }
 
-/* RESPONSIVE MEDIA QUERIES */
-@media (max-width: 1024px) {
-  .hero-card-container,
-  .bestsellers-grid-container,
-  .story-card-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .golden-promo-card {
-    min-height: 240px;
-  }
+.footer-bottom-row {
+  max-width: 1280px;
+  margin: 20px auto 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 0.82rem;
+  color: var(--leafora-text-muted);
+}
 
-  .value-props-inner {
+/* RESPONSIVE BREAKPOINTS */
+@media (max-width: 1100px) {
+  .values-cards-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 
-  .insta-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-
-  .testimonials-grid {
+  .sustainability-grid {
     grid-template-columns: 1fr;
   }
 }
 
-@media (max-width: 640px) {
-  .nav-links, .nav-search-box {
-    display: none;
-  }
-
-  .hero-heading {
-    font-size: 36px;
-  }
-
-  .value-props-inner {
+@media (max-width: 900px) {
+  .hero-section-3rd, .story-container, .values-main-layout, .journey-container {
     grid-template-columns: 1fr;
+    text-align: center;
+  }
+
+  .story-right-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-right-col {
+    justify-content: center;
+  }
+
+  .hero-side-text-italic {
+    position: relative;
+    right: 0;
+    top: 0;
+    transform: none;
+    text-align: center;
+    width: auto;
+  }
+
+  .journey-pillars-row {
+    justify-content: center;
   }
 }
