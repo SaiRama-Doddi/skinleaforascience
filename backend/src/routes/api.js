@@ -2,6 +2,7 @@ const express = require('express');
 const { getHealthStatus } = require('../controllers/healthController');
 const { getAllProducts, getProductById } = require('../controllers/productController');
 const adminController = require('../controllers/adminController');
+const authController = require('../controllers/authController');
 
 const router = express.Router();
 
@@ -11,6 +12,13 @@ router.get('/health', getHealthStatus);
 // Public Product Endpoints
 router.get('/products', getAllProducts);
 router.get('/products/:id', getProductById);
+
+// ─── USER AUTHENTICATION ENDPOINTS ───
+router.post('/auth/register', authController.registerUser);
+router.post('/auth/login', authController.loginUser);
+router.post('/auth/forgot-password', authController.forgotPassword);
+router.post('/auth/reset-password', authController.resetPassword);
+router.get('/auth/me', authController.getCurrentUser);
 
 // ─── ADMIN AUTHENTICATION ───
 router.post('/admin/send-otp', adminController.sendOtp);

@@ -246,6 +246,11 @@ const initDb = async () => {
         referral_earnings DECIMAL(10, 2) DEFAULT 0.00,
         avatar_url TEXT,
         notes TEXT,
+        password_hash VARCHAR(255) DEFAULT NULL,
+        remember_token VARCHAR(255) DEFAULT NULL,
+        reset_otp VARCHAR(10) DEFAULT NULL,
+        reset_otp_expires DATETIME DEFAULT NULL,
+        terms_accepted_at DATETIME DEFAULT NULL,
         deleted_at DATETIME DEFAULT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
@@ -258,7 +263,12 @@ const initDb = async () => {
       "ALTER TABLE customers ADD COLUMN referral_earnings DECIMAL(10, 2) DEFAULT 0.00 AFTER loyalty_points",
       "ALTER TABLE customers ADD COLUMN avatar_url TEXT AFTER referral_earnings",
       "ALTER TABLE customers ADD COLUMN notes TEXT AFTER avatar_url",
-      "ALTER TABLE customers ADD COLUMN deleted_at DATETIME DEFAULT NULL AFTER notes"
+      "ALTER TABLE customers ADD COLUMN password_hash VARCHAR(255) DEFAULT NULL AFTER notes",
+      "ALTER TABLE customers ADD COLUMN remember_token VARCHAR(255) DEFAULT NULL AFTER password_hash",
+      "ALTER TABLE customers ADD COLUMN reset_otp VARCHAR(10) DEFAULT NULL AFTER remember_token",
+      "ALTER TABLE customers ADD COLUMN reset_otp_expires DATETIME DEFAULT NULL AFTER reset_otp",
+      "ALTER TABLE customers ADD COLUMN terms_accepted_at DATETIME DEFAULT NULL AFTER reset_otp_expires",
+      "ALTER TABLE customers ADD COLUMN deleted_at DATETIME DEFAULT NULL AFTER terms_accepted_at"
     ];
     for (const query of custCols) {
       try { await pool.query(query); } catch (e) {}

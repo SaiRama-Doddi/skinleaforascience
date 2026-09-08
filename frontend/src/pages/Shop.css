@@ -1,0 +1,797 @@
+/* Premium Organic Botanical Shop Page Theme matching reference design */
+:root {
+  --leafora-bg: #FAF7F2;
+  --leafora-card-bg: #FFFFFF;
+  --leafora-bronze: #A67C52;
+  --leafora-bronze-hover: #8E653E;
+  --leafora-green: #2D5A27;
+  --leafora-text-dark: #2D3748;
+  --leafora-text-muted: #64748B;
+  --leafora-border: #EFE8DE;
+  --leafora-gold: #D4AF37;
+  --leafora-sale-red: #C53030;
+}
+
+.shop-container {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 24px 20px 80px 20px;
+  background-color: var(--leafora-bg);
+  min-height: 100vh;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  color: var(--leafora-text-dark);
+}
+
+/* 1. HERO HEADER SECTION MATCHING REFERENCE IMAGE */
+.shop-hero {
+  background: linear-gradient(135deg, #FAF7F2 0%, #F5EFE6 100%);
+  border: 1px solid var(--leafora-border);
+  border-radius: 16px;
+  padding: 36px 40px;
+  margin-bottom: 36px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 30px;
+  position: relative;
+  overflow: hidden;
+}
+
+.shop-hero-text {
+  flex: 1;
+  max-width: 650px;
+  z-index: 2;
+}
+
+.shop-breadcrumbs {
+  font-size: 0.85rem;
+  color: var(--leafora-text-muted);
+  margin-bottom: 12px;
+}
+
+.shop-breadcrumbs span {
+  color: var(--leafora-bronze);
+  font-weight: 500;
+}
+
+.shop-hero-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 2.8rem;
+  font-weight: 700;
+  color: #1A2E22;
+  margin-bottom: 12px;
+  line-height: 1.15;
+}
+
+.shop-hero-sub {
+  font-size: 1.05rem;
+  color: var(--leafora-text-muted);
+  margin-bottom: 24px;
+  line-height: 1.6;
+}
+
+/* Benefit Pills Row */
+.hero-benefit-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.benefit-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #FFFFFF;
+  border: 1px solid var(--leafora-border);
+  padding: 8px 16px;
+  border-radius: 30px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #334155;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+}
+
+.benefit-icon-circle {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #F4EBE1;
+  color: var(--leafora-bronze);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Hero Right Visual Column */
+.shop-hero-visual {
+  position: relative;
+  width: 380px;
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.hero-pedestal-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 14px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.06);
+}
+
+.hero-side-headline {
+  position: absolute;
+  right: -10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: 1.8rem;
+  color: #1A2E22;
+  text-align: right;
+  width: 180px;
+  line-height: 1.2;
+  text-shadow: 0 2px 10px rgba(255,255,255,0.8);
+}
+
+/* 2. SHOP MAIN LAYOUT GRID (SIDEBAR + PRODUCTS) */
+.shop-main-layout {
+  display: grid;
+  grid-template-columns: 270px 1fr;
+  gap: 32px;
+  align-items: start;
+}
+
+/* 3. SIDEBAR FILTER PANEL */
+.shop-sidebar {
+  background: var(--leafora-card-bg);
+  border: 1px solid var(--leafora-border);
+  border-radius: 14px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  position: sticky;
+  top: 100px;
+}
+
+.filter-group-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--leafora-text-dark);
+  margin-bottom: 16px;
+}
+
+/* Category List Accordion */
+.category-filter-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.category-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.category-item:hover {
+  background-color: #F8F4EE;
+  color: var(--leafora-bronze);
+}
+
+.category-item.active {
+  background-color: #F4EBE1;
+  color: var(--leafora-bronze);
+  font-weight: 600;
+}
+
+.category-item .cat-count {
+  font-size: 0.8rem;
+  color: #94A3B8;
+}
+
+.category-item.active .cat-count {
+  color: var(--leafora-bronze);
+}
+
+.category-item .cat-arrow {
+  font-size: 0.8rem;
+  margin-left: 4px;
+}
+
+/* Price Range Slider */
+.price-slider-box {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.price-range-inputs {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--leafora-text-dark);
+}
+
+.range-slider {
+  width: 100%;
+  accent-color: var(--leafora-bronze);
+  cursor: pointer;
+}
+
+/* Checkbox Filters (Skin Type & Concerns) */
+.checkbox-filter-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.checkbox-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.88rem;
+  color: #475569;
+  cursor: pointer;
+  user-select: none;
+}
+
+.checkbox-item input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--leafora-bronze);
+  cursor: pointer;
+}
+
+.checkbox-label-text {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  margin-left: 8px;
+}
+
+.item-count {
+  font-size: 0.8rem;
+  color: #94A3B8;
+}
+
+/* Clear Filters Button */
+.btn-clear-filters {
+  width: 100%;
+  padding: 10px;
+  background-color: #F8F4EE;
+  border: 1px solid var(--leafora-border);
+  border-radius: 8px;
+  color: var(--leafora-bronze);
+  font-weight: 600;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.btn-clear-filters:hover {
+  background-color: var(--leafora-bronze);
+  color: #FFFFFF;
+}
+
+/* 4. PRODUCTS AREA & TOOLBAR */
+.shop-content-area {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.shop-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  background: var(--leafora-card-bg);
+  border: 1px solid var(--leafora-border);
+  border-radius: 12px;
+  padding: 14px 20px;
+}
+
+.results-count {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--leafora-text-dark);
+}
+
+.toolbar-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.in-category-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #F8F4EE;
+  border: 1px solid var(--leafora-border);
+  padding: 6px 12px;
+  border-radius: 8px;
+  width: 220px;
+}
+
+.in-category-search input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 0.85rem;
+  width: 100%;
+  color: var(--leafora-text-dark);
+}
+
+.sort-dropdown-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  color: var(--leafora-text-muted);
+}
+
+.sort-select {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--leafora-border);
+  background: #FFFFFF;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--leafora-text-dark);
+  outline: none;
+  cursor: pointer;
+}
+
+.view-mode-toggle {
+  display: flex;
+  gap: 4px;
+  background: #F8F4EE;
+  padding: 4px;
+  border-radius: 8px;
+}
+
+.view-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: #64748B;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.view-btn.active {
+  background: #FFFFFF;
+  color: var(--leafora-bronze);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+}
+
+/* Mobile Filter Trigger Button */
+.btn-mobile-filter-trigger {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  background: var(--leafora-bronze);
+  color: #FFFFFF;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* 5. PRODUCT GRID VIEW (4 COLUMNS ON DESKTOP) */
+.shop-products-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+/* Individual Product Card (Matching Image) */
+.shop-card {
+  background: var(--leafora-card-bg);
+  border: 1px solid var(--leafora-border);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.shop-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(166, 124, 82, 0.08);
+  border-color: #E2D5C5;
+}
+
+/* Image Container */
+.card-img-container {
+  position: relative;
+  width: 100%;
+  height: 220px;
+  background: #F7F4EE;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card-img-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.shop-card:hover .card-img-container img {
+  transform: scale(1.05);
+}
+
+/* Badges */
+.shop-card-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  z-index: 2;
+}
+
+.badge-bestseller { background: #A67C52; color: #FFFFFF; }
+.badge-new { background: #1A2E22; color: #FFFFFF; }
+.badge-sale { background: #C53030; color: #FFFFFF; }
+.badge-hot { background: #DD6B20; color: #FFFFFF; }
+
+/* Favorite Heart Button */
+.btn-wishlist-heart {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748B;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 2;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+.btn-wishlist-heart:hover, .btn-wishlist-heart.active {
+  background: #FFFFFF;
+  color: #E53E3E;
+  transform: scale(1.1);
+}
+
+/* Card Content Details */
+.shop-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.shop-card-brand {
+  font-size: 0.78rem;
+  color: var(--leafora-text-muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.shop-card-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--leafora-text-dark);
+  line-height: 1.3;
+}
+
+.shop-card-rating {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: var(--leafora-text-muted);
+  margin-bottom: 4px;
+}
+
+.stars-row {
+  display: flex;
+  gap: 2px;
+}
+
+.shop-card-price-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  margin-bottom: 12px;
+}
+
+.price-main {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--leafora-text-dark);
+}
+
+.price-original {
+  font-size: 0.88rem;
+  color: #94A3B8;
+  text-decoration: line-through;
+}
+
+/* Bronze Add to Cart Button */
+.btn-card-add-cart {
+  width: 100%;
+  padding: 10px;
+  background-color: var(--leafora-bronze);
+  color: #FFFFFF;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.btn-card-add-cart:hover {
+  background-color: var(--leafora-bronze-hover);
+  transform: translateY(-1px);
+}
+
+/* 6. ALTERNATE LIST VIEW LAYOUT */
+.shop-products-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.shop-list-card {
+  background: var(--leafora-card-bg);
+  border: 1px solid var(--leafora-border);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  transition: all 0.2s ease;
+}
+
+.shop-list-card .card-img-container {
+  width: 180px;
+  height: 140px;
+  margin-bottom: 0;
+  flex-shrink: 0;
+}
+
+.shop-list-card .shop-card-info {
+  flex: 1;
+}
+
+.shop-list-card .list-card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 180px;
+  flex-shrink: 0;
+}
+
+/* 7. PAGINATION BAR */
+.shop-pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 36px;
+  padding-top: 24px;
+  border-top: 1px solid var(--leafora-border);
+}
+
+.pagination-pages {
+  display: flex;
+  gap: 8px;
+}
+
+.page-num-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  border: 1px solid var(--leafora-border);
+  background: #FFFFFF;
+  color: var(--leafora-text-dark);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.page-num-btn:hover, .page-num-btn.active {
+  background: var(--leafora-bronze);
+  color: #FFFFFF;
+  border-color: var(--leafora-bronze);
+}
+
+.btn-load-more {
+  padding: 12px 28px;
+  background: #FFFFFF;
+  border: 1.5px solid var(--leafora-bronze);
+  color: var(--leafora-bronze);
+  font-weight: 600;
+  border-radius: 30px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-load-more:hover {
+  background: var(--leafora-bronze);
+  color: #FFFFFF;
+}
+
+/* 8. MOBILE OFF-CANVAS FILTER DRAWER */
+.mobile-filter-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.mobile-filter-drawer {
+  width: 320px;
+  max-width: 85vw;
+  height: 100%;
+  background: #FFFFFF;
+  padding: 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-shadow: -10px 0 25px rgba(0,0,0,0.15);
+}
+
+.mobile-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--leafora-border);
+}
+
+.mobile-drawer-header h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.3rem;
+  color: var(--leafora-text-dark);
+}
+
+.btn-drawer-close {
+  background: none;
+  border: none;
+  color: #64748B;
+  cursor: pointer;
+}
+
+/* 9. RESPONSIVE BREAKPOINTS */
+@media (max-width: 1100px) {
+  .shop-products-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .shop-hero {
+    flex-direction: column;
+    text-align: center;
+    padding: 28px 20px;
+  }
+
+  .shop-hero-visual {
+    width: 100%;
+    height: 160px;
+    justify-content: center;
+  }
+
+  .hero-side-headline {
+    position: relative;
+    right: 0;
+    top: 0;
+    transform: none;
+    text-align: center;
+    width: auto;
+    margin-top: 12px;
+  }
+
+  .hero-benefit-pills {
+    justify-content: center;
+  }
+
+  .shop-main-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .shop-sidebar {
+    display: none; /* Hidden on mobile, triggered via mobile filter button */
+  }
+
+  .btn-mobile-filter-trigger {
+    display: flex;
+  }
+
+  .shop-products-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .shop-products-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .shop-hero-title {
+    font-size: 2.1rem;
+  }
+
+  .shop-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .toolbar-controls {
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+
+  .in-category-search {
+    width: 100%;
+  }
+}

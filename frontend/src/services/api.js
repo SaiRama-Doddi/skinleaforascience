@@ -34,6 +34,7 @@ api.interceptors.response.use(
 export const checkHealth = () => api.get('/health');
 export const getProducts = () => api.get('/products');
 export const getProductById = (id) => api.get(`/products/${id}`);
+export const getCategories = (params) => api.get('/admin/categories', { params });
 
 // Admin Auth API
 export const adminSendOtp = (email) => api.post('/admin/send-otp', { email });
@@ -192,5 +193,13 @@ export const adminResolveShiprocketNdr = (id, data) => api.post(`/admin/shiprock
 export const adminGetShiprocketManifests = () => api.get('/admin/shiprocket/manifests');
 export const adminGenerateShiprocketManifest = (data) => api.post('/admin/shiprocket/generate-manifest', data);
 
+// ─── USER AUTHENTICATION APIS ───
+export const userRegister = (data) => api.post('/auth/register', data);
+export const userLogin = (data) => api.post('/auth/login', data);
+export const userForgotPassword = (data) => api.post('/auth/forgot-password', data);
+export const userResetPassword = (data) => api.post('/auth/reset-password', data);
+export const userGetCurrentUser = () => api.get('/auth/me');
+
 export default api;
+
 
