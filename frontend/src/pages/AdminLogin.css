@@ -1,0 +1,476 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+/* Main Container for Admin Login Page */
+.leafora-login-page {
+  display: flex;
+  min-height: 100vh;
+  width: 100vw;
+  background-color: #F8F6F1;
+  color: #1F2937;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  overflow-x: hidden;
+}
+
+/* ─── LEFT PANEL (BRAND SHOWCASE) ─── */
+.leafora-login-left {
+  flex: 1.1;
+  background-color: #F6F4EE;
+  padding: 48px 56px 36px 56px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  border-right: 1px solid #EFECE6;
+}
+
+.leafora-left-head {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Brand Logo */
+.leafora-brand-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.leafora-brand-logo-icon {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+}
+
+.leafora-brand-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: #A37F3F;
+  line-height: 1.1;
+}
+
+.leafora-brand-sub {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: #8C8275;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+.leafora-headline-group {
+  margin-top: 10px;
+  max-width: 480px;
+}
+
+.leafora-headline-rule {
+  width: 32px;
+  height: 2px;
+  background-color: #C5A059;
+  margin-bottom: 16px;
+}
+
+.leafora-main-headline {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 38px;
+  font-weight: 600;
+  line-height: 1.22;
+  color: #27221C;
+  margin: 0 0 14px 0;
+}
+
+.leafora-main-subtext {
+  font-size: 14px;
+  color: #656C76;
+  line-height: 1.6;
+  margin: 0 0 28px 0;
+}
+
+/* 4 Features Grid */
+.leafora-features-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+  max-width: 480px;
+}
+
+.leafora-feature-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+}
+
+.leafora-feature-icon-box {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  background-color: #EFECE6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #374151;
+}
+
+.leafora-feature-text {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #374151;
+  line-height: 1.25;
+}
+
+/* Hero Skincare Product Showcase */
+.leafora-hero-img-wrap {
+  width: 100%;
+  max-width: 500px;
+  height: 240px;
+  border-radius: 16px;
+  overflow: hidden;
+  position: relative;
+  margin: 0 auto;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.06);
+}
+
+.leafora-hero-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Bottom Tagline */
+.leafora-left-footer {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.leafora-bottom-tagline {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  color: #8C8275;
+  text-transform: uppercase;
+}
+
+.leafora-bottom-rule {
+  width: 32px;
+  height: 1.5px;
+  background-color: #C5A059;
+  margin: 6px auto 0 auto;
+}
+
+/* ─── RIGHT PANEL (LOGIN FORM CARD) ─── */
+.leafora-login-right {
+  flex: 1;
+  background-color: #F8F6F1;
+  padding: 40px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.leafora-back-link {
+  position: absolute;
+  top: 32px;
+  right: 48px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #4B5563;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.leafora-back-link:hover {
+  color: #A37F3F;
+}
+
+/* Login White Card Container */
+.leafora-login-card {
+  background-color: #FFFFFF;
+  border-radius: 20px;
+  width: 440px;
+  max-width: 95%;
+  padding: 40px 36px 36px 36px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.04);
+  border: 1px solid #EFECE6;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.leafora-card-brand-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.leafora-card-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 6px 0;
+}
+
+.leafora-card-subtitle {
+  font-size: 13.5px;
+  color: #6B7280;
+  margin: 0 0 28px 0;
+}
+
+/* Alert Boxes */
+.leafora-alert-box {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 500;
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  text-align: left;
+}
+
+.leafora-alert-box.error {
+  background-color: #FDF0ED;
+  color: #D9453B;
+  border: 1px solid #FCA5A5;
+}
+
+.leafora-alert-box.success {
+  background-color: #E8F5EB;
+  color: #2D7A4D;
+  border: 1px solid #86EFAC;
+}
+
+/* Form Controls */
+.leafora-login-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  text-align: left;
+}
+
+.leafora-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.leafora-field-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.leafora-field-input-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.leafora-field-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9CA3AF;
+  width: 18px;
+  height: 18px;
+  pointer-events: none;
+}
+
+.leafora-input-text {
+  width: 100%;
+  padding: 11px 16px 11px 42px;
+  border-radius: 8px;
+  border: 1px solid #E5E7EB;
+  font-size: 13.5px;
+  font-family: inherit;
+  color: #111827;
+  outline: none;
+  background-color: #FFFFFF;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.leafora-input-text:focus {
+  border-color: #A37F3F;
+  box-shadow: 0 0 0 3px rgba(163, 127, 63, 0.15);
+}
+
+.leafora-otp-input {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid #E5E7EB;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.35em;
+  text-align: center;
+  font-family: monospace, inherit;
+  color: #111827;
+  outline: none;
+  background-color: #FAF8F5;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.leafora-otp-input:focus {
+  border-color: #A37F3F;
+  background-color: #FFFFFF;
+  box-shadow: 0 0 0 3px rgba(163, 127, 63, 0.15);
+}
+
+/* Submit Button */
+.leafora-submit-btn {
+  width: 100%;
+  padding: 13px 20px;
+  background-color: #A87B34;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 30px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  margin-top: 4px;
+}
+
+.leafora-submit-btn:hover {
+  background-color: #936A2A;
+}
+
+.leafora-submit-btn:active {
+  transform: scale(0.99);
+}
+
+.leafora-submit-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Or Divider */
+.leafora-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin: 20px 0 16px 0;
+  color: #9CA3AF;
+  font-size: 12px;
+}
+
+.leafora-divider::before,
+.leafora-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background-color: #EFECE6;
+}
+
+/* Secure Access Box */
+.leafora-secure-box {
+  width: 100%;
+  background-color: #F7F6F3;
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  text-align: left;
+  box-sizing: border-box;
+}
+
+.leafora-secure-icon {
+  color: #A87B34;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.leafora-secure-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 2px;
+}
+
+.leafora-secure-desc {
+  font-size: 11.5px;
+  color: #6B7280;
+  line-height: 1.4;
+}
+
+/* Card Footer */
+.leafora-card-footer {
+  margin-top: 24px;
+  font-size: 12.5px;
+  color: #6B7280;
+}
+
+.leafora-card-footer a {
+  color: #A87B34;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.leafora-card-footer a:hover {
+  text-decoration: underline;
+}
+
+/* Resend OTP Link */
+.leafora-resend-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-size: 12px;
+}
+
+.leafora-resend-btn {
+  background: none;
+  border: none;
+  color: #A87B34;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  font-size: 12px;
+}
+
+.leafora-resend-btn:hover {
+  text-decoration: underline;
+}
+
+/* Responsive Media Queries */
+@media (max-width: 900px) {
+  .leafora-login-page {
+    flex-direction: column;
+  }
+  .leafora-login-left {
+    padding: 32px 24px;
+    border-right: none;
+    border-bottom: 1px solid #EFECE6;
+  }
+  .leafora-login-right {
+    padding: 32px 16px;
+  }
+  .leafora-back-link {
+    top: 16px;
+    right: 20px;
+  }
+}

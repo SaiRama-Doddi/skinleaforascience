@@ -1,35 +1,39 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import './AdminLogin.css';
 import { adminSendOtp, adminVerifyOtp } from '../services/api';
-import { ShieldCheck, Mail, KeyRound, ArrowRight, RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react';
+import {
+  ShieldCheck, Mail, KeyRound, ArrowRight, ArrowLeft,
+  Package, ClipboardList, Users, BarChart2, CheckCircle2, AlertCircle, RefreshCw
+} from 'lucide-react';
 
 export default function AdminLogin() {
-  const [step, setStep] = useState(1); // 1: Email, 2: OTP
+  const [step, setStep] = useState(1); // Step 1: Email, Step 2: OTP
   const [email, setEmail] = useState('hkahir46@gmail.com');
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
   const [error, setError] = useState(null);
-  const [devOtp, setDevOtp] = useState(null);
   const navigate = useNavigate();
 
   const handleSendOtp = async (e) => {
     e.preventDefault();
+    if (!email) return;
+
     setLoading(true);
     setError(null);
     setMessage(null);
 
     try {
       const res = await adminSendOtp(email);
-      if (res.success) {
+      if (res && res.success) {
         setMessage(`OTP sent successfully to ${email}. Please check your inbox.`);
-        if (res.devOtp) setDevOtp(res.devOtp);
         setStep(2);
       } else {
-        setError(res.message || 'Failed to send OTP');
+        setError(res?.message || 'Failed to send OTP. Please check your admin email.');
       }
     } catch (err) {
-      setError(err.message || 'Error sending OTP. Make sure server is online.');
+      setError(err.message || 'Error sending OTP. Make sure backend server is online.');
     } finally {
       setLoading(false);
     }
@@ -37,289 +41,276 @@ export default function AdminLogin() {
 
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
+    if (!otp) return;
+
     setLoading(true);
     setError(null);
     setMessage(null);
 
     try {
       const res = await adminVerifyOtp(email, otp);
-      if (res.success) {
+      if (res && res.success) {
         localStorage.setItem('leafora_admin_token', res.token);
-        localStorage.setItem('leafora_admin_user', JSON.stringify(res.user));
-        setMessage('Login verified! Redirecting to Admin Control Dashboard...');
+        if (res.user) {
+          localStorage.setItem('leafora_admin_user', JSON.stringify(res.user));
+        }
+        setMessage('Verification successful! Redirecting to Admin Dashboard...');
         setTimeout(() => {
           navigate('/admin/dashboard');
-        }, 1000);
+        }, 800);
       } else {
-        setError(res.message || 'Invalid OTP code');
+        setError(res?.message || 'Invalid OTP code. Please try again.');
       }
     } catch (err) {
-      setError(err.message || 'Failed to verify OTP code');
+      setError(err.message || 'Failed to verify OTP code.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={styles.pageContainer}>
-      <div style={styles.card}>
-        <div style={styles.header}>
-          <div style={styles.iconCircle}>
-            <ShieldCheck size={32} color="#10b981" />
+    <div className="leafora-login-page">
+      {/* ─── LEFT PANEL (BRAND & PRODUCT SHOWCASE) ─── */}
+      <div className="leafora-login-left">
+        <div className="leafora-left-head">
+          {/* Brand Logo Header */}
+          <div className="leafora-brand-row">
+            <svg className="leafora-brand-logo-icon" viewBox="0 0 100 100" fill="none">
+              <defs>
+                <linearGradient id="loginLeafGold" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#D4AF37" />
+                  <stop offset="50%" stopColor="#C5A059" />
+                  <stop offset="100%" stopColor="#8C6A3C" />
+                </linearGradient>
+              </defs>
+              <path d="M50 15C50 15 25 35 25 60C25 73.8 36.2 85 50 85C63.8 85 75 73.8 75 60C75 35 50 15 50 15Z" fill="url(#loginLeafGold)" />
+              <path d="M50 15C50 15 38 40 38 60C38 70 43 78 50 85C57 78 62 70 62 60C62 40 50 15 50 15Z" fill="#FDFBF7" fillOpacity="0.25" />
+              <path d="M50 15V85" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" strokeOpacity="0.4" />
+            </svg>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <span className="leafora-brand-title">LeafOra</span>
+              <span className="leafora-brand-sub">LIFE SCIENCES</span>
+            </div>
           </div>
-          <h2 style={styles.title}>Leafora Admin Portal</h2>
-          <p style={styles.subtitle}>Secure Email & OTP Authentication</p>
+
+          <div className="leafora-headline-group">
+            <div className="leafora-headline-rule"></div>
+            <h1 className="leafora-main-headline">
+              Pure Care.<br />
+              Stronger Tomorrows.
+            </h1>
+            <p className="leafora-main-subtext">
+              Natural skincare, powered by science.<br />
+              Now in your hands — and in better control<br />
+              with our admin panel.
+            </p>
+          </div>
+
+          {/* 4 Feature Icons Grid */}
+          <div className="leafora-features-grid">
+            <div className="leafora-feature-item">
+              <div className="leafora-feature-icon-box">
+                <Package size={18} />
+              </div>
+              <span className="leafora-feature-text">Manage Products</span>
+            </div>
+
+            <div className="leafora-feature-item">
+              <div className="leafora-feature-icon-box">
+                <ClipboardList size={18} />
+              </div>
+              <span className="leafora-feature-text">Track Orders</span>
+            </div>
+
+            <div className="leafora-feature-item">
+              <div className="leafora-feature-icon-box">
+                <Users size={18} />
+              </div>
+              <span className="leafora-feature-text">View Customers</span>
+            </div>
+
+            <div className="leafora-feature-item">
+              <div className="leafora-feature-icon-box">
+                <BarChart2 size={18} />
+              </div>
+              <span className="leafora-feature-text">Grow Your Business</span>
+            </div>
+          </div>
         </div>
 
-        {error && (
-          <div style={styles.errorBox}>
-            <AlertCircle size={18} /> <span>{error}</span>
-          </div>
-        )}
+        {/* Hero Skincare Product Display */}
+        <div className="leafora-hero-img-wrap">
+          <img 
+            src="/assets/hydra_glow_moisturizer.jpg" 
+            alt="LeafOra Skincare Products" 
+            className="leafora-hero-img" 
+          />
+        </div>
 
-        {message && (
-          <div style={styles.successBox}>
-            <CheckCircle2 size={18} /> <span>{message}</span>
-          </div>
-        )}
+        {/* Bottom Tagline */}
+        <div className="leafora-left-footer">
+          <span className="leafora-bottom-tagline">GOOD SKIN BRIGHTER TOMORROWS</span>
+          <div className="leafora-bottom-rule"></div>
+        </div>
+      </div>
 
-        {step === 1 ? (
-          <form onSubmit={handleSendOtp} style={styles.form}>
-            <div style={styles.inputGroup}>
-              <label style={styles.label}>Admin Email Address</label>
-              <div style={styles.inputWrapper}>
-                <Mail size={20} color="#9ca3af" style={styles.inputIcon} />
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@leaforalifescience.com"
-                  required
-                  style={styles.input}
-                />
-              </div>
-              <small style={styles.hint}>Authorized email: <strong>hkahir46@gmail.com</strong></small>
+      {/* ─── RIGHT PANEL (ADMIN LOGIN CARD) ─── */}
+      <div className="leafora-login-right">
+        {/* Back to Website Link */}
+        <Link to="/" className="leafora-back-link">
+          <ArrowLeft size={16} />
+          <span>Back to Website</span>
+        </Link>
+
+        {/* Login White Card */}
+        <div className="leafora-login-card">
+          {/* Card Top Logo */}
+          <div className="leafora-card-brand-logo">
+            <svg viewBox="0 0 100 100" fill="none" style={{ width: 36, height: 36 }}>
+              <path d="M50 15C50 15 25 35 25 60C25 73.8 36.2 85 50 85C63.8 85 75 73.8 75 60C75 35 50 15 50 15Z" fill="url(#loginLeafGold)" />
+              <path d="M50 15V85" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" strokeOpacity="0.4" />
+            </svg>
+            <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
+              <span style={{ fontFamily: 'Playfair Display, serif', fontSize: 20, fontWeight: 700, color: '#A37F3F', lineHeight: 1.1 }}>LeafOra</span>
+              <span style={{ fontSize: 7.5, fontWeight: 700, letterSpacing: '0.18em', color: '#8C8275' }}>LIFE SCIENCES</span>
             </div>
+          </div>
 
-            <button type="submit" disabled={loading} style={styles.button}>
-              {loading ? (
-                <>
-                  <RefreshCw className="spin" size={18} /> Sending OTP...
-                </>
-              ) : (
-                <>
-                  Send OTP Code <ArrowRight size={18} />
-                </>
-              )}
-            </button>
-          </form>
-        ) : (
-          <form onSubmit={handleVerifyOtp} style={styles.form}>
-            <div style={styles.inputGroup}>
-              <label style={styles.label}>Enter 6-Digit OTP</label>
-              <div style={styles.inputWrapper}>
-                <KeyRound size={20} color="#9ca3af" style={styles.inputIcon} />
+          <h2 className="leafora-card-title">Admin Login</h2>
+          <p className="leafora-card-subtitle">
+            {step === 1 
+              ? 'Enter your email to receive a secure OTP' 
+              : `Enter the 6-digit OTP sent to ${email}`}
+          </p>
+
+          {/* Feedback Alerts */}
+          {error && (
+            <div className="leafora-alert-box error">
+              <AlertCircle size={17} style={{ flexShrink: 0 }} />
+              <span>{error}</span>
+            </div>
+          )}
+
+          {message && (
+            <div className="leafora-alert-box success">
+              <CheckCircle2 size={17} style={{ flexShrink: 0 }} />
+              <span>{message}</span>
+            </div>
+          )}
+
+          {/* STEP 1: EMAIL ADDRESS FORM */}
+          {step === 1 && (
+            <form onSubmit={handleSendOtp} className="leafora-login-form">
+              <div className="leafora-field-group">
+                <label className="leafora-field-label">Email Address</label>
+                <div className="leafora-field-input-wrap">
+                  <Mail className="leafora-field-icon" />
+                  <input
+                    type="email"
+                    className="leafora-input-text"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="admin@leafora.com"
+                    required
+                  />
+                </div>
+              </div>
+
+              <button type="submit" className="leafora-submit-btn" disabled={loading}>
+                {loading ? (
+                  <>
+                    <RefreshCw className="spin" size={16} />
+                    Sending OTP...
+                  </>
+                ) : (
+                  <>
+                    Send OTP <ArrowRight size={16} />
+                  </>
+                )}
+              </button>
+            </form>
+          )}
+
+          {/* STEP 2: OTP INPUT FORM (SHOWN AFTER OTP IS SENT) */}
+          {step === 2 && (
+            <form onSubmit={handleVerifyOtp} className="leafora-login-form">
+              <div className="leafora-field-group">
+                <label className="leafora-field-label">Enter 6-Digit OTP Code</label>
                 <input
                   type="text"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
-                  placeholder="e.g. 584920"
                   maxLength={6}
+                  className="leafora-otp-input"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/[^0-9]/g, ''))}
+                  placeholder="000000"
+                  autoFocus
                   required
-                  style={styles.otpInput}
                 />
-              </div>
-              {devOtp && (
-                <div style={styles.devOtpBadge}>
-                  💡 Quick Dev OTP Code: <strong>{devOtp}</strong>
+                
+                <div className="leafora-resend-row">
+                  <span style={{ color: '#6B7280' }}>Didn't receive code?</span>
+                  <button 
+                    type="button" 
+                    className="leafora-resend-btn"
+                    onClick={handleSendOtp}
+                    disabled={loading}
+                  >
+                    Resend OTP
+                  </button>
                 </div>
-              )}
+              </div>
+
+              <button type="submit" className="leafora-submit-btn" disabled={loading || otp.length < 6}>
+                {loading ? (
+                  <>
+                    <RefreshCw className="spin" size={16} />
+                    Verifying...
+                  </>
+                ) : (
+                  <>
+                    Verify OTP & Access Dashboard <ArrowRight size={16} />
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#6B7280',
+                  fontSize: 12,
+                  cursor: 'pointer',
+                  marginTop: 4,
+                  textDecoration: 'underline'
+                }}
+                onClick={() => { setStep(1); setOtp(''); setError(null); setMessage(null); }}
+              >
+                Change email address
+              </button>
+            </form>
+          )}
+
+          {/* Divider */}
+          <div className="leafora-divider">or</div>
+
+          {/* Secure Access Info Box */}
+          <div className="leafora-secure-box">
+            <ShieldCheck className="leafora-secure-icon" size={20} />
+            <div>
+              <div className="leafora-secure-title">Secure Access</div>
+              <div className="leafora-secure-desc">
+                We'll send a one-time password (OTP) to your email for secure and safe login.
+              </div>
             </div>
+          </div>
 
-            <button type="submit" disabled={loading} style={styles.button}>
-              {loading ? (
-                <>
-                  <RefreshCw className="spin" size={18} /> Verifying Code...
-                </>
-              ) : (
-                <>
-                  Verify & Access Dashboard <ArrowRight size={18} />
-                </>
-              )}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setStep(1);
-                setOtp('');
-                setError(null);
-              }}
-              style={styles.backButton}
-            >
-              ← Change Email Address
-            </button>
-          </form>
-        )}
+          {/* Card Footer */}
+          <div className="leafora-card-footer">
+            Need help? Contact <a href="mailto:support@leafora.com">support@leafora.com</a>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
-
-const styles = {
-  pageContainer: {
-    minHeight: '80vh',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '2rem 1rem',
-    background: 'radial-gradient(circle at top, #064e3b 0%, #022c22 100%)',
-    borderRadius: '16px',
-    margin: '1rem 0',
-  },
-  card: {
-    width: '100%',
-    maxWidth: '440px',
-    backgroundColor: 'rgba(15, 23, 42, 0.85)',
-    backdropFilter: 'blur(16px)',
-    border: '1px solid rgba(255, 255, 255, 0.1)',
-    borderRadius: '20px',
-    padding: '2.5rem 2rem',
-    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-    color: '#fff',
-  },
-  header: {
-    textAlign: 'center',
-    marginBottom: '2rem',
-  },
-  iconCircle: {
-    width: '64px',
-    height: '64px',
-    borderRadius: '50%',
-    backgroundColor: 'rgba(16, 185, 129, 0.15)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    margin: '0 auto 1rem auto',
-    border: '1px solid rgba(16, 185, 129, 0.3)',
-  },
-  title: {
-    fontSize: '1.6rem',
-    fontWeight: '700',
-    margin: '0 0 0.5rem 0',
-    color: '#f8fafc',
-  },
-  subtitle: {
-    fontSize: '0.9rem',
-    color: '#94a3b8',
-    margin: 0,
-  },
-  form: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '1.25rem',
-  },
-  inputGroup: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '0.5rem',
-  },
-  label: {
-    fontSize: '0.85rem',
-    fontWeight: '600',
-    color: '#cbd5e1',
-  },
-  inputWrapper: {
-    position: 'relative',
-    display: 'flex',
-    alignItems: 'center',
-  },
-  inputIcon: {
-    position: 'absolute',
-    left: '14px',
-  },
-  input: {
-    width: '100%',
-    padding: '0.75rem 1rem 0.75rem 2.75rem',
-    backgroundColor: 'rgba(30, 41, 59, 0.8)',
-    border: '1px solid #334155',
-    borderRadius: '10px',
-    color: '#fff',
-    fontSize: '0.95rem',
-    outline: 'none',
-  },
-  otpInput: {
-    width: '100%',
-    padding: '0.75rem 1rem 0.75rem 2.75rem',
-    backgroundColor: 'rgba(30, 41, 59, 0.8)',
-    border: '1px solid #10b981',
-    borderRadius: '10px',
-    color: '#10b981',
-    fontSize: '1.4rem',
-    fontWeight: 'bold',
-    letterSpacing: '6px',
-    outline: 'none',
-  },
-  hint: {
-    fontSize: '0.78rem',
-    color: '#64748b',
-    marginTop: '4px',
-  },
-  devOtpBadge: {
-    fontSize: '0.82rem',
-    color: '#34d399',
-    backgroundColor: 'rgba(16, 185, 129, 0.15)',
-    padding: '8px 12px',
-    borderRadius: '6px',
-    marginTop: '6px',
-    border: '1px dashed #10b981',
-  },
-  button: {
-    padding: '0.85rem 1rem',
-    backgroundColor: '#10b981',
-    color: '#064e3b',
-    border: 'none',
-    borderRadius: '10px',
-    fontSize: '1rem',
-    fontWeight: '700',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '0.5rem',
-    transition: 'all 0.2s ease',
-  },
-  backButton: {
-    background: 'none',
-    border: 'none',
-    color: '#94a3b8',
-    fontSize: '0.85rem',
-    cursor: 'pointer',
-    textAlign: 'center',
-    marginTop: '0.5rem',
-  },
-  errorBox: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.5rem',
-    padding: '0.75rem 1rem',
-    backgroundColor: 'rgba(239, 68, 68, 0.15)',
-    border: '1px solid rgba(239, 68, 68, 0.3)',
-    borderRadius: '10px',
-    color: '#f87171',
-    fontSize: '0.85rem',
-    marginBottom: '1rem',
-  },
-  successBox: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.5rem',
-    padding: '0.75rem 1rem',
-    backgroundColor: 'rgba(16, 185, 129, 0.15)',
-    border: '1px solid rgba(16, 185, 129, 0.3)',
-    borderRadius: '10px',
-    color: '#34d399',
-    fontSize: '0.85rem',
-    marginBottom: '1rem',
-  },
-};
