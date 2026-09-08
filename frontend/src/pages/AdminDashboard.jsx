@@ -1140,6 +1140,7 @@ export default function AdminDashboard() {
     }
   }, [activeTab, categoryViewTab, catLevelFilter, catStatusFilter, catSearchQuery]);
 
+
   const handleCatMediaUpload = async (field, file) => {
     if (!file) return;
     const reader = new FileReader();
@@ -2584,6 +2585,33 @@ export default function AdminDashboard() {
   });
 
   const pagedOrders = displayedOrders.slice((orderPage - 1) * orderPerPage, orderPage * orderPerPage);
+
+  const displayedCategories = dbCategories.filter(cat => {
+    if (categoryViewTab === 'trash') {
+      if (!cat.deleted_at) return false;
+    } else {
+      if (cat.deleted_at) return false;
+    }
+
+    if (catLevelFilter !== 'all' && cat.level !== catLevelFilter) return false;
+
+    if (categoryViewTab === 'catalog') {
+      if (catStatusFilter === 'active' && !cat.is_active) return false;
+      if (catStatusFilter === 'inactive' && cat.is_active) return false;
+    }
+
+    if (catSearchQuery.trim()) {
+      const q = catSearchQuery.toLowerCase();
+      const matchName = String(cat.name || '').toLowerCase().includes(q);
+      const matchSlug = String(cat.slug || '').toLowerCase().includes(q);
+      const matchDesc = String(cat.description || '').toLowerCase().includes(q);
+      if (!matchName && !matchSlug && !matchDesc) return false;
+    }
+
+    return true;
+  });
+
+  const pagedCategories = displayedCategories.slice((catPage - 1) * catPerPage, catPage * catPerPage);
 
   // Product Image Mapping Helper
   const getProductImage = (prodName, index) => {
