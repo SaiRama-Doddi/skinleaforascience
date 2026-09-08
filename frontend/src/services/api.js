@@ -102,13 +102,57 @@ export const adminGetPaymentSettlements = () => api.get('/admin/payments/settlem
 export const adminExportRevenueUrl = '/api/admin/revenue/export';
 
 // Reviews Controls
-export const adminGetReviews = () => api.get('/admin/reviews');
+export const adminGetReviews = (params) => api.get('/admin/reviews', { params });
+export const adminGetReviewDetails = (id) => api.get(`/admin/reviews/${id}`);
 export const adminUpdateReviewStatus = (id, data) => api.put(`/admin/reviews/${id}`, data);
-export const adminDeleteReview = (id) => api.delete(`/admin/reviews/${id}`);
+export const adminReplyToReview = (id, data) => api.post(`/admin/reviews/${id}/reply`, data);
+export const adminReportAbuseReview = (id, data) => api.post(`/admin/reviews/${id}/report-abuse`, data);
+export const adminRestoreReview = (id) => api.post(`/admin/reviews/${id}/restore`);
+export const adminDeleteReview = (id, force = false) => api.delete(`/admin/reviews/${id}`, { params: { force } });
+export const adminGetReviewAnalytics = () => api.get('/admin/reviews/analytics');
+export const adminExportReviewsUrl = `${API_BASE_URL}/admin/reviews/export`;
 
-// Referrals Controls
-export const adminGetReferrals = () => api.get('/admin/referrals');
-export const adminUpdateReferralStatus = (id, status) => api.put(`/admin/referrals/${id}`, { status });
+// Homepage CMS Controls
+export const adminGetHomepageBanners = (params) => api.get('/admin/homepage/banners', { params });
+export const adminCreateHomepageBanner = (data) => api.post('/admin/homepage/banners', data);
+export const adminUpdateHomepageBanner = (id, data) => api.put(`/admin/homepage/banners/${id}`, data);
+export const adminDeleteHomepageBanner = (id) => api.delete(`/admin/homepage/banners/${id}`);
+export const adminReorderHomepageBanners = (orders) => api.post('/admin/homepage/banners/reorder', { orders });
+
+export const adminGetHomepageSections = () => api.get('/admin/homepage/sections');
+export const adminUpdateHomepageSection = (id, data) => api.put(`/admin/homepage/sections/${id}`, data);
+export const adminReorderHomepageSections = (orders) => api.post('/admin/homepage/sections/reorder', { orders });
+
+export const adminGetCuratedProducts = () => api.get('/admin/homepage/curated-products');
+export const adminCurateProducts = (data) => api.post('/admin/homepage/curate-products', data);
+
+// System Settings Controls
+export const adminGetSystemSettings = () => api.get('/admin/system/settings');
+export const adminUpdateSystemSettingsGroup = (data) => api.put('/admin/system/settings', { settings: data });
+
+export const adminGetSystemUsers = () => api.get('/admin/system/users');
+export const adminCreateSystemUser = (data) => api.post('/admin/system/users', data);
+export const adminUpdateSystemUser = (id, data) => api.put(`/admin/system/users/${id}`, data);
+export const adminDeleteSystemUser = (id) => api.delete(`/admin/system/users/${id}`);
+
+export const adminGetSystemRoles = () => api.get('/admin/system/roles');
+export const adminUpdateSystemRole = (id, data) => api.put(`/admin/system/roles/${id}`, data);
+
+export const adminGetActivityLogs = () => api.get('/admin/system/activity-logs');
+export const adminGetLoginHistory = () => api.get('/admin/system/login-history');
+export const adminExportBackupUrl = `${API_BASE_URL}/admin/system/backup`;
+
+// Referrals & Wallet Controls
+export const adminGetReferrals = (params) => api.get('/admin/referrals', { params });
+export const adminUpdateReferralStatus = (id, data) => api.post(`/admin/referrals/${id}/status`, data);
+export const adminGetReferralSettings = () => api.get('/admin/referrals/settings');
+export const adminUpdateReferralSettings = (data) => api.put('/admin/referrals/settings', data);
+export const adminGetReferralAnalytics = () => api.get('/admin/referrals/analytics');
+export const adminExportReferralsUrl = `${API_BASE_URL}/admin/referrals/export`;
+
+export const adminGetWalletTransactions = (params) => api.get('/admin/wallet/transactions', { params });
+export const adminManualWalletAdjustment = (data) => api.post('/admin/wallet/adjustment', data);
+export const adminExportWalletTransactionsUrl = `${API_BASE_URL}/admin/wallet/export`;
 
 // Coupons Controls
 export const adminGetCoupons = (params) => api.get('/admin/coupons', { params });

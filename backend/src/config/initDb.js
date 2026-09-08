@@ -922,6 +922,342 @@ const initDb = async () => {
       console.log('🌱 Seeded default coupon usage history');
     }
 
+    // ─── REFERRALS & WALLET SCHEMA & MIGRATIONS ───
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS referral_settings (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        referrer_reward_amount DECIMAL(10, 2) DEFAULT 15.00,
+        referee_discount_amount DECIMAL(10, 2) DEFAULT 10.00,
+        min_order_amount DECIMAL(10, 2) DEFAULT 30.00,
+        signup_bonus_amount DECIMAL(10, 2) DEFAULT 5.00,
+        min_cashout_threshold DECIMAL(10, 2) DEFAULT 25.00,
+        max_wallet_balance DECIMAL(10, 2) DEFAULT 500.00,
+        is_program_active TINYINT(1) DEFAULT 1,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      );
+    `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS wallet_transactions (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        customer_id INT NOT NULL,
+        customer_name VARCHAR(255) NOT NULL,
+        customer_email VARCHAR(255) NOT NULL,
+        transaction_type VARCHAR(20) NOT NULL,
+        amount DECIMAL(10, 2) NOT NULL,
+        source VARCHAR(50) NOT NULL,
+        reference_id VARCHAR(100) NULL,
+        description TEXT,
+        balance_after DECIMAL(10, 2) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // Upgrade referrals table columns safely
+    const refCols = [
+      "referrer_id INT NULL",
+      "referrer_email VARCHAR(255)",
+      "referee_id INT NULL",
+      "referee_email VARCHAR(255)",
+      "referee_discount DECIMAL(10, 2) DEFAULT 10.00",
+      "rejection_reason VARCHAR(255) NULL"
+    ];
+
+    for (const colDef of refCols) {
+      try {
+        await pool.query(`ALTER TABLE referrals ADD COLUMN ${colDef}`);
+      } catch (e) {}
+    }
+
+    // Seed default referral settings if empty
+    const [refSetCount] = await pool.query('SELECT COUNT(*) as cnt FROM referral_settings');
+    if (refSetCount[0].cnt === 0) {
+      await pool.query(`
+        INSERT INTO referral_settings (referrer_reward_amount, referee_discount_amount, min_order_amount, signup_bonus_amount, min_cashout_threshold, max_wallet_balance, is_program_active) VALUES
+        (15.00, 10.00, 30.00, 5.00, 25.00, 500.00, 1);
+      `);
+      console.log('🌱 Seeded default Referral Program settings');
+    }
+
+    // Seed default referrals if empty or count <= 3
+    const [refCount] = await pool.query('SELECT COUNT(*) as cnt FROM referrals');
+    if (refCount[0].cnt <= 3) {
+      await pool.query(`
+        INSERT INTO referrals (referrer_id, referrer_name, referrer_email, referee_id, referee_name, referee_email, reward_amount, referee_discount, status, rejection_reason) VALUES
+        (1, 'Dr. Ramesh Varma', 'ramesh.v@gmail.com', 2, 'Anita Sharma', 'anita.s@gmail.com', 15.00, 10.00, 'Approved', NULL),
+        (3, 'Vikram Patel', 'vikram.p@gmail.com', 4, 'Suresh Kumar', 'suresh.k@gmail.com', 15.00, 10.00, 'Pending', NULL),
+        (1, 'Dr. Ramesh Varma', 'ramesh.v@gmail.com', 5, 'Rajesh Rao', 'rajesh.r@gmail.com', 15.00, 10.00, 'Approved', NULL),
+        (2, 'Anita Sharma', 'anita.s@gmail.com', 6, 'Kiran Bedi', 'kiran.b@gmail.com', 15.00, 10.00, 'Rejected', 'Duplicate IP address / Self-referral attempt');
+      `);
+      console.log('🌱 Seeded rich default referrals history');
+    }
+
+    // Seed default wallet transactions if empty
+    const [wCount] = await pool.query('SELECT COUNT(*) as cnt FROM wallet_transactions');
+    if (wCount[0].cnt === 0) {
+      await pool.query(`
+        INSERT INTO wallet_transactions (customer_id, customer_name, customer_email, transaction_type, amount, source, reference_id, description, balance_after) VALUES
+        (1, 'Dr. Ramesh Varma', 'ramesh.v@gmail.com', 'credit', 15.00, 'referral_bonus', 'REF-1001', 'Referral reward for inviting Anita Sharma', 140.00),
+        (1, 'Dr. Ramesh Varma', 'ramesh.v@gmail.com', 'credit', 15.00, 'referral_bonus', 'REF-1003', 'Referral reward for inviting Rajesh Rao', 155.00),
+        (2, 'Anita Sharma', 'anita.s@gmail.com', 'credit', 5.00, 'signup_bonus', 'SIGNUP-2026', 'Welcome account signup bonus credit', 45.00),
+        (3, 'Vikram Patel', 'vikram.p@gmail.com', 'debit', 20.00, 'order_payment', 'ORD-1003', 'Applied wallet balance discount on order ORD-1003', 65.00);
+      `);
+      console.log('🌱 Seeded default customer wallet transactions log');
+    }
+
+    // ─── REVIEWS SCHEMA & MIGRATIONS ───
+    const reviewCols = [
+      "product_image VARCHAR(255) NULL",
+      "customer_id INT NULL",
+      "customer_email VARCHAR(255) NULL",
+      "title VARCHAR(255) NULL",
+      "images TEXT NULL",
+      "is_verified_buyer TINYINT(1) DEFAULT 1",
+      "is_reported_abuse TINYINT(1) DEFAULT 0",
+      "abuse_reason VARCHAR(255) NULL",
+      "admin_reply TEXT NULL",
+      "admin_replied_at DATETIME NULL",
+      "deleted_at TIMESTAMP NULL"
+    ];
+
+    for (const colDef of reviewCols) {
+      try {
+        await pool.query(`ALTER TABLE reviews ADD COLUMN ${colDef}`);
+      } catch (e) {}
+    }
+
+    // Seed default reviews if empty or count <= 2
+    const [revCount] = await pool.query('SELECT COUNT(*) as cnt FROM reviews');
+    if (revCount[0].cnt <= 2) {
+      await pool.query(`
+        INSERT INTO reviews (product_id, product_name, product_image, customer_id, customer_name, customer_email, rating, title, comment, images, status, is_featured, is_verified_buyer, is_reported_abuse, abuse_reason, admin_reply, admin_replied_at) VALUES
+        (1, 'LeafExtract Pharma Grade', '/assets/vitamin_c_serum.jpg', 1, 'Dr. Ramesh Varma', 'ramesh.v@gmail.com', 5, 'Outstanding Potency & Purity', 'Extremely high purity extract. Used this in our clinical formulation trial with wonderful results. Highly recommended for premium skincare labs!', '["/assets/vitamin_c_serum.jpg", "/assets/hydra_glow_moisturizer.jpg"]', 'Approved', 1, 1, 0, NULL, 'Thank you Dr. Varma! We take great pride in maintaining pharma-grade ISO certification standards.', NOW()),
+        (2, 'BioVital Nutraceutical', '/assets/hydra_glow_moisturizer.jpg', 2, 'Anita Sharma', 'anita.s@gmail.com', 5, 'Visible Skin Radiance in 2 Weeks', 'I have been taking these nutraceutical capsules daily for 14 days and my skin texture has become noticeably smoother and hydrated.', '["/assets/hydra_glow_moisturizer.jpg"]', 'Approved', 1, 1, 0, NULL, NULL, NULL),
+        (3, 'EcoScience Active Solution', '/assets/night_cream.jpg', 3, 'Vikram Patel', 'vikram.p@gmail.com', 4, 'Great Active Formula, Fast Delivery', 'Solid formulation quality. Bottle packaging was securely bubble wrapped. Will re-order next month.', '[]', 'Pending', 0, 1, 0, NULL, NULL, NULL),
+        (4, 'Aloe Vera Pure Gel Base', '/assets/face_wash.jpg', 4, 'Suresh Kumar', 'suresh.k@gmail.com', 2, 'Packaging Cap Leakage Issue', 'The gel quality is okay but the plastic cap was slightly loose upon unboxing causing minor leakage.', '[]', 'Approved', 0, 1, 0, NULL, 'Apologies Suresh for the packaging inconvenience. We are sending a replacement cap seal immediately!', NOW()),
+        (1, 'LeafExtract Pharma Grade', '/assets/vitamin_c_serum.jpg', 5, 'Anonymous User', 'spam.user@temp.com', 1, 'Competitor Spam Post', 'Do not buy this brand, buy competitor product X instead at website.com', '[]', 'Rejected', 0, 0, 1, 'Promotional spam / Competitor link promotion', NULL, NULL);
+      `);
+      console.log('🌱 Seeded default rich product reviews');
+    }
+
+    // ─── 16. HOMEPAGE CMS & LAYOUT BUILDER TABLES ───
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS homepage_banners (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        banner_type ENUM('hero', 'offer', 'category', 'flash_sale') NOT NULL DEFAULT 'hero',
+        title VARCHAR(255) NOT NULL,
+        subtitle VARCHAR(255) NULL,
+        desktop_image_url VARCHAR(500) NOT NULL,
+        mobile_image_url VARCHAR(500) NULL,
+        link_url VARCHAR(500) NULL,
+        button_text VARCHAR(100) DEFAULT 'Shop Now',
+        category_id INT NULL,
+        flash_sale_end_time DATETIME NULL,
+        display_order INT DEFAULT 0,
+        is_active TINYINT(1) DEFAULT 1,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      );
+    `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS homepage_sections (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        section_key VARCHAR(100) NOT NULL UNIQUE,
+        section_name VARCHAR(100) NOT NULL,
+        custom_title VARCHAR(255) NULL,
+        custom_subtitle VARCHAR(255) NULL,
+        item_limit INT DEFAULT 8,
+        display_order INT DEFAULT 0,
+        is_active TINYINT(1) DEFAULT 1,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      );
+    `);
+
+    // Seed default homepage banners if empty
+    const [bannerCount] = await pool.query('SELECT COUNT(*) as cnt FROM homepage_banners');
+    if (bannerCount[0].cnt === 0) {
+      await pool.query(`
+        INSERT INTO homepage_banners (banner_type, title, subtitle, desktop_image_url, mobile_image_url, link_url, button_text, flash_sale_end_time, display_order, is_active) VALUES
+        ('hero', 'Pharma-Grade Botanical Actives', '100% Pure Organic Extracts Certified by Global Herbal Labs', '/assets/hero_banner_1.jpg', '/assets/hero_banner_1_mobile.jpg', '/shop', 'Explore Catalog', NULL, 1, 1),
+        ('hero', 'Clinical Skin Radiance & Hydration', 'Formulated with Vitamin C & Hyaluronic Acid Hybrids', '/assets/hero_banner_2.jpg', '/assets/hero_banner_2_mobile.jpg', '/category/skincare', 'Discover Skincare', NULL, 2, 1),
+        ('offer', 'FLAT 20% OFF Summer Festival Sale', 'Use Promo Code SUMMER2026 at Checkout on Orders Above $99', '/assets/offer_banner_1.jpg', '/assets/offer_banner_1_mobile.jpg', '/offers', 'Claim Discount', NULL, 1, 1),
+        ('category', 'Pure Plant Extract Oils', 'Cold-pressed bioactive seed & leaf distillates', '/assets/cat_banner_extracts.jpg', '/assets/cat_banner_extracts_mobile.jpg', '/category/extracts', 'Shop Extracts', NULL, 1, 1),
+        ('flash_sale', 'Mega Flash Sale - Up to 50% OFF', 'Limited Stock Available! Ends In:', '/assets/flash_sale_banner.jpg', '/assets/flash_sale_banner_mobile.jpg', '/flash-sale', 'Grab Deals Now', DATE_ADD(NOW(), INTERVAL 3 DAY), 1, 1);
+      `);
+      console.log('🌱 Seeded default homepage banners');
+    }
+
+    // Seed default homepage layout sections if empty
+    const [secCount] = await pool.query('SELECT COUNT(*) as cnt FROM homepage_sections');
+    if (secCount[0].cnt === 0) {
+      await pool.query(`
+        INSERT INTO homepage_sections (section_key, section_name, custom_title, custom_subtitle, item_limit, display_order, is_active) VALUES
+        ('hero_slider', 'Hero Banner Slider', 'Featured Seasonal Promotions', 'Discover our latest organic formulations & clinical breakthroughs', 5, 1, 1),
+        ('category_banners', 'Category Banners Grid', 'Browse By Herbal Specialty', 'Explore curated categories crafted for holistic wellness', 6, 2, 1),
+        ('offer_banner', 'Promo Offer Banners', 'Exclusive Customer Deals', 'Special promotional discounts and coupon codes', 2, 3, 1),
+        ('flash_sale', 'Flash Sale Countdown', 'Limited Time Flash Offers', 'Hurry! Special discounted rates available while stocks last', 4, 4, 1),
+        ('featured_products', 'Featured Products', 'Featured Botanical Solutions', 'Handpicked top-selling formulations loved by customers', 8, 5, 1),
+        ('trending_products', 'Trending Now Products', 'Trending In Clinical Trials', 'Fastest growing formulations based on customer demand', 8, 6, 1),
+        ('new_arrivals', 'New Arrivals', 'Latest Product Arrivals', 'Explore our brand new additions to the Leafora catalog', 8, 7, 1),
+        ('best_sellers', 'Best Sellers', 'All-Time Customer Favorites', 'Our highest-rated & most ordered products of the month', 8, 8, 1);
+      `);
+      console.log('🌱 Seeded default homepage layout sections');
+    }
+
+    // ─── 17. SYSTEM SETTINGS, ADMIN USERS, ROLES & LOGS TABLES ───
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS system_settings (
+        key_name VARCHAR(100) PRIMARY KEY,
+        key_value TEXT,
+        setting_group VARCHAR(50) NOT NULL DEFAULT 'store',
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      );
+    `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS admin_users (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) NOT NULL UNIQUE,
+        phone VARCHAR(50) NULL,
+        password_hash VARCHAR(255) DEFAULT '$2b$10$e8w.x7W3J.W1zJ2L...demo',
+        role VARCHAR(100) DEFAULT 'Store Manager',
+        permissions TEXT NULL,
+        is_active TINYINT(1) DEFAULT 1,
+        last_login_at DATETIME NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS admin_roles (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        role_name VARCHAR(100) NOT NULL UNIQUE,
+        description VARCHAR(255) NULL,
+        permissions TEXT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS activity_logs (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        admin_name VARCHAR(255) NOT NULL,
+        action VARCHAR(255) NOT NULL,
+        module VARCHAR(100) NOT NULL,
+        ip_address VARCHAR(100) DEFAULT '127.0.0.1',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS login_history (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        admin_email VARCHAR(255) NOT NULL,
+        ip_address VARCHAR(100) DEFAULT '127.0.0.1',
+        browser VARCHAR(255) DEFAULT 'Chrome / Windows',
+        status VARCHAR(50) DEFAULT 'Success',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // Seed default system settings if empty
+    const [settingsCount] = await pool.query('SELECT COUNT(*) as cnt FROM system_settings');
+    if (settingsCount[0].cnt === 0) {
+      await pool.query(`
+        INSERT INTO system_settings (key_name, key_value, setting_group) VALUES
+        ('store_name', 'Leafora Life Sciences', 'store'),
+        ('support_email', 'support@leaforalifescience.com', 'store'),
+        ('support_phone', '+91 98765 43210', 'store'),
+        ('store_address', '104 Botanical Tech Park, HITEC City, Hyderabad, Telangana 500081', 'store'),
+        ('store_currency', 'USD ($)', 'store'),
+        ('header_logo_url', '/assets/leafora_logo_header.png', 'store'),
+        ('footer_logo_url', '/assets/leafora_logo_footer.png', 'store'),
+        ('favicon_url', '/favicon.ico', 'store'),
+        ('meta_title', 'Leafora Lifescience - Pharma-Grade Botanical Formulations', 'seo'),
+        ('meta_description', 'Discover 100% pure organic extracts, clinical skincare hybrids, and certified bioactive supplements formulated for holistic wellness.', 'seo'),
+        ('meta_keywords', 'botanical extracts, clinical skincare, organic supplements, vitamin c serum, hyaluronic acid, herbal lab', 'seo'),
+        ('google_analytics_id', 'G-LEAFORA2026', 'seo'),
+        ('gstin_number', '36AAAAA0000A1Z5', 'gst'),
+        ('hsn_code', '30049011', 'gst'),
+        ('default_tax_percent', '18.00', 'gst'),
+        ('tax_included_in_price', 'true', 'gst'),
+        ('free_shipping_threshold', '75.00', 'delivery'),
+        ('standard_shipping_fee', '5.99', 'delivery'),
+        ('express_shipping_fee', '14.99', 'delivery'),
+        ('smtp_host', 'smtp.sendgrid.net', 'email_smtp'),
+        ('smtp_port', '587', 'email_smtp'),
+        ('smtp_username', 'apikey', 'email_smtp'),
+        ('smtp_password', 'SG.981237612387126387123', 'email_smtp'),
+        ('smtp_encryption', 'TLS', 'email_smtp'),
+        ('smtp_sender_name', 'Leafora Lifescience Customer Support', 'email_smtp'),
+        ('smtp_sender_email', 'notifications@leaforalifescience.com', 'email_smtp'),
+        ('sms_provider', 'MSG91', 'sms'),
+        ('sms_api_key', 'msg91_live_sec_99812376', 'sms'),
+        ('sms_sender_id', 'LEAFOR', 'sms'),
+        ('sms_otp_template_id', 'TMP_OTP_9918', 'sms'),
+        ('enable_sms_notifications', 'true', 'sms'),
+        ('security_2fa_enabled', 'false', 'security'),
+        ('security_session_timeout_mins', '60', 'security'),
+        ('security_max_failed_attempts', '5', 'security'),
+        ('security_ip_whitelist', '127.0.0.1, 192.168.1.1', 'security');
+      `);
+      console.log('🌱 Seeded default system settings');
+    }
+
+    // Seed default admin roles if empty
+    const [rolesCount] = await pool.query('SELECT COUNT(*) as cnt FROM admin_roles');
+    if (rolesCount[0].cnt === 0) {
+      await pool.query(`
+        INSERT INTO admin_roles (role_name, description, permissions) VALUES
+        ('Super Admin', 'Full unrestricted access to all store modules and security settings', '["all"]'),
+        ('Store Manager', 'Manage categories, products, coupons, banners, and review moderation', '["categories", "products", "coupons", "banners", "reviews"]'),
+        ('Fulfillment Manager', 'Manage order processing, warehouse assignment, and Shiprocket logistics', '["orders", "shiprocket", "inventory"]'),
+        ('Customer Support', 'View customer directories, order details, and issue refunds', '["customers", "orders_read", "refunds"]');
+      `);
+      console.log('🌱 Seeded default admin roles');
+    }
+
+    // Seed default admin users if empty
+    const [adminUserCount] = await pool.query('SELECT COUNT(*) as cnt FROM admin_users');
+    if (adminUserCount[0].cnt === 0) {
+      await pool.query(`
+        INSERT INTO admin_users (name, email, phone, role, permissions, is_active, last_login_at) VALUES
+        ('Sai Admin', 'admin@leaforalifescience.com', '+91 98765 00001', 'Super Admin', '["all"]', 1, NOW()),
+        ('Priya Sharma', 'priya.s@leaforalifescience.com', '+91 98765 00002', 'Store Manager', '["categories", "products", "coupons", "banners", "reviews"]', 1, NOW()),
+        ('Rahul Verma', 'rahul.v@leaforalifescience.com', '+91 98765 00003', 'Fulfillment Manager', '["orders", "shiprocket", "inventory"]', 1, NOW());
+      `);
+      console.log('🌱 Seeded default admin users');
+    }
+
+    // Seed default activity logs if empty
+    const [logsCount] = await pool.query('SELECT COUNT(*) as cnt FROM activity_logs');
+    if (logsCount[0].cnt === 0) {
+      await pool.query(`
+        INSERT INTO activity_logs (admin_name, action, module, ip_address) VALUES
+        ('Sai Admin', 'System settings updated (Store Name & GSTIN)', 'Settings', '127.0.0.1'),
+        ('Priya Sharma', 'Created new discount coupon SUMMER2026', 'Coupons', '192.168.1.15'),
+        ('Rahul Verma', 'Dispatched AWB SR-AWB-99812 via BlueDart', 'Shiprocket', '192.168.1.20'),
+        ('Sai Admin', 'Approved customer review #1 by Dr. Ramesh Varma', 'Reviews', '127.0.0.1');
+      `);
+      console.log('🌱 Seeded default activity logs');
+    }
+
+    // Seed default login history if empty
+    const [loginCount] = await pool.query('SELECT COUNT(*) as cnt FROM login_history');
+    if (loginCount[0].cnt === 0) {
+      await pool.query(`
+        INSERT INTO login_history (admin_email, ip_address, browser, status) VALUES
+        ('admin@leaforalifescience.com', '127.0.0.1', 'Chrome 128.0 (Windows 11)', 'Success'),
+        ('priya.s@leaforalifescience.com', '192.168.1.15', 'Firefox 129.0 (macOS)', 'Success'),
+        ('admin@leaforalifescience.com', '127.0.0.1', 'Chrome 128.0 (Windows 11)', 'Success'),
+        ('unknown.hacker@bad.com', '45.12.89.102', 'Python-urllib/3.10', 'Failed');
+      `);
+      console.log('🌱 Seeded default login history');
+    }
+
     console.log('✅ Database initialization complete.');
   } catch (error) {
     console.error('❌ Database initialization error:', error.message);

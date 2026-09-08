@@ -9,15 +9,21 @@ import {
   adminGetOrders, adminGetOrderDetails, adminUpdateOrderDetails, adminUpdateOrderStatus, adminCancelOrder, adminRefundOrder, adminReturnOrder, adminExchangeOrder, adminAddOrderTimeline, adminBulkOrdersAction, adminExportOrdersUrl,
   adminGetCustomers, adminGetCustomerDetails, adminUpdateCustomer, adminUpdateCustomerStatus, adminUpdateCustomerWalletPoints, adminDeleteCustomer, adminRestoreCustomer, adminExportCustomersUrl,
   adminGetPayments, adminGetPaymentGatewaysConfig, adminUpdatePaymentGatewayConfig, adminIssueRefund, adminRetryFailedPayment, adminMarkCodCollected, adminGetPaymentRefundsLog, adminGetPaymentSettlements, adminExportRevenueUrl,
-  adminGetReviews, adminUpdateReviewStatus, adminDeleteReview,
-  adminGetReferrals, adminUpdateReferralStatus,
+  adminGetReviews, adminGetReviewDetails, adminUpdateReviewStatus, adminReplyToReview, adminReportAbuseReview, adminRestoreReview, adminDeleteReview, adminGetReviewAnalytics, adminExportReviewsUrl,
+  adminGetReferrals, adminUpdateReferralStatus, adminGetReferralSettings, adminUpdateReferralSettings, adminGetReferralAnalytics, adminExportReferralsUrl, adminGetWalletTransactions, adminManualWalletAdjustment, adminExportWalletTransactionsUrl,
   adminGetCoupons, adminGetCouponDetails, adminCreateCoupon, adminAddCoupon, adminUpdateCoupon, adminUpdateCouponStatus, adminDeleteCoupon, adminRestoreCoupon, adminBulkGenerateCoupons, adminGetCouponAnalytics, adminGetCouponUsageHistory, adminExportCouponsUrl,
   adminGetShiprocketConfig, adminUpdateShiprocketConfig,
   adminGetShiprocketPickupLocations, adminAddShiprocketPickupLocation, adminUpdateShiprocketPickupLocation, adminDeleteShiprocketPickupLocation,
   adminCalculateShippingRates,
   adminGetShiprocketShipments, adminGenerateShiprocketAwb, adminScheduleShiprocketPickup, adminGenerateShiprocketLabel, adminCancelShiprocketShipment, adminTrackShiprocketShipment,
   adminGetShiprocketNdr, adminResolveShiprocketNdr,
-  adminGetShiprocketManifests, adminGenerateShiprocketManifest,
+  adminGetHomepageBanners, adminCreateHomepageBanner, adminUpdateHomepageBanner, adminDeleteHomepageBanner, adminReorderHomepageBanners,
+  adminGetHomepageSections, adminUpdateHomepageSection, adminReorderHomepageSections,
+  adminGetCuratedProducts, adminCurateProducts,
+  adminGetSystemSettings, adminUpdateSystemSettingsGroup,
+  adminGetSystemUsers, adminCreateSystemUser, adminUpdateSystemUser, adminDeleteSystemUser,
+  adminGetSystemRoles, adminUpdateSystemRole,
+  adminGetActivityLogs, adminGetLoginHistory, adminExportBackupUrl,
 } from '../services/api';
 import {
   LayoutDashboard, Grid, Package, ShoppingCart, CreditCard, Users,
@@ -278,6 +284,837 @@ export default function AdminDashboard() {
 
   const handleExportCoupons = () => {
     window.open(adminExportCouponsUrl, '_blank');
+  };
+
+  // ─── REFERRALS & WALLET STATE ───
+  const [dbReferrals, setDbReferrals] = useState([]);
+  const [referralSubTab, setReferralSubTab] = useState('history'); // 'history' | 'settings' | 'transactions' | 'manual' | 'analytics'
+  const [referralSearchQuery, setReferralSearchQuery] = useState('');
+  const [referralStatusFilter, setReferralStatusFilter] = useState('all'); // 'all', 'Pending', 'Approved', 'Rejected'
+  const [referralMetrics, setReferralMetrics] = useState({ totalReferrals: 0, pendingCount: 0, approvedCount: 0, rejectedCount: 0, approvedAmount: 0 });
+  const [referralSettings, setReferralSettings] = useState({
+    referrer_reward_amount: 15.00,
+    referee_discount_amount: 10.00,
+    min_order_amount: 30.00,
+    signup_bonus_amount: 5.00,
+    min_cashout_threshold: 25.00,
+    max_wallet_balance: 500.00,
+    is_program_active: true
+  });
+  const [walletTransactions, setWalletTransactions] = useState([]);
+  const [walletTypeFilter, setWalletTypeFilter] = useState('all');
+  const [referralAnalytics, setReferralAnalytics] = useState(null);
+  const [showRejectReasonModal, setShowRejectReasonModal] = useState(null);
+  const [rejectionReasonText, setRejectionReasonText] = useState('');
+  const [manualWalletForm, setManualWalletForm] = useState({ customer_id: '', transaction_type: 'credit', amount: 25.00, description: '' });
+
+  // ─── REFERRALS & WALLET HANDLERS ───
+  const fetchReferrals = async () => {
+    try {
+      const params = {
+        status: referralStatusFilter !== 'all' ? referralStatusFilter : undefined,
+        search: referralSearchQuery || undefined
+      };
+      const res = await adminGetReferrals(params);
+      if (res && res.success) {
+        setDbReferrals(res.data || []);
+        if (res.metrics) setReferralMetrics(res.metrics);
+      }
+    } catch (e) {
+      console.warn('Error fetching referrals:', e);
+    }
+  };
+
+  const fetchReferralSettings = async () => {
+    try {
+      const res = await adminGetReferralSettings();
+      if (res && res.success && res.data) {
+        setReferralSettings({
+          ...res.data,
+          is_program_active: !!res.data.is_program_active
+        });
+      }
+    } catch (e) {
+      console.warn('Error fetching referral settings:', e);
+    }
+  };
+
+  const fetchWalletTransactions = async () => {
+    try {
+      const res = await adminGetWalletTransactions({ search: referralSearchQuery, type: walletTypeFilter !== 'all' ? walletTypeFilter : undefined });
+      if (res && res.success) {
+        setWalletTransactions(res.data || []);
+      }
+    } catch (e) {
+      console.warn('Error fetching wallet transactions:', e);
+    }
+  };
+
+  const fetchReferralAnalytics = async () => {
+    try {
+      const res = await adminGetReferralAnalytics();
+      if (res && res.success) {
+        setReferralAnalytics(res.analytics);
+      }
+    } catch (e) {
+      console.warn('Error fetching referral analytics:', e);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'referrals') {
+      fetchReferrals();
+      if (referralSubTab === 'settings') fetchReferralSettings();
+      if (referralSubTab === 'transactions') fetchWalletTransactions();
+      if (referralSubTab === 'analytics') fetchReferralAnalytics();
+    }
+  }, [activeTab, referralSubTab, referralStatusFilter, walletTypeFilter, referralSearchQuery]);
+
+  const handleApproveReferral = async (id, referrerName) => {
+    try {
+      const res = await adminUpdateReferralStatus(id, { status: 'Approved' });
+      if (res && res.success) {
+        showNotification(res.message || `Referral #${id} approved! Wallet balance credited to ${referrerName}.`);
+        fetchReferrals();
+      }
+    } catch (err) {
+      showNotification(`Error approving referral #${id}`);
+    }
+  };
+
+  const handleRejectReferralSubmit = async (e) => {
+    e.preventDefault();
+    if (!showRejectReasonModal) return;
+    try {
+      const res = await adminUpdateReferralStatus(showRejectReasonModal.id, { status: 'Rejected', rejection_reason: rejectionReasonText });
+      if (res && res.success) {
+        showNotification(`Referral #${showRejectReasonModal.id} rejected.`);
+        setShowRejectReasonModal(null);
+        setRejectionReasonText('');
+        fetchReferrals();
+      }
+    } catch (err) {
+      showNotification(`Error rejecting referral`);
+    }
+  };
+
+  const handleSaveReferralSettings = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await adminUpdateReferralSettings(referralSettings);
+      if (res && res.success) {
+        showNotification('Referral & Wallet Reward Settings saved successfully!');
+        fetchReferralSettings();
+      }
+    } catch (err) {
+      showNotification('Error saving referral settings');
+    }
+  };
+
+  const handleManualWalletAdjustmentSubmit = async (e) => {
+    e.preventDefault();
+    if (!manualWalletForm.customer_id) {
+      showNotification('Please select a customer!');
+      return;
+    }
+    try {
+      const res = await adminManualWalletAdjustment(manualWalletForm);
+      if (res && res.success) {
+        showNotification(res.message || 'Manual wallet adjustment applied successfully!');
+        setManualWalletForm({ customer_id: '', transaction_type: 'credit', amount: 25.00, description: '' });
+        fetchWalletTransactions();
+        setReferralSubTab('transactions');
+      }
+    } catch (err) {
+      showNotification(`Error adjusting wallet: ${err.message || 'Validation error'}`);
+    }
+  };
+
+  const handleExportReferrals = () => {
+    window.open(adminExportReferralsUrl, '_blank');
+  };
+
+  const handleExportWalletTransactions = () => {
+    window.open(adminExportWalletTransactionsUrl, '_blank');
+  };
+
+  // ─── REVIEWS MANAGEMENT STATE & HANDLERS ───
+  const [reviewsList, setReviewsList] = useState([]);
+  const [reviewsPagination, setReviewsPagination] = useState({ total: 0, page: 1, limit: 20, totalPages: 1 });
+  const [reviewsSubTab, setReviewsSubTab] = useState('all');
+  const [reviewsSearchQuery, setReviewsSearchQuery] = useState('');
+  const [reviewsStatusFilter, setReviewsStatusFilter] = useState('all');
+  const [reviewsRatingFilter, setReviewsRatingFilter] = useState('all');
+  const [reviewsShowDeleted, setReviewsShowDeleted] = useState(false);
+  const [reviewsAnalytics, setReviewsAnalytics] = useState(null);
+  const [loadingReviews, setLoadingReviews] = useState(false);
+
+  const [replyModalReview, setReplyModalReview] = useState(null);
+  const [replyText, setReplyText] = useState('');
+  const [abuseModalReview, setAbuseModalReview] = useState(null);
+  const [abuseReasonText, setAbuseReasonText] = useState('');
+  const [zoomImageModalUrl, setZoomImageModalUrl] = useState(null);
+
+  const fetchReviews = async (page = 1) => {
+    setLoadingReviews(true);
+    try {
+      const params = {
+        search: reviewsSearchQuery || undefined,
+        status: reviewsSubTab === 'pending' ? 'Pending' : (reviewsStatusFilter !== 'all' ? reviewsStatusFilter : undefined),
+        rating: reviewsRatingFilter !== 'all' ? reviewsRatingFilter : undefined,
+        is_reported_abuse: reviewsSubTab === 'abuse' ? 'true' : undefined,
+        show_deleted: reviewsShowDeleted ? 'true' : undefined,
+        page,
+        limit: 20
+      };
+      const res = await adminGetReviews(params);
+      if (res && res.success) {
+        setReviewsList(res.data || []);
+        if (res.pagination) {
+          setReviewsPagination(res.pagination);
+        }
+      }
+    } catch (e) {
+      console.warn('Error fetching reviews:', e);
+    } finally {
+      setLoadingReviews(false);
+    }
+  };
+
+  const fetchReviewAnalytics = async () => {
+    try {
+      const res = await adminGetReviewAnalytics();
+      if (res && res.success) {
+        setReviewsAnalytics(res.data);
+      }
+    } catch (e) {
+      console.warn('Error fetching review analytics:', e);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'reviews') {
+      if (reviewsSubTab === 'analytics') {
+        fetchReviewAnalytics();
+      } else {
+        fetchReviews(1);
+      }
+    }
+  }, [activeTab, reviewsSubTab, reviewsSearchQuery, reviewsStatusFilter, reviewsRatingFilter, reviewsShowDeleted]);
+
+  const handleUpdateReviewStatus = async (id, status) => {
+    try {
+      const res = await adminUpdateReviewStatus(id, { status });
+      if (res && res.success) {
+        showNotification(`Review status updated to ${status}`);
+        fetchReviews(reviewsPagination.page);
+      }
+    } catch (e) {
+      showNotification('Error updating review status');
+    }
+  };
+
+  const handleOpenReplyModal = (review) => {
+    setReplyModalReview(review);
+    setReplyText(review.admin_reply || '');
+  };
+
+  const handleSubmitAdminReply = async (e) => {
+    e.preventDefault();
+    if (!replyModalReview) return;
+    try {
+      const res = await adminReplyToReview(replyModalReview.id, { admin_reply: replyText });
+      if (res && res.success) {
+        showNotification('Official Admin Response published!');
+        setReplyModalReview(null);
+        setReplyText('');
+        fetchReviews(reviewsPagination.page);
+      }
+    } catch (e) {
+      showNotification('Error submitting admin response');
+    }
+  };
+
+  const handleOpenAbuseModal = (review) => {
+    setAbuseModalReview(review);
+    setAbuseReasonText(review.abuse_reason || 'Inappropriate language or spam');
+  };
+
+  const handleSubmitReportAbuse = async (e) => {
+    e.preventDefault();
+    if (!abuseModalReview) return;
+    try {
+      const res = await adminReportAbuseReview(abuseModalReview.id, {
+        is_reported_abuse: true,
+        abuse_reason: abuseReasonText
+      });
+      if (res && res.success) {
+        showNotification('Review flagged for abuse');
+        setAbuseModalReview(null);
+        setAbuseReasonText('');
+        fetchReviews(reviewsPagination.page);
+      }
+    } catch (e) {
+      showNotification('Error flagging review');
+    }
+  };
+
+  const handleRemoveAbuseFlag = async (id) => {
+    try {
+      const res = await adminReportAbuseReview(id, { is_reported_abuse: false });
+      if (res && res.success) {
+        showNotification('Abuse flag cleared successfully');
+        fetchReviews(reviewsPagination.page);
+      }
+    } catch (e) {
+      showNotification('Error clearing abuse flag');
+    }
+  };
+
+  const handleDeleteReviewItem = async (id, force = false) => {
+    if (!window.confirm(force ? 'Permanently delete this review?' : 'Move this review to trash?')) return;
+    try {
+      const res = await adminDeleteReview(id, force);
+      if (res && res.success) {
+        showNotification(res.message || 'Review deleted');
+        fetchReviews(reviewsPagination.page);
+      }
+    } catch (e) {
+      showNotification('Error deleting review');
+    }
+  };
+
+  const handleRestoreReviewItem = async (id) => {
+    try {
+      const res = await adminRestoreReview(id);
+      if (res && res.success) {
+        showNotification('Review restored from trash!');
+        fetchReviews(reviewsPagination.page);
+      }
+    } catch (e) {
+      showNotification('Error restoring review');
+    }
+  };
+
+  const handleExportReviews = () => {
+    window.open(adminExportReviewsUrl, '_blank');
+  };
+
+  // ─── HOMEPAGE CMS & BUILDER STATE & HANDLERS ───
+  const [cmsSubTab, setCmsSubTab] = useState('builder'); // 'builder', 'banners', 'curation'
+  const [cmsBannerTypeTab, setCmsBannerTypeTab] = useState('hero'); // 'hero', 'offer', 'category', 'flash_sale'
+  const [homepageBanners, setHomepageBanners] = useState([]);
+  const [homepageSections, setHomepageSections] = useState([]);
+  const [curatedProducts, setCuratedProducts] = useState([]);
+  const [loadingCms, setLoadingCms] = useState(false);
+
+  // Modals state
+  const [bannerModalData, setBannerModalData] = useState(null);
+  const [bannerForm, setBannerForm] = useState({
+    id: null,
+    banner_type: 'hero',
+    title: '',
+    subtitle: '',
+    desktop_image_url: '',
+    mobile_image_url: '',
+    link_url: '',
+    button_text: 'Shop Now',
+    category_id: '',
+    flash_sale_end_time: '',
+    display_order: 0,
+    is_active: true
+  });
+
+  const [editSectionModalData, setEditSectionModalData] = useState(null);
+  const [sectionForm, setSectionForm] = useState({
+    id: null,
+    custom_title: '',
+    custom_subtitle: '',
+    item_limit: 8,
+    is_active: true
+  });
+
+  const fetchHomepageBanners = async () => {
+    setLoadingCms(true);
+    try {
+      const res = await adminGetHomepageBanners({ type: cmsBannerTypeTab });
+      if (res && res.success) {
+        setHomepageBanners(res.data || []);
+      }
+    } catch (e) {
+      console.warn('Error fetching homepage banners:', e);
+    } finally {
+      setLoadingCms(false);
+    }
+  };
+
+  const fetchHomepageSections = async () => {
+    setLoadingCms(true);
+    try {
+      const res = await adminGetHomepageSections();
+      if (res && res.success) {
+        setHomepageSections(res.data || []);
+      }
+    } catch (e) {
+      console.warn('Error fetching homepage sections:', e);
+    } finally {
+      setLoadingCms(false);
+    }
+  };
+
+  const fetchCuratedProductsList = async () => {
+    setLoadingCms(true);
+    try {
+      const res = await adminGetCuratedProducts();
+      if (res && res.success) {
+        setCuratedProducts(res.data || []);
+      }
+    } catch (e) {
+      console.warn('Error fetching curated products:', e);
+    } finally {
+      setLoadingCms(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'marketing') {
+      if (cmsSubTab === 'builder') fetchHomepageSections();
+      if (cmsSubTab === 'banners') fetchHomepageBanners();
+      if (cmsSubTab === 'curation') fetchCuratedProductsList();
+    }
+  }, [activeTab, cmsSubTab, cmsBannerTypeTab]);
+
+  const handleMoveSection = async (index, direction) => {
+    const newSections = [...homepageSections];
+    const targetIdx = direction === 'up' ? index - 1 : index + 1;
+    if (targetIdx < 0 || targetIdx >= newSections.length) return;
+
+    const temp = newSections[index];
+    newSections[index] = newSections[targetIdx];
+    newSections[targetIdx] = temp;
+
+    const updatedOrders = newSections.map((sec, idx) => ({
+      ...sec,
+      display_order: idx + 1
+    }));
+
+    setHomepageSections(updatedOrders);
+
+    try {
+      const ordersPayload = updatedOrders.map(sec => ({ id: sec.id, display_order: sec.display_order }));
+      const res = await adminReorderHomepageSections(ordersPayload);
+      if (res && res.success) {
+        showNotification('Homepage section layout reordered live!');
+      }
+    } catch (e) {
+      showNotification('Error saving section layout order');
+    }
+  };
+
+  const handleToggleSectionActive = async (section) => {
+    try {
+      const res = await adminUpdateHomepageSection(section.id, { is_active: !section.is_active });
+      if (res && res.success) {
+        showNotification(`${section.section_name} is now ${!section.is_active ? 'Active' : 'Disabled'}`);
+        fetchHomepageSections();
+      }
+    } catch (e) {
+      showNotification('Error updating section status');
+    }
+  };
+
+  const handleOpenEditSectionModal = (sec) => {
+    setEditSectionModalData(sec);
+    setSectionForm({
+      id: sec.id,
+      custom_title: sec.custom_title || '',
+      custom_subtitle: sec.custom_subtitle || '',
+      item_limit: sec.item_limit || 8,
+      is_active: sec.is_active ? true : false
+    });
+  };
+
+  const handleSaveSectionSettings = async (e) => {
+    e.preventDefault();
+    if (!editSectionModalData) return;
+    try {
+      const res = await adminUpdateHomepageSection(editSectionModalData.id, sectionForm);
+      if (res && res.success) {
+        showNotification('Section layout parameters updated successfully!');
+        setEditSectionModalData(null);
+        fetchHomepageSections();
+      }
+    } catch (e) {
+      showNotification('Error updating section settings');
+    }
+  };
+
+  const handleOpenBannerModal = (banner = null) => {
+    if (banner) {
+      setBannerModalData(banner);
+      setBannerForm({
+        id: banner.id,
+        banner_type: banner.banner_type || cmsBannerTypeTab,
+        title: banner.title || '',
+        subtitle: banner.subtitle || '',
+        desktop_image_url: banner.desktop_image_url || '',
+        mobile_image_url: banner.mobile_image_url || '',
+        link_url: banner.link_url || '',
+        button_text: banner.button_text || 'Shop Now',
+        category_id: banner.category_id || '',
+        flash_sale_end_time: banner.flash_sale_end_time ? banner.flash_sale_end_time.substring(0, 16) : '',
+        display_order: banner.display_order || 0,
+        is_active: banner.is_active ? true : false
+      });
+    } else {
+      setBannerModalData({});
+      setBannerForm({
+        id: null,
+        banner_type: cmsBannerTypeTab,
+        title: '',
+        subtitle: '',
+        desktop_image_url: '',
+        mobile_image_url: '',
+        link_url: '',
+        button_text: 'Shop Now',
+        category_id: '',
+        flash_sale_end_time: '',
+        display_order: homepageBanners.length + 1,
+        is_active: true
+      });
+    }
+  };
+
+  const handleSaveBannerSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      if (bannerForm.id) {
+        const res = await adminUpdateHomepageBanner(bannerForm.id, bannerForm);
+        if (res && res.success) {
+          showNotification('Homepage banner updated successfully!');
+          setBannerModalData(null);
+          fetchHomepageBanners();
+        }
+      } else {
+        const res = await adminCreateHomepageBanner(bannerForm);
+        if (res && res.success) {
+          showNotification('New homepage banner added!');
+          setBannerModalData(null);
+          fetchHomepageBanners();
+        }
+      }
+    } catch (e) {
+      showNotification('Error saving banner');
+    }
+  };
+
+  const handleDeleteBannerItem = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this banner?')) return;
+    try {
+      const res = await adminDeleteHomepageBanner(id);
+      if (res && res.success) {
+        showNotification('Banner deleted successfully');
+        fetchHomepageBanners();
+      }
+    } catch (e) {
+      showNotification('Error deleting banner');
+    }
+  };
+
+  const handleToggleBannerActive = async (banner) => {
+    try {
+      const res = await adminUpdateHomepageBanner(banner.id, { is_active: !banner.is_active });
+      if (res && res.success) {
+        showNotification(`Banner ${!banner.is_active ? 'Activated' : 'Deactivated'}`);
+        fetchHomepageBanners();
+      }
+    } catch (e) {
+      showNotification('Error toggling banner status');
+    }
+  };
+
+  const handleToggleProductCurationFlag = async (prodId, field, currentVal) => {
+    try {
+      const payload = { id: prodId, [field]: !currentVal };
+      const res = await adminCurateProducts(payload);
+      if (res && res.success) {
+        showNotification('Product section tag updated!');
+        setCuratedProducts(prev => prev.map(p => p.id === prodId ? { ...p, [field]: !currentVal ? 1 : 0 } : p));
+      }
+    } catch (e) {
+      showNotification('Error updating product section tag');
+    }
+  };
+
+  // ─── SYSTEM SETTINGS & RBAC STATE & HANDLERS ───
+  const [settingsSubTab, setSettingsSubTab] = useState('store'); // 'store', 'rules', 'integrations', 'admins', 'logs', 'security'
+  const [systemSettingsMap, setSystemSettingsMap] = useState({});
+  const [systemUsersList, setSystemUsersList] = useState([]);
+  const [systemRolesList, setSystemRolesList] = useState([]);
+  const [activityLogsList, setActivityLogsList] = useState([]);
+  const [loginHistoryList, setLoginHistoryList] = useState([]);
+  const [loadingSettings, setLoadingSettings] = useState(false);
+
+  const [storeSettingsForm, setStoreSettingsForm] = useState({
+    store_name: '',
+    support_email: '',
+    support_phone: '',
+    store_address: '',
+    store_currency: 'USD ($)',
+    header_logo_url: '',
+    footer_logo_url: '',
+    favicon_url: ''
+  });
+
+  const [rulesSettingsForm, setRulesSettingsForm] = useState({
+    meta_title: '',
+    meta_description: '',
+    meta_keywords: '',
+    google_analytics_id: '',
+    gstin_number: '',
+    hsn_code: '',
+    default_tax_percent: '18.00',
+    tax_included_in_price: 'true',
+    free_shipping_threshold: '75.00',
+    standard_shipping_fee: '5.99',
+    express_shipping_fee: '14.99'
+  });
+
+  const [integrationsForm, setIntegrationsForm] = useState({
+    smtp_host: '',
+    smtp_port: '587',
+    smtp_username: '',
+    smtp_password: '',
+    smtp_encryption: 'TLS',
+    smtp_sender_name: '',
+    smtp_sender_email: '',
+    sms_provider: 'MSG91',
+    sms_api_key: '',
+    sms_sender_id: '',
+    sms_otp_template_id: '',
+    enable_sms_notifications: 'true'
+  });
+
+  const [securityForm, setSecurityForm] = useState({
+    security_2fa_enabled: 'false',
+    security_session_timeout_mins: '60',
+    security_max_failed_attempts: '5',
+    security_ip_whitelist: ''
+  });
+
+  const [adminUserModal, setAdminUserModal] = useState(null);
+  const [adminUserForm, setAdminUserForm] = useState({
+    id: null,
+    name: '',
+    email: '',
+    phone: '',
+    role: 'Store Manager',
+    permissions: ['categories', 'products', 'coupons', 'banners', 'reviews'],
+    is_active: true
+  });
+
+  const fetchSystemSettings = async () => {
+    setLoadingSettings(true);
+    try {
+      const res = await adminGetSystemSettings();
+      if (res && res.success) {
+        const m = res.data || {};
+        setSystemSettingsMap(m);
+        setStoreSettingsForm({
+          store_name: m.store_name || '',
+          support_email: m.support_email || '',
+          support_phone: m.support_phone || '',
+          store_address: m.store_address || '',
+          store_currency: m.store_currency || 'USD ($)',
+          header_logo_url: m.header_logo_url || '',
+          footer_logo_url: m.footer_logo_url || '',
+          favicon_url: m.favicon_url || ''
+        });
+        setRulesSettingsForm({
+          meta_title: m.meta_title || '',
+          meta_description: m.meta_description || '',
+          meta_keywords: m.meta_keywords || '',
+          google_analytics_id: m.google_analytics_id || '',
+          gstin_number: m.gstin_number || '',
+          hsn_code: m.hsn_code || '',
+          default_tax_percent: m.default_tax_percent || '18.00',
+          tax_included_in_price: m.tax_included_in_price || 'true',
+          free_shipping_threshold: m.free_shipping_threshold || '75.00',
+          standard_shipping_fee: m.standard_shipping_fee || '5.99',
+          express_shipping_fee: m.express_shipping_fee || '14.99'
+        });
+        setIntegrationsForm({
+          smtp_host: m.smtp_host || '',
+          smtp_port: m.smtp_port || '587',
+          smtp_username: m.smtp_username || '',
+          smtp_password: m.smtp_password || '',
+          smtp_encryption: m.smtp_encryption || 'TLS',
+          smtp_sender_name: m.smtp_sender_name || '',
+          smtp_sender_email: m.smtp_sender_email || '',
+          sms_provider: m.sms_provider || 'MSG91',
+          sms_api_key: m.sms_api_key || '',
+          sms_sender_id: m.sms_sender_id || '',
+          sms_otp_template_id: m.sms_otp_template_id || '',
+          enable_sms_notifications: m.enable_sms_notifications || 'true'
+        });
+        setSecurityForm({
+          security_2fa_enabled: m.security_2fa_enabled || 'false',
+          security_session_timeout_mins: m.security_session_timeout_mins || '60',
+          security_max_failed_attempts: m.security_max_failed_attempts || '5',
+          security_ip_whitelist: m.security_ip_whitelist || ''
+        });
+      }
+    } catch (e) {
+      console.warn('Error fetching system settings:', e);
+    } finally {
+      setLoadingSettings(false);
+    }
+  };
+
+  const fetchSystemUsers = async () => {
+    setLoadingSettings(true);
+    try {
+      const res = await adminGetSystemUsers();
+      if (res && res.success) {
+        setSystemUsersList(res.data || []);
+      }
+    } catch (e) {
+      console.warn('Error fetching admin users:', e);
+    } finally {
+      setLoadingSettings(false);
+    }
+  };
+
+  const fetchSystemRoles = async () => {
+    try {
+      const res = await adminGetSystemRoles();
+      if (res && res.success) {
+        setSystemRolesList(res.data || []);
+      }
+    } catch (e) {
+      console.warn('Error fetching admin roles:', e);
+    }
+  };
+
+  const fetchActivityLogs = async () => {
+    setLoadingSettings(true);
+    try {
+      const res = await adminGetActivityLogs();
+      if (res && res.success) {
+        setActivityLogsList(res.data || []);
+      }
+    } catch (e) {
+      console.warn('Error fetching activity logs:', e);
+    } finally {
+      setLoadingSettings(false);
+    }
+  };
+
+  const fetchLoginHistory = async () => {
+    try {
+      const res = await adminGetLoginHistory();
+      if (res && res.success) {
+        setLoginHistoryList(res.data || []);
+      }
+    } catch (e) {
+      console.warn('Error fetching login history:', e);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'settings') {
+      fetchSystemSettings();
+      if (settingsSubTab === 'admins') {
+        fetchSystemUsers();
+        fetchSystemRoles();
+      }
+      if (settingsSubTab === 'logs') {
+        fetchActivityLogs();
+        fetchLoginHistory();
+      }
+    }
+  }, [activeTab, settingsSubTab]);
+
+  const handleSaveSettingsGroup = async (groupData, groupName) => {
+    try {
+      const res = await adminUpdateSystemSettingsGroup(groupData);
+      if (res && res.success) {
+        showNotification(`${groupName} saved successfully!`);
+        fetchSystemSettings();
+      }
+    } catch (e) {
+      showNotification(`Error saving ${groupName}`);
+    }
+  };
+
+  const handleSendTestSmtpEmail = () => {
+    showNotification(`Test email sent to ${integrationsForm.smtp_sender_email || 'admin@leaforalifescience.com'} via SMTP Host ${integrationsForm.smtp_host}`);
+  };
+
+  const handleOpenAdminUserModal = (user = null) => {
+    if (user) {
+      setAdminUserModal(user);
+      setAdminUserForm({
+        id: user.id,
+        name: user.name || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        role: user.role || 'Store Manager',
+        permissions: Array.isArray(user.permissions) ? user.permissions : ['categories', 'products', 'coupons', 'banners', 'reviews'],
+        is_active: user.is_active ? true : false
+      });
+    } else {
+      setAdminUserModal({});
+      setAdminUserForm({
+        id: null,
+        name: '',
+        email: '',
+        phone: '',
+        role: 'Store Manager',
+        permissions: ['categories', 'products', 'coupons', 'banners', 'reviews'],
+        is_active: true
+      });
+    }
+  };
+
+  const handleSaveAdminUserSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      if (adminUserForm.id) {
+        const res = await adminUpdateSystemUser(adminUserForm.id, adminUserForm);
+        if (res && res.success) {
+          showNotification('Admin user updated!');
+          setAdminUserModal(null);
+          fetchSystemUsers();
+        }
+      } else {
+        const res = await adminCreateSystemUser(adminUserForm);
+        if (res && res.success) {
+          showNotification('New admin user created!');
+          setAdminUserModal(null);
+          fetchSystemUsers();
+        }
+      }
+    } catch (e) {
+      showNotification('Error saving admin user');
+    }
+  };
+
+  const handleDeleteAdminUser = async (id) => {
+    if (!window.confirm('Are you sure you want to revoke access and remove this admin user?')) return;
+    try {
+      const res = await adminDeleteSystemUser(id);
+      if (res && res.success) {
+        showNotification('Admin user deleted!');
+        fetchSystemUsers();
+      }
+    } catch (e) {
+      showNotification('Error deleting admin user');
+    }
+  };
+
+  const handleExportBackup = () => {
+    window.open(adminExportBackupUrl, '_blank');
   };
 
   // ─── CATEGORY HANDLERS ───
@@ -8164,8 +9001,2543 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* ─── TAB 8: REVIEWS, MARKETING, REPORTS, SETTINGS ─── */}
-          {['reviews', 'marketing', 'reports', 'settings'].includes(activeTab) && (
+          {/* ─── TAB 8: REFER & EARN & WALLET MANAGEMENT SUITE ─── */}
+          {activeTab === 'referrals' && (
+            <div>
+              {/* Header Banner */}
+              <div className="leafora-card" style={{ padding: '18px 24px', marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+                <div>
+                  <h3 style={{ margin: '0 0 4px 0', fontSize: 18, color: '#111827', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Gift size={20} color="#A37F3F" /> Refer & Earn & Wallet Management
+                  </h3>
+                  <p style={{ margin: 0, fontSize: 12.5, color: '#6B7280' }}>
+                    Manage customer advocate referral programs, approve reward payouts, monitor customer wallet balances, and issue manual credits/debits.
+                  </p>
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button
+                    type="button"
+                    className="leafora-cat-btn-primary"
+                    onClick={() => setReferralSubTab('manual')}
+                  >
+                    <Plus size={14} /> Manual Credit / Debit
+                  </button>
+                  <button
+                    type="button"
+                    className="leafora-cat-btn-secondary"
+                    onClick={() => setReferralSubTab('settings')}
+                  >
+                    <Settings size={14} color="#A37F3F" /> Reward Settings
+                  </button>
+                </div>
+              </div>
+
+              {/* Sub-Tab Navigation Bar */}
+              <div className="leafora-prod-form-tab-bar" style={{ marginBottom: 20 }}>
+                <button
+                  type="button"
+                  className={`leafora-prod-tab ${referralSubTab === 'history' ? 'active' : ''}`}
+                  onClick={() => setReferralSubTab('history')}
+                >
+                  <Gift size={13} /> Referral History ({referralMetrics.totalReferrals || dbReferrals.length})
+                </button>
+                <button
+                  type="button"
+                  className={`leafora-prod-tab ${referralSubTab === 'settings' ? 'active' : ''}`}
+                  onClick={() => setReferralSubTab('settings')}
+                >
+                  <Settings size={13} /> Reward & Wallet Settings
+                </button>
+                <button
+                  type="button"
+                  className={`leafora-prod-tab ${referralSubTab === 'transactions' ? 'active' : ''}`}
+                  onClick={() => setReferralSubTab('transactions')}
+                >
+                  <Wallet size={13} /> Wallet Transactions Log
+                </button>
+                <button
+                  type="button"
+                  className={`leafora-prod-tab ${referralSubTab === 'manual' ? 'active' : ''}`}
+                  onClick={() => setReferralSubTab('manual')}
+                >
+                  <DollarSign size={13} /> Manual Credit / Debit
+                </button>
+                <button
+                  type="button"
+                  className={`leafora-prod-tab ${referralSubTab === 'analytics' ? 'active' : ''}`}
+                  onClick={() => setReferralSubTab('analytics')}
+                >
+                  <BarChart2 size={13} /> Analytics & Leaderboard
+                </button>
+              </div>
+
+              {/* SUB-TAB 1: REFERRAL HISTORY */}
+              {referralSubTab === 'history' && (
+                <div>
+                  {/* Summary Metric Cards */}
+                  <div className="leafora-metrics-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: 20 }}>
+                    <div className="leafora-metric-card">
+                      <div className="leafora-metric-header">
+                        <span className="leafora-metric-title">Total Referrals</span>
+                        <div className="leafora-metric-icon"><Gift size={16} color="#A37F3F" /></div>
+                      </div>
+                      <div className="leafora-metric-value">{referralMetrics.totalReferrals || dbReferrals.length}</div>
+                      <div className="leafora-metric-sub">Total invite requests</div>
+                    </div>
+
+                    <div className="leafora-metric-card">
+                      <div className="leafora-metric-header">
+                        <span className="leafora-metric-title">Pending Approvals</span>
+                        <div className="leafora-metric-icon"><Clock size={16} color="#D97706" /></div>
+                      </div>
+                      <div className="leafora-metric-value" style={{ color: '#D97706' }}>{referralMetrics.pendingCount || 0}</div>
+                      <div className="leafora-metric-sub">Awaiting verification</div>
+                    </div>
+
+                    <div className="leafora-metric-card">
+                      <div className="leafora-metric-header">
+                        <span className="leafora-metric-title">Approved Rewards</span>
+                        <div className="leafora-metric-icon"><CheckCircle2 size={16} color="#16A34A" /></div>
+                      </div>
+                      <div className="leafora-metric-value" style={{ color: '#16A34A' }}>
+                        ${parseFloat(referralMetrics.approvedAmount || 0).toFixed(2)}
+                      </div>
+                      <div className="leafora-metric-sub">{referralMetrics.approvedCount || 0} approved payouts</div>
+                    </div>
+
+                    <div className="leafora-metric-card">
+                      <div className="leafora-metric-header">
+                        <span className="leafora-metric-title">Rejected Referrals</span>
+                        <div className="leafora-metric-icon"><Ban size={16} color="#DC2626" /></div>
+                      </div>
+                      <div className="leafora-metric-value" style={{ color: '#DC2626' }}>{referralMetrics.rejectedCount || 0}</div>
+                      <div className="leafora-metric-sub">Flagged / Invalid invites</div>
+                    </div>
+                  </div>
+
+                  {/* Toolbar */}
+                  <div className="leafora-card" style={{ padding: 20 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
+                      <div style={{ display: 'flex', gap: 10, flex: 1, maxWidth: 600 }}>
+                        <div className="leafora-cat-search-box" style={{ flex: 1 }}>
+                          <Search className="leafora-search-icon" size={16} />
+                          <input
+                            type="text"
+                            placeholder="Search Referrer Name, Email, Referee..."
+                            value={referralSearchQuery}
+                            onChange={(e) => setReferralSearchQuery(e.target.value)}
+                          />
+                        </div>
+
+                        <select
+                          className="leafora-cat-select"
+                          value={referralStatusFilter}
+                          onChange={(e) => setReferralStatusFilter(e.target.value)}
+                        >
+                          <option value="all">All Statuses</option>
+                          <option value="Pending">Pending Only</option>
+                          <option value="Approved">Approved</option>
+                          <option value="Rejected">Rejected</option>
+                        </select>
+                      </div>
+
+                      <button
+                        type="button"
+                        className="leafora-cat-btn-secondary"
+                        onClick={handleExportReferrals}
+                      >
+                        <Download size={14} /> Export CSV
+                      </button>
+                    </div>
+
+                    {/* Master Referral History Table */}
+                    <table className="leafora-table" style={{ fontSize: 12 }}>
+                      <thead>
+                        <tr>
+                          <th>Referrer Customer</th>
+                          <th>Referee (Invited Friend)</th>
+                          <th>Referrer Reward</th>
+                          <th>Referee Discount</th>
+                          <th>Status</th>
+                          <th>Timestamp</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {dbReferrals.length === 0 ? (
+                          <tr>
+                            <td colSpan="7" style={{ textAlign: 'center', padding: 30, color: '#9CA3AF' }}>
+                              No referral records found matching your filters.
+                            </td>
+                          </tr>
+                        ) : (
+                          dbReferrals.map((r) => (
+                            <tr key={r.id}>
+                              <td>
+                                <div style={{ fontWeight: 700, color: '#111827' }}>{r.referrer_name}</div>
+                                <div style={{ fontSize: 11, color: '#6B7280' }}>{r.referrer_email || 'email@example.com'}</div>
+                              </td>
+
+                              <td>
+                                <div style={{ fontWeight: 600, color: '#111827' }}>{r.referee_name}</div>
+                                <div style={{ fontSize: 11, color: '#6B7280' }}>{r.referee_email || 'friend@example.com'}</div>
+                              </td>
+
+                              <td style={{ fontWeight: 700, color: '#16A34A' }}>
+                                +${parseFloat(r.reward_amount || 15.00).toFixed(2)}
+                              </td>
+
+                              <td style={{ fontWeight: 600, color: '#2563EB' }}>
+                                ${parseFloat(r.referee_discount || 10.00).toFixed(2)} OFF
+                              </td>
+
+                              <td>
+                                {r.status === 'Approved' ? (
+                                  <span className="leafora-status-pill delivered" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                    <CheckCircle2 size={12} /> Approved
+                                  </span>
+                                ) : r.status === 'Rejected' ? (
+                                  <div>
+                                    <span className="leafora-status-pill cancelled" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                      <Ban size={12} /> Rejected
+                                    </span>
+                                    {r.rejection_reason && <div style={{ fontSize: 10, color: '#DC2626', marginTop: 2 }}>{r.rejection_reason}</div>}
+                                  </div>
+                                ) : (
+                                  <span className="leafora-status-pill processing" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, backgroundColor: '#FEF3C7', color: '#B45309' }}>
+                                    <Clock size={12} /> Pending
+                                  </span>
+                                )}
+                              </td>
+
+                              <td style={{ fontSize: 11, color: '#6B7280' }}>
+                                {r.created_at ? new Date(r.created_at).toLocaleDateString() : 'Recent'}
+                              </td>
+
+                              <td>
+                                {r.status === 'Pending' ? (
+                                  <div style={{ display: 'flex', gap: 6 }}>
+                                    <button
+                                      type="button"
+                                      className="leafora-cat-btn-primary"
+                                      style={{ fontSize: 11, padding: '4px 8px', backgroundColor: '#16A34A' }}
+                                      onClick={() => handleApproveReferral(r.id, r.referrer_name)}
+                                      title="Approve Referral & Credit Wallet"
+                                    >
+                                      Approve
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="leafora-cat-btn-secondary"
+                                      style={{ fontSize: 11, padding: '4px 8px', color: '#DC2626', borderColor: '#FCA5A5' }}
+                                      onClick={() => {
+                                        setShowRejectReasonModal(r);
+                                        setRejectionReasonText('');
+                                      }}
+                                      title="Reject Referral"
+                                    >
+                                      Reject
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <span style={{ fontSize: 11, color: '#9CA3AF' }}>Finalized</span>
+                                )}
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Reject Referral Reason Modal */}
+                  {showRejectReasonModal && (
+                    <div className="leafora-inline-modal">
+                      <div className="leafora-inline-modal-body">
+                        <h4 style={{ margin: '0 0 8px 0', fontSize: 14, fontWeight: 700, color: '#111827' }}>Reject Referral #{showRejectReasonModal.id}</h4>
+                        <p style={{ fontSize: 12, color: '#6B7280', margin: '0 0 12px 0' }}>
+                          Specify the rejection reason for {showRejectReasonModal.referrer_name}'s referral of {showRejectReasonModal.referee_name}:
+                        </p>
+                        <form onSubmit={handleRejectReferralSubmit}>
+                          <textarea
+                            rows="3"
+                            className="leafora-cat-input"
+                            style={{ width: '100%', resize: 'vertical' }}
+                            placeholder="e.g. Self-referral attempt / Invalid customer account..."
+                            value={rejectionReasonText}
+                            onChange={(e) => setRejectionReasonText(e.target.value)}
+                            required
+                          />
+                          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 12 }}>
+                            <button type="button" className="leafora-cat-btn-secondary" onClick={() => setShowRejectReasonModal(null)}>Cancel</button>
+                            <button type="submit" className="leafora-cat-btn-primary" style={{ backgroundColor: '#DC2626' }}>Reject Referral</button>
+                          </div>
+                        </form>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* SUB-TAB 2: REWARD & WALLET SETTINGS */}
+              {referralSubTab === 'settings' && (
+                <div className="leafora-card" style={{ padding: 24 }}>
+                  <div style={{ marginBottom: 18 }}>
+                    <h4 style={{ margin: '0 0 4px 0', fontSize: 16, fontWeight: 700, color: '#111827' }}>Referral & Wallet Program Configuration</h4>
+                    <p style={{ margin: 0, fontSize: 12, color: '#6B7280' }}>
+                      Configure credit rewards, signup bonuses, minimum purchase qualifications, and maximum wallet balance caps.
+                    </p>
+                  </div>
+
+                  <form onSubmit={handleSaveReferralSettings}>
+                    <h5 style={{ margin: '0 0 12px 0', fontSize: 14, fontWeight: 700, color: '#374151' }}>Referral Incentives Config</h5>
+                    <div className="leafora-prod-form-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 20 }}>
+                      <div className="leafora-form-group">
+                        <label className="leafora-form-label">Referrer Wallet Reward ($)</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          className="leafora-cat-input"
+                          value={referralSettings.referrer_reward_amount}
+                          onChange={(e) => setReferralSettings({ ...referralSettings, referrer_reward_amount: e.target.value })}
+                        />
+                        <span style={{ fontSize: 11, color: '#6B7280', marginTop: 4 }}>Amount credited to advocate's wallet on successful referral</span>
+                      </div>
+
+                      <div className="leafora-form-group">
+                        <label className="leafora-form-label">Referee Friend Discount ($)</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          className="leafora-cat-input"
+                          value={referralSettings.referee_discount_amount}
+                          onChange={(e) => setReferralSettings({ ...referralSettings, referee_discount_amount: e.target.value })}
+                        />
+                        <span style={{ fontSize: 11, color: '#6B7280', marginTop: 4 }}>Welcome coupon discount for invited friend</span>
+                      </div>
+
+                      <div className="leafora-form-group">
+                        <label className="leafora-form-label">Min Order Requirement ($)</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          className="leafora-cat-input"
+                          value={referralSettings.min_order_amount}
+                          onChange={(e) => setReferralSettings({ ...referralSettings, min_order_amount: e.target.value })}
+                        />
+                        <span style={{ fontSize: 11, color: '#6B7280', marginTop: 4 }}>Minimum order subtotal to qualify referral payout</span>
+                      </div>
+                    </div>
+
+                    <h5 style={{ margin: '18px 0 12px 0', fontSize: 14, fontWeight: 700, color: '#374151' }}>Wallet Rules & Limits</h5>
+                    <div className="leafora-prod-form-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 20 }}>
+                      <div className="leafora-form-group">
+                        <label className="leafora-form-label">New Account Signup Bonus ($)</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          className="leafora-cat-input"
+                          value={referralSettings.signup_bonus_amount}
+                          onChange={(e) => setReferralSettings({ ...referralSettings, signup_bonus_amount: e.target.value })}
+                        />
+                        <span style={{ fontSize: 11, color: '#6B7280', marginTop: 4 }}>Instant welcome wallet credit upon registration</span>
+                      </div>
+
+                      <div className="leafora-form-group">
+                        <label className="leafora-form-label">Min Cashout / Redeem Threshold ($)</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          className="leafora-cat-input"
+                          value={referralSettings.min_cashout_threshold}
+                          onChange={(e) => setReferralSettings({ ...referralSettings, min_cashout_threshold: e.target.value })}
+                        />
+                        <span style={{ fontSize: 11, color: '#6B7280', marginTop: 4 }}>Minimum wallet balance required to apply at checkout</span>
+                      </div>
+
+                      <div className="leafora-form-group">
+                        <label className="leafora-form-label">Max Wallet Balance Cap ($)</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          className="leafora-cat-input"
+                          value={referralSettings.max_wallet_balance}
+                          onChange={(e) => setReferralSettings({ ...referralSettings, max_wallet_balance: e.target.value })}
+                        />
+                        <span style={{ fontSize: 11, color: '#6B7280', marginTop: 4 }}>Maximum accumulative balance a customer account can hold</span>
+                      </div>
+                    </div>
+
+                    <div className="leafora-cat-toggles-bar" style={{ marginBottom: 20 }}>
+                      <label className="leafora-toggle-item">
+                        <input
+                          type="checkbox"
+                          checked={referralSettings.is_program_active}
+                          onChange={(e) => setReferralSettings({ ...referralSettings, is_program_active: e.target.checked })}
+                        />
+                        <span>Enable Refer & Earn Program Storewide</span>
+                      </label>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                      <button type="submit" className="leafora-cat-btn-primary">
+                        Save Program & Wallet Settings
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+
+              {/* SUB-TAB 3: WALLET TRANSACTIONS AUDIT LOG */}
+              {referralSubTab === 'transactions' && (
+                <div className="leafora-card" style={{ padding: 20 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
+                    <div style={{ display: 'flex', gap: 10, flex: 1, maxWidth: 600 }}>
+                      <div className="leafora-cat-search-box" style={{ flex: 1 }}>
+                        <Search className="leafora-search-icon" size={16} />
+                        <input
+                          type="text"
+                          placeholder="Search Customer, Email, Ref ID, Description..."
+                          value={referralSearchQuery}
+                          onChange={(e) => setReferralSearchQuery(e.target.value)}
+                        />
+                      </div>
+
+                      <select
+                        className="leafora-cat-select"
+                        value={walletTypeFilter}
+                        onChange={(e) => setWalletTypeFilter(e.target.value)}
+                      >
+                        <option value="all">All Types (Credits & Debits)</option>
+                        <option value="credit">Credit (+)</option>
+                        <option value="debit">Debit (-)</option>
+                      </select>
+                    </div>
+
+                    <button
+                      type="button"
+                      className="leafora-cat-btn-secondary"
+                      onClick={handleExportWalletTransactions}
+                    >
+                      <Download size={14} /> Export CSV
+                    </button>
+                  </div>
+
+                  <table className="leafora-table" style={{ fontSize: 12 }}>
+                    <thead>
+                      <tr>
+                        <th>Reference ID</th>
+                        <th>Customer Account</th>
+                        <th>Type</th>
+                        <th>Source</th>
+                        <th>Amount</th>
+                        <th>Balance After</th>
+                        <th>Description</th>
+                        <th>Timestamp</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {walletTransactions.length === 0 ? (
+                        <tr>
+                          <td colSpan="8" style={{ textAlign: 'center', padding: 24, color: '#9CA3AF' }}>No wallet transaction records found.</td>
+                        </tr>
+                      ) : (
+                        walletTransactions.map((w) => (
+                          <tr key={w.id}>
+                            <td style={{ fontWeight: 700, fontFamily: 'monospace', color: '#A37F3F' }}>
+                              {w.reference_id || `WLT-${w.id}`}
+                            </td>
+                            <td>
+                              <div style={{ fontWeight: 700, color: '#111827' }}>{w.customer_name}</div>
+                              <div style={{ fontSize: 11, color: '#6B7280' }}>{w.customer_email}</div>
+                            </td>
+                            <td>
+                              <span className={`leafora-status-pill ${w.transaction_type === 'credit' ? 'delivered' : 'cancelled'}`}>
+                                {w.transaction_type === 'credit' ? 'Credit (+)' : 'Debit (-)'}
+                              </span>
+                            </td>
+                            <td>
+                              <span className="leafora-badge" style={{ backgroundColor: '#F3F4F6', color: '#374151', textTransform: 'capitalize', fontSize: 10.5 }}>
+                                {w.source.replace(/_/g, ' ')}
+                              </span>
+                            </td>
+                            <td style={{ fontWeight: 700, color: w.transaction_type === 'credit' ? '#16A34A' : '#DC2626' }}>
+                              {w.transaction_type === 'credit' ? '+' : '-'}${parseFloat(w.amount).toFixed(2)}
+                            </td>
+                            <td style={{ fontWeight: 700, color: '#111827' }}>
+                              ${parseFloat(w.balance_after).toFixed(2)}
+                            </td>
+                            <td style={{ fontSize: 11, color: '#4B5563', maxWidth: 220 }}>
+                              {w.description || 'N/A'}
+                            </td>
+                            <td style={{ fontSize: 11, color: '#6B7280' }}>
+                              {w.created_at ? new Date(w.created_at).toLocaleString() : 'Recent'}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* SUB-TAB 4: MANUAL WALLET CREDIT / DEBIT */}
+              {referralSubTab === 'manual' && (
+                <div className="leafora-card" style={{ padding: 24, maxWidth: 650, margin: '0 auto' }}>
+                  <div style={{ marginBottom: 18 }}>
+                    <h4 style={{ margin: '0 0 4px 0', fontSize: 16, fontWeight: 700, color: '#111827' }}>Manual Customer Wallet Adjustment</h4>
+                    <p style={{ margin: 0, fontSize: 12, color: '#6B7280' }}>
+                      Manually add or deduct funds from a customer's wallet balance with mandatory admin audit notes.
+                    </p>
+                  </div>
+
+                  <form onSubmit={handleManualWalletAdjustmentSubmit}>
+                    <div className="leafora-form-group" style={{ marginBottom: 16 }}>
+                      <label className="leafora-form-label">Select Customer Account *</label>
+                      <select
+                        className="leafora-cat-input"
+                        value={manualWalletForm.customer_id}
+                        onChange={(e) => setManualWalletForm({ ...manualWalletForm, customer_id: e.target.value })}
+                        required
+                      >
+                        <option value="">-- Choose Customer --</option>
+                        {dbCustomers.map(c => (
+                          <option key={c.id} value={c.id}>
+                            {c.name} ({c.email}) - Current Bal: ${parseFloat(c.wallet_balance || 0).toFixed(2)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="leafora-prod-form-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', gap: 16, marginBottom: 16 }}>
+                      <div className="leafora-form-group">
+                        <label className="leafora-form-label">Adjustment Direction *</label>
+                        <select
+                          className="leafora-cat-input"
+                          value={manualWalletForm.transaction_type}
+                          onChange={(e) => setManualWalletForm({ ...manualWalletForm, transaction_type: e.target.value })}
+                        >
+                          <option value="credit">Credit (+) Add Funds</option>
+                          <option value="debit">Debit (-) Deduct Funds</option>
+                        </select>
+                      </div>
+
+                      <div className="leafora-form-group">
+                        <label className="leafora-form-label">Adjustment Amount ($) *</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          className="leafora-cat-input"
+                          placeholder="25.00"
+                          value={manualWalletForm.amount}
+                          onChange={(e) => setManualWalletForm({ ...manualWalletForm, amount: e.target.value })}
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="leafora-form-group" style={{ marginBottom: 20 }}>
+                      <label className="leafora-form-label">Admin Reason & Audit Notes *</label>
+                      <textarea
+                        rows="3"
+                        className="leafora-cat-input"
+                        style={{ width: '100%', resize: 'vertical' }}
+                        placeholder="Explain reason for manual adjustment (e.g. Goodwill credit for delayed shipment)..."
+                        value={manualWalletForm.description}
+                        onChange={(e) => setManualWalletForm({ ...manualWalletForm, description: e.target.value })}
+                        required
+                      />
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                      <button
+                        type="button"
+                        className="leafora-cat-btn-secondary"
+                        onClick={() => setReferralSubTab('history')}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="leafora-cat-btn-primary"
+                        style={{ backgroundColor: manualWalletForm.transaction_type === 'debit' ? '#DC2626' : '#16A34A' }}
+                      >
+                        Apply Wallet {manualWalletForm.transaction_type === 'debit' ? 'Debit (-)' : 'Credit (+)'}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+
+              {/* SUB-TAB 5: REFERRAL ANALYTICS & LEADERBOARD */}
+              {referralSubTab === 'analytics' && (
+                <div>
+                  <div className="leafora-metrics-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginBottom: 20 }}>
+                    <div className="leafora-metric-card">
+                      <div className="leafora-metric-header">
+                        <span className="leafora-metric-title">Total Rewards Disbursed</span>
+                        <div className="leafora-metric-icon"><DollarSign size={16} color="#16A34A" /></div>
+                      </div>
+                      <div className="leafora-metric-value" style={{ color: '#16A34A' }}>
+                        ${parseFloat(referralAnalytics?.totalDisbursed || 0).toFixed(2)}
+                      </div>
+                      <div className="leafora-metric-sub">Approved wallet payouts</div>
+                    </div>
+
+                    <div className="leafora-metric-card">
+                      <div className="leafora-metric-header">
+                        <span className="leafora-metric-title">Pending Rewards Pipeline</span>
+                        <div className="leafora-metric-icon"><Clock size={16} color="#D97706" /></div>
+                      </div>
+                      <div className="leafora-metric-value" style={{ color: '#D97706' }}>
+                        ${parseFloat(referralAnalytics?.pendingDisbursement || 0).toFixed(2)}
+                      </div>
+                      <div className="leafora-metric-sub">{referralAnalytics?.pendingCount || 0} pending verification</div>
+                    </div>
+
+                    <div className="leafora-metric-card">
+                      <div className="leafora-metric-header">
+                        <span className="leafora-metric-title">Conversion Rate</span>
+                        <div className="leafora-metric-icon"><TrendingUp size={16} color="#2563EB" /></div>
+                      </div>
+                      <div className="leafora-metric-value" style={{ color: '#2563EB' }}>
+                        {referralAnalytics?.totalReferrals ? `${Math.round(((referralAnalytics?.approvedCount || 0) / referralAnalytics.totalReferrals) * 100)}%` : '0%'}
+                      </div>
+                      <div className="leafora-metric-sub">Approved invites ratio</div>
+                    </div>
+                  </div>
+
+                  {/* Top Referrers Leaderboard */}
+                  <div className="leafora-card" style={{ padding: 20 }}>
+                    <h4 style={{ margin: '0 0 14px 0', fontSize: 15, fontWeight: 700, color: '#111827' }}>Top Advocates Leaderboard</h4>
+                    <table className="leafora-table" style={{ fontSize: 12 }}>
+                      <thead>
+                        <tr>
+                          <th>Rank</th>
+                          <th>Referrer Customer</th>
+                          <th>Total Invites</th>
+                          <th>Total Rewards Earned</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(referralAnalytics?.topReferrers || []).map((tr, idx) => (
+                          <tr key={idx}>
+                            <td style={{ fontWeight: 700, color: '#A37F3F' }}>#{idx + 1}</td>
+                            <td>
+                              <div style={{ fontWeight: 700, color: '#111827' }}>{tr.referrer_name}</div>
+                              <div style={{ fontSize: 11, color: '#6B7280' }}>{tr.referrer_email}</div>
+                            </td>
+                            <td style={{ fontWeight: 700 }}>{tr.referral_count} friends invited</td>
+                            <td style={{ color: '#16A34A', fontWeight: 700 }}>+${parseFloat(tr.total_earned || 0).toFixed(2)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          {activeTab === 'reviews' && (
+            <div className="leafora-reviews-wrapper">
+              {/* Header Bar with Sub-tabs and Export */}
+              <div className="leafora-card" style={{ padding: 20, marginBottom: 24 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+                  {/* Sub-tabs */}
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    <button
+                      className={`leafora-subtab-btn ${reviewsSubTab === 'all' && !reviewsShowDeleted ? 'active' : ''}`}
+                      onClick={() => { setReviewsSubTab('all'); setReviewsShowDeleted(false); }}
+                    >
+                      <Star size={15} style={{ marginRight: 6 }} /> All Reviews
+                    </button>
+                    <button
+                      className={`leafora-subtab-btn ${reviewsSubTab === 'pending' && !reviewsShowDeleted ? 'active' : ''}`}
+                      onClick={() => { setReviewsSubTab('pending'); setReviewsShowDeleted(false); }}
+                    >
+                      <Clock size={15} style={{ marginRight: 6 }} /> Pending Moderation
+                    </button>
+                    <button
+                      className={`leafora-subtab-btn ${reviewsSubTab === 'abuse' && !reviewsShowDeleted ? 'active' : ''}`}
+                      onClick={() => { setReviewsSubTab('abuse'); setReviewsShowDeleted(false); }}
+                    >
+                      <ShieldAlert size={15} style={{ marginRight: 6 }} /> Flagged Abuse
+                    </button>
+                    <button
+                      className={`leafora-subtab-btn ${reviewsSubTab === 'analytics' ? 'active' : ''}`}
+                      onClick={() => setReviewsSubTab('analytics')}
+                    >
+                      <BarChart2 size={15} style={{ marginRight: 6 }} /> Rating Analytics
+                    </button>
+                    <button
+                      className={`leafora-subtab-btn ${reviewsShowDeleted ? 'active' : ''}`}
+                      onClick={() => { setReviewsShowDeleted(true); setReviewsSubTab('all'); }}
+                      style={{ color: reviewsShowDeleted ? '#DC2626' : undefined }}
+                    >
+                      <Trash2 size={15} style={{ marginRight: 6 }} /> Trash Bin
+                    </button>
+                  </div>
+
+                  {/* Actions */}
+                  <div style={{ display: 'flex', gap: 12 }}>
+                    <button className="leafora-btn leafora-btn-secondary" onClick={handleExportReviews}>
+                      <Download size={15} style={{ marginRight: 6 }} /> Export CSV
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* ANALYTICS SUB TAB */}
+              {reviewsSubTab === 'analytics' ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                  {reviewsAnalytics ? (
+                    <>
+                      {/* Top Summary Widgets */}
+                      <div className="leafora-metrics-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
+                        <div className="leafora-metric-card">
+                          <div className="metric-icon" style={{ background: '#FEF3C7', color: '#D97706' }}><Star size={20} /></div>
+                          <div className="metric-info">
+                            <span className="metric-label">Average Customer Rating</span>
+                            <h3 className="metric-value">{reviewsAnalytics.summary.average_rating} <span style={{ fontSize: 14, color: '#D97706' }}>/ 5.0</span></h3>
+                            <span className="metric-trend positive">⭐ Based on {reviewsAnalytics.summary.total_reviews} total reviews</span>
+                          </div>
+                        </div>
+
+                        <div className="leafora-metric-card">
+                          <div className="metric-icon" style={{ background: '#E0E7FF', color: '#4F46E5' }}><CheckCircle2 size={20} /></div>
+                          <div className="metric-info">
+                            <span className="metric-label">Approved Reviews</span>
+                            <h3 className="metric-value">{reviewsAnalytics.summary.approved_reviews}</h3>
+                            <span className="metric-trend positive">Publicly live on store</span>
+                          </div>
+                        </div>
+
+                        <div className="leafora-metric-card">
+                          <div className="metric-icon" style={{ background: '#FEE2E2', color: '#DC2626' }}><Clock size={20} /></div>
+                          <div className="metric-info">
+                            <span className="metric-label">Pending Moderation</span>
+                            <h3 className="metric-value">{reviewsAnalytics.summary.pending_reviews}</h3>
+                            <span className="metric-trend neutral">Awaiting admin review</span>
+                          </div>
+                        </div>
+
+                        <div className="leafora-metric-card">
+                          <div className="metric-icon" style={{ background: '#DCFCE7', color: '#16A34A' }}><ShieldCheck size={20} /></div>
+                          <div className="metric-info">
+                            <span className="metric-label">Verified Buyer Ratio</span>
+                            <h3 className="metric-value">{reviewsAnalytics.summary.verified_buyer_percent}%</h3>
+                            <span className="metric-trend positive">Verified purchase reviews</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Star Rating Breakdown & Top Rated Products Grid */}
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: 24 }}>
+                        {/* Star Rating Distribution */}
+                        <div className="leafora-card" style={{ padding: 24 }}>
+                          <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16, color: '#111827' }}>Rating Distribution</h3>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                            {[5, 4, 3, 2, 1].map(stars => {
+                              const count = reviewsAnalytics.star_distribution[stars] || 0;
+                              const total = reviewsAnalytics.summary.total_reviews || 1;
+                              const percent = Math.round((count / total) * 100);
+                              return (
+                                <div key={stars} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                  <div style={{ width: 60, fontSize: 13, fontWeight: 600, color: '#374151', display: 'flex', alignItems: 'center' }}>
+                                    {stars} ⭐
+                                  </div>
+                                  <div style={{ flex: 1, height: 10, background: '#E5E7EB', borderRadius: 5, overflow: 'hidden' }}>
+                                    <div style={{
+                                      width: `${percent}%`,
+                                      height: '100%',
+                                      background: stars >= 4 ? '#16A34A' : stars === 3 ? '#EAB308' : '#DC2626',
+                                      borderRadius: 5,
+                                      transition: 'width 0.4s ease'
+                                    }} />
+                                  </div>
+                                  <div style={{ width: 70, textAlign: 'right', fontSize: 13, fontWeight: 600, color: '#6B7280' }}>
+                                    {count} ({percent}%)
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Top Rated Products */}
+                        <div className="leafora-card" style={{ padding: 24 }}>
+                          <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16, color: '#111827' }}>Top Highest Rated Products</h3>
+                          {reviewsAnalytics.top_rated_products && reviewsAnalytics.top_rated_products.length > 0 ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                              {reviewsAnalytics.top_rated_products.map((p, idx) => (
+                                <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: '#F9FAFB', borderRadius: 8 }}>
+                                  <div>
+                                    <div style={{ fontSize: 14, fontWeight: 600, color: '#111827' }}>{p.product_name}</div>
+                                    <div style={{ fontSize: 12, color: '#6B7280' }}>{p.review_count} verified reviews</div>
+                                  </div>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#FEF3C7', color: '#D97706', padding: '4px 10px', borderRadius: 12, fontWeight: 700, fontSize: 13 }}>
+                                    <Star size={14} fill="#D97706" /> {p.avg_rating}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div style={{ color: '#6B7280', fontSize: 13 }}>No approved reviews data yet.</div>
+                          )}
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="leafora-card" style={{ padding: 40, textAlign: 'center', color: '#6B7280' }}>
+                      <RefreshCw size={24} className="spin" style={{ marginBottom: 12 }} />
+                      <div>Loading rating analytics & breakdown...</div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                /* REVIEWS MASTER TABLE WITH FILTERS */
+                <div className="leafora-card">
+                  {/* Search and Filters Header */}
+                  <div style={{ padding: '16px 20px', borderBottom: '1px solid #E5E7EB', display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+                    {/* Search Bar */}
+                    <div className="leafora-search-box" style={{ flex: 1, minWidth: 240 }}>
+                      <Search size={16} />
+                      <input
+                        type="text"
+                        placeholder="Search product, customer name, email, review title..."
+                        value={reviewsSearchQuery}
+                        onChange={(e) => setReviewsSearchQuery(e.target.value)}
+                      />
+                      {reviewsSearchQuery && (
+                        <button className="clear-search" onClick={() => setReviewsSearchQuery('')}>
+                          <X size={14} />
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Filter: Status */}
+                    {reviewsSubTab === 'all' && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontSize: 13, color: '#6B7280', fontWeight: 600 }}>Status:</span>
+                        <select
+                          className="leafora-select"
+                          value={reviewsStatusFilter}
+                          onChange={(e) => setReviewsStatusFilter(e.target.value)}
+                          style={{ padding: '6px 12px', fontSize: 13 }}
+                        >
+                          <option value="all">All Statuses</option>
+                          <option value="Approved">Approved</option>
+                          <option value="Pending">Pending Moderation</option>
+                          <option value="Rejected">Rejected</option>
+                        </select>
+                      </div>
+                    )}
+
+                    {/* Filter: Rating */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 13, color: '#6B7280', fontWeight: 600 }}>Rating:</span>
+                      <select
+                        className="leafora-select"
+                        value={reviewsRatingFilter}
+                        onChange={(e) => setReviewsRatingFilter(e.target.value)}
+                        style={{ padding: '6px 12px', fontSize: 13 }}
+                      >
+                        <option value="all">All Ratings</option>
+                        <option value="5">5 Stars ⭐⭐⭐⭐⭐</option>
+                        <option value="4">4 Stars ⭐⭐⭐⭐</option>
+                        <option value="3">3 Stars ⭐⭐⭐</option>
+                        <option value="2">2 Stars ⭐⭐</option>
+                        <option value="1">1 Star ⭐</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Reviews Table */}
+                  <div className="table-responsive">
+                    <table className="leafora-table">
+                      <thead>
+                        <tr>
+                          <th>ID</th>
+                          <th>Product</th>
+                          <th>Customer</th>
+                          <th>Rating & Review</th>
+                          <th>Images</th>
+                          <th>Status</th>
+                          <th>Admin Response</th>
+                          <th style={{ textAlign: 'right' }}>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {loadingReviews ? (
+                          <tr>
+                            <td colSpan="8" style={{ textAlign: 'center', padding: 40, color: '#6B7280' }}>
+                              <RefreshCw size={24} className="spin" style={{ marginBottom: 8 }} />
+                              <div>Loading customer reviews...</div>
+                            </td>
+                          </tr>
+                        ) : reviewsList.length === 0 ? (
+                          <tr>
+                            <td colSpan="8" style={{ textAlign: 'center', padding: 40, color: '#6B7280' }}>
+                              <Star size={32} style={{ opacity: 0.3, marginBottom: 8 }} />
+                              <div style={{ fontWeight: 600, fontSize: 15 }}>No customer reviews found</div>
+                              <div style={{ fontSize: 13, marginTop: 4 }}>Try adjusting your search query or filter settings.</div>
+                            </td>
+                          </tr>
+                        ) : (
+                          reviewsList.map((r) => {
+                            return (
+                              <tr key={r.id} style={{ opacity: r.deleted_at ? 0.65 : 1 }}>
+                                <td>#{r.id}</td>
+                                <td>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                    {r.product_image ? (
+                                      <img src={r.product_image} alt="" style={{ width: 36, height: 36, borderRadius: 6, objectFit: 'cover', border: '1px solid #E5E7EB' }} />
+                                    ) : (
+                                      <div style={{ width: 36, height: 36, borderRadius: 6, background: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9CA3AF' }}><Package size={18} /></div>
+                                    )}
+                                    <div>
+                                      <div style={{ fontWeight: 600, fontSize: 13, color: '#111827' }}>{r.product_name}</div>
+                                      <div style={{ fontSize: 11, color: '#9CA3AF' }}>ID: #{r.product_id}</div>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td>
+                                  <div style={{ fontWeight: 600, fontSize: 13, color: '#111827' }}>{r.customer_name}</div>
+                                  <div style={{ fontSize: 11, color: '#6B7280' }}>{r.customer_email || 'No email provided'}</div>
+                                  {r.is_verified_buyer ? (
+                                    <span style={{ fontSize: 10, background: '#DCFCE7', color: '#16A34A', padding: '1px 6px', borderRadius: 4, fontWeight: 700, display: 'inline-block', marginTop: 2 }}>
+                                      ✓ Verified Buyer
+                                    </span>
+                                  ) : null}
+                                </td>
+                                <td style={{ maxWidth: 300 }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
+                                    {[...Array(5)].map((_, i) => (
+                                      <Star key={i} size={13} fill={i < r.rating ? '#F59E0B' : '#E5E7EB'} color={i < r.rating ? '#F59E0B' : '#E5E7EB'} />
+                                    ))}
+                                    <span style={{ fontSize: 12, fontWeight: 700, color: '#D97706', marginLeft: 4 }}>{r.rating}.0</span>
+                                  </div>
+                                  {r.title && <div style={{ fontWeight: 700, fontSize: 12, color: '#111827', marginBottom: 2 }}>{r.title}</div>}
+                                  <div style={{ fontSize: 12, color: '#4B5563', lineHeight: 1.4, wordBreak: 'break-word' }}>{r.comment}</div>
+                                  
+                                  {r.is_reported_abuse ? (
+                                    <div style={{ background: '#FEE2E2', border: '1px solid #FCA5A5', color: '#991B1B', borderRadius: 6, padding: '4px 8px', fontSize: 11, marginTop: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                      <ShieldAlert size={13} /> <strong>Flagged:</strong> {r.abuse_reason || 'Abuse reported'}
+                                    </div>
+                                  ) : null}
+                                </td>
+                                <td>
+                                  {r.images && r.images.length > 0 ? (
+                                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                                      {r.images.map((imgUrl, i) => (
+                                        <img
+                                          key={i}
+                                          src={imgUrl}
+                                          alt={`Review upload ${i}`}
+                                          style={{ width: 34, height: 34, borderRadius: 4, objectFit: 'cover', cursor: 'pointer', border: '1px solid #D1D5DB' }}
+                                          onClick={() => setZoomImageModalUrl(imgUrl)}
+                                          title="Click to zoom photo"
+                                        />
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <span style={{ fontSize: 11, color: '#9CA3AF' }}>No photos</span>
+                                  )}
+                                </td>
+                                <td>
+                                  <select
+                                    className={`leafora-status-select status-${(r.status || 'Pending').toLowerCase()}`}
+                                    value={r.status || 'Pending'}
+                                    onChange={(e) => handleUpdateReviewStatus(r.id, e.target.value)}
+                                    disabled={r.deleted_at ? true : false}
+                                  >
+                                    <option value="Approved">Approved</option>
+                                    <option value="Pending">Pending</option>
+                                    <option value="Rejected">Rejected</option>
+                                  </select>
+                                </td>
+                                <td>
+                                  {r.admin_reply ? (
+                                    <div style={{ background: '#F3F4F6', borderRadius: 6, padding: '6px 10px', fontSize: 11, color: '#374151', maxWidth: 220 }}>
+                                      <div style={{ fontWeight: 700, color: '#16A34A', display: 'flex', alignItems: 'center', gap: 4, marginBottom: 2 }}>
+                                        <CheckCircle2 size={12} /> Official Response
+                                      </div>
+                                      <div style={{ lineHeight: 1.3 }}>{r.admin_reply}</div>
+                                    </div>
+                                  ) : (
+                                    <button
+                                      className="leafora-btn leafora-btn-secondary"
+                                      style={{ padding: '4px 8px', fontSize: 11 }}
+                                      onClick={() => handleOpenReplyModal(r)}
+                                      disabled={r.deleted_at ? true : false}
+                                    >
+                                      + Reply
+                                    </button>
+                                  )}
+                                </td>
+                                <td style={{ textAlign: 'right' }}>
+                                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
+                                    {r.deleted_at ? (
+                                      <>
+                                        <button
+                                          className="leafora-icon-btn"
+                                          title="Restore Review"
+                                          onClick={() => handleRestoreReviewItem(r.id)}
+                                          style={{ color: '#16A34A' }}
+                                        >
+                                          <RotateCcw size={15} />
+                                        </button>
+                                        <button
+                                          className="leafora-icon-btn"
+                                          title="Permanently Delete"
+                                          onClick={() => handleDeleteReviewItem(r.id, true)}
+                                          style={{ color: '#DC2626' }}
+                                        >
+                                          <Trash2 size={15} />
+                                        </button>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <button
+                                          className="leafora-icon-btn"
+                                          title="Edit Official Admin Response"
+                                          onClick={() => handleOpenReplyModal(r)}
+                                        >
+                                          <Edit size={15} />
+                                        </button>
+                                        
+                                        {r.is_reported_abuse ? (
+                                          <button
+                                            className="leafora-icon-btn"
+                                            title="Clear Abuse Flag"
+                                            onClick={() => handleRemoveAbuseFlag(r.id)}
+                                            style={{ color: '#16A34A' }}
+                                          >
+                                            <ShieldCheck size={15} />
+                                          </button>
+                                        ) : (
+                                          <button
+                                            className="leafora-icon-btn"
+                                            title="Flag as Abuse / Spam"
+                                            onClick={() => handleOpenAbuseModal(r)}
+                                            style={{ color: '#D97706' }}
+                                          >
+                                            <ShieldAlert size={15} />
+                                          </button>
+                                        )}
+
+                                        <button
+                                          className="leafora-icon-btn"
+                                          title="Move to Trash"
+                                          onClick={() => handleDeleteReviewItem(r.id, false)}
+                                          style={{ color: '#DC2626' }}
+                                        >
+                                          <Trash2 size={15} />
+                                        </button>
+                                      </>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Pagination Footer */}
+                  {reviewsPagination.totalPages > 1 && (
+                    <div style={{ padding: '14px 20px', borderTop: '1px solid #E5E7EB', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: 13, color: '#6B7280' }}>
+                        Showing Page {reviewsPagination.page} of {reviewsPagination.totalPages} ({reviewsPagination.total} reviews)
+                      </span>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button
+                          className="leafora-btn leafora-btn-secondary"
+                          style={{ padding: '6px 12px', fontSize: 12 }}
+                          disabled={reviewsPagination.page <= 1}
+                          onClick={() => fetchReviews(reviewsPagination.page - 1)}
+                        >
+                          Previous
+                        </button>
+                        <button
+                          className="leafora-btn leafora-btn-secondary"
+                          style={{ padding: '6px 12px', fontSize: 12 }}
+                          disabled={reviewsPagination.page >= reviewsPagination.totalPages}
+                          onClick={() => fetchReviews(reviewsPagination.page + 1)}
+                        >
+                          Next
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ADMIN REPLY MODAL */}
+              {replyModalReview && (
+                <div className="leafora-modal-overlay" onClick={() => setReplyModalReview(null)}>
+                  <div className="leafora-modal" style={{ maxWidth: 500 }} onClick={(e) => e.stopPropagation()}>
+                    <div className="leafora-modal-header">
+                      <h3>Official Admin Response</h3>
+                      <button className="close-btn" onClick={() => setReplyModalReview(null)}><X size={18} /></button>
+                    </div>
+                    <form onSubmit={handleSubmitAdminReply}>
+                      <div className="leafora-modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                        <div style={{ background: '#F9FAFB', borderRadius: 8, padding: 12, border: '1px solid #E5E7EB' }}>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: '#111827' }}>Review by {replyModalReview.customer_name} ({replyModalReview.rating} ⭐)</div>
+                          <div style={{ fontSize: 12, color: '#4B5563', marginTop: 4 }}>"{replyModalReview.comment}"</div>
+                        </div>
+
+                        <div>
+                          <label className="leafora-form-label">Write Official Response / Customer Reply</label>
+                          <textarea
+                            className="leafora-input"
+                            rows={4}
+                            placeholder="Thank you for your feedback! We are thrilled to hear..."
+                            value={replyText}
+                            onChange={(e) => setReplyText(e.target.value)}
+                            required
+                          />
+                          <span style={{ fontSize: 11, color: '#6B7280', marginTop: 4, display: 'block' }}>
+                            This official response will be publicly displayed underneath the review on the product page.
+                          </span>
+                        </div>
+                      </div>
+                      <div className="leafora-modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                        <button type="button" className="leafora-btn leafora-btn-secondary" onClick={() => setReplyModalReview(null)}>Cancel</button>
+                        <button type="submit" className="leafora-btn leafora-btn-primary">Publish Response</button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
+
+              {/* REPORT ABUSE MODAL */}
+              {abuseModalReview && (
+                <div className="leafora-modal-overlay" onClick={() => setAbuseModalReview(null)}>
+                  <div className="leafora-modal" style={{ maxWidth: 450 }} onClick={(e) => e.stopPropagation()}>
+                    <div className="leafora-modal-header">
+                      <h3>Flag Review for Abuse / Spam</h3>
+                      <button className="close-btn" onClick={() => setAbuseModalReview(null)}><X size={18} /></button>
+                    </div>
+                    <form onSubmit={handleSubmitReportAbuse}>
+                      <div className="leafora-modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                        <div style={{ fontSize: 13, color: '#374151' }}>
+                          Flagging review <strong>#{abuseModalReview.id}</strong> by <strong>{abuseModalReview.customer_name}</strong>.
+                        </div>
+
+                        <div>
+                          <label className="leafora-form-label">Abuse / Violation Reason</label>
+                          <select
+                            className="leafora-select"
+                            value={abuseReasonText}
+                            onChange={(e) => setAbuseReasonText(e.target.value)}
+                            style={{ marginBottom: 10 }}
+                          >
+                            <option value="Inappropriate language or profanity">Inappropriate language or profanity</option>
+                            <option value="Spam / Promotional links">Spam / Promotional links</option>
+                            <option value="Fake or misleading review">Fake or misleading review</option>
+                            <option value="Offensive or abusive content">Offensive or abusive content</option>
+                            <option value="Irrelevant content / Wrong product">Irrelevant content / Wrong product</option>
+                          </select>
+
+                          <textarea
+                            className="leafora-input"
+                            rows={3}
+                            placeholder="Add extra internal moderator notes..."
+                            value={abuseReasonText}
+                            onChange={(e) => setAbuseReasonText(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <div className="leafora-modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                        <button type="button" className="leafora-btn leafora-btn-secondary" onClick={() => setAbuseModalReview(null)}>Cancel</button>
+                        <button type="submit" className="leafora-btn leafora-btn-primary" style={{ background: '#DC2626' }}>Flag Review</button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
+
+              {/* PHOTO ZOOM PREVIEW MODAL */}
+              {zoomImageModalUrl && (
+                <div className="leafora-modal-overlay" onClick={() => setZoomImageModalUrl(null)}>
+                  <div style={{ background: '#fff', padding: 12, borderRadius: 12, maxWidth: 600, maxHeight: '85vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', alignItems: 'center' }} onClick={(e) => e.stopPropagation()}>
+                    <div style={{ alignSelf: 'flex-end', marginBottom: 8 }}>
+                      <button className="close-btn" onClick={() => setZoomImageModalUrl(null)}><X size={20} /></button>
+                    </div>
+                    <img src={zoomImageModalUrl} alt="Review photo full preview" style={{ maxWidth: '100%', maxHeight: '70vh', borderRadius: 8, objectFit: 'contain' }} />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          {activeTab === 'marketing' && (
+            <div className="leafora-homepage-cms-wrapper">
+              {/* Header Bar with Sub-tabs */}
+              <div className="leafora-card" style={{ padding: 20, marginBottom: 24 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+                  {/* CMS Sub-tabs */}
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    <button
+                      className={`leafora-subtab-btn ${cmsSubTab === 'builder' ? 'active' : ''}`}
+                      onClick={() => setCmsSubTab('builder')}
+                    >
+                      <Layers size={15} style={{ marginRight: 6 }} /> Drag & Drop Layout Builder
+                    </button>
+                    <button
+                      className={`leafora-subtab-btn ${cmsSubTab === 'banners' ? 'active' : ''}`}
+                      onClick={() => setCmsSubTab('banners')}
+                    >
+                      <Image size={15} style={{ marginRight: 6 }} /> Banner Manager (Hero, Offer, Cat, Flash)
+                    </button>
+                    <button
+                      className={`leafora-subtab-btn ${cmsSubTab === 'curation' ? 'active' : ''}`}
+                      onClick={() => setCmsSubTab('curation')}
+                    >
+                      <Sparkles size={15} style={{ marginRight: 6 }} /> Product Section Curation
+                    </button>
+                  </div>
+
+                  {cmsSubTab === 'banners' && (
+                    <button className="leafora-btn leafora-btn-primary" onClick={() => handleOpenBannerModal(null)}>
+                      <Plus size={15} style={{ marginRight: 6 }} /> Add {cmsBannerTypeTab.toUpperCase()} Banner
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* 1. DRAG & DROP HOMEPAGE BUILDER SUB-TAB */}
+              {cmsSubTab === 'builder' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  <div className="leafora-card" style={{ padding: 20, background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+                    <h3 style={{ fontSize: 16, fontWeight: 700, color: '#0F172A', marginBottom: 4 }}>Drag & Drop Section Ordering</h3>
+                    <p style={{ fontSize: 13, color: '#64748B' }}>
+                      Reorder the layout sections of your homepage in real-time. Use Move Up / Move Down controls to rearrange sections or toggle section visibility.
+                    </p>
+                  </div>
+
+                  {loadingCms ? (
+                    <div className="leafora-card" style={{ padding: 40, textAlign: 'center', color: '#6B7280' }}>
+                      <RefreshCw size={24} className="spin" style={{ marginBottom: 8 }} />
+                      <div>Loading homepage sections...</div>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                      {homepageSections.map((sec, idx) => (
+                        <div
+                          key={sec.id}
+                          className="leafora-card"
+                          style={{
+                            padding: '16px 20px',
+                            display: 'flex',
+                            justify: 'space-between',
+                            alignItems: 'center',
+                            borderLeft: `4px solid ${sec.is_active ? '#16A34A' : '#9CA3AF'}`,
+                            opacity: sec.is_active ? 1 : 0.65
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                              <button
+                                className="leafora-icon-btn"
+                                disabled={idx === 0}
+                                onClick={() => handleMoveSection(idx, 'up')}
+                                title="Move Section Up"
+                              >
+                                <ArrowUp size={14} />
+                              </button>
+                              <button
+                                className="leafora-icon-btn"
+                                disabled={idx === homepageSections.length - 1}
+                                onClick={() => handleMoveSection(idx, 'down')}
+                                title="Move Section Down"
+                              >
+                                <ArrowDown size={14} />
+                              </button>
+                            </div>
+
+                            <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#F1F5F9', color: '#475569', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 12 }}>
+                              #{sec.display_order}
+                            </div>
+
+                            <div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <h4 style={{ fontSize: 15, fontWeight: 700, color: '#1E293B' }}>{sec.section_name}</h4>
+                                <span style={{ fontSize: 11, background: '#E2E8F0', color: '#475569', padding: '2px 8px', borderRadius: 4, fontFamily: 'monospace' }}>
+                                  key: {sec.section_key}
+                                </span>
+                              </div>
+                              <div style={{ fontSize: 13, color: '#64748B', marginTop: 2 }}>
+                                Title: <strong>"{sec.custom_title || sec.section_name}"</strong> • Max Items: {sec.item_limit}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                            <button
+                              className={`leafora-btn ${sec.is_active ? 'leafora-btn-secondary' : 'leafora-btn-primary'}`}
+                              style={{ padding: '6px 12px', fontSize: 12 }}
+                              onClick={() => handleToggleSectionActive(sec)}
+                            >
+                              {sec.is_active ? 'Disable Section' : 'Enable Section'}
+                            </button>
+                            <button
+                              className="leafora-icon-btn"
+                              title="Edit Title & Limit"
+                              onClick={() => handleOpenEditSectionModal(sec)}
+                            >
+                              <Edit size={16} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* 2. BANNERS MANAGEMENT SUB-TAB */}
+              {cmsSubTab === 'banners' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                  {/* Banner Type Filter Pills */}
+                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', borderBottom: '1px solid #E2E8F0', paddingBottom: 12 }}>
+                    <button
+                      className={`leafora-subtab-btn ${cmsBannerTypeTab === 'hero' ? 'active' : ''}`}
+                      onClick={() => setCmsBannerTypeTab('hero')}
+                    >
+                      Hero Banners Slider
+                    </button>
+                    <button
+                      className={`leafora-subtab-btn ${cmsBannerTypeTab === 'offer' ? 'active' : ''}`}
+                      onClick={() => setCmsBannerTypeTab('offer')}
+                    >
+                      Offer Banners
+                    </button>
+                    <button
+                      className={`leafora-subtab-btn ${cmsBannerTypeTab === 'category' ? 'active' : ''}`}
+                      onClick={() => setCmsBannerTypeTab('category')}
+                    >
+                      Category Banners
+                    </button>
+                    <button
+                      className={`leafora-subtab-btn ${cmsBannerTypeTab === 'flash_sale' ? 'active' : ''}`}
+                      onClick={() => setCmsBannerTypeTab('flash_sale')}
+                    >
+                      Flash Sale Banners
+                    </button>
+                  </div>
+
+                  {/* Banners Grid */}
+                  <div className="leafora-card">
+                    <div className="table-responsive">
+                      <table className="leafora-table">
+                        <thead>
+                          <tr>
+                            <th>Order</th>
+                            <th>Desktop Preview</th>
+                            <th>Mobile Preview</th>
+                            <th>Banner Info & CTA</th>
+                            <th>Target Link</th>
+                            <th>Status</th>
+                            <th style={{ textAlign: 'right' }}>Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {loadingCms ? (
+                            <tr>
+                              <td colSpan="7" style={{ textAlign: 'center', padding: 40, color: '#6B7280' }}>
+                                <RefreshCw size={24} className="spin" style={{ marginBottom: 8 }} />
+                                <div>Loading banners...</div>
+                              </td>
+                            </tr>
+                          ) : homepageBanners.length === 0 ? (
+                            <tr>
+                              <td colSpan="7" style={{ textAlign: 'center', padding: 40, color: '#6B7280' }}>
+                                <Image size={32} style={{ opacity: 0.3, marginBottom: 8 }} />
+                                <div style={{ fontWeight: 600, fontSize: 15 }}>No {cmsBannerTypeTab} banners configured</div>
+                                <button className="leafora-btn leafora-btn-primary" style={{ marginTop: 12, padding: '6px 14px', fontSize: 12 }} onClick={() => handleOpenBannerModal(null)}>
+                                  + Add First {cmsBannerTypeTab.toUpperCase()} Banner
+                                </button>
+                              </td>
+                            </tr>
+                          ) : (
+                            homepageBanners.map(b => (
+                              <tr key={b.id}>
+                                <td><span style={{ fontWeight: 700 }}>#{b.display_order}</span></td>
+                                <td>
+                                  {b.desktop_image_url ? (
+                                    <img src={b.desktop_image_url} alt="Desktop Banner" style={{ width: 100, height: 48, borderRadius: 6, objectFit: 'cover', border: '1px solid #CBD5E1' }} />
+                                  ) : <span style={{ color: '#94A3B8', fontSize: 11 }}>No Desktop Image</span>}
+                                </td>
+                                <td>
+                                  {b.mobile_image_url ? (
+                                    <img src={b.mobile_image_url} alt="Mobile Banner" style={{ width: 40, height: 48, borderRadius: 6, objectFit: 'cover', border: '1px solid #CBD5E1' }} />
+                                  ) : <span style={{ color: '#94A3B8', fontSize: 11 }}>Same as Desktop</span>}
+                                </td>
+                                <td style={{ maxWidth: 260 }}>
+                                  <div style={{ fontWeight: 700, fontSize: 13, color: '#0F172A' }}>{b.title}</div>
+                                  {b.subtitle && <div style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>{b.subtitle}</div>}
+                                  <span style={{ fontSize: 10, background: '#EEF2FF', color: '#4F46E5', padding: '1px 6px', borderRadius: 4, fontWeight: 700, display: 'inline-block', marginTop: 4 }}>
+                                    CTA: {b.button_text || 'Shop Now'}
+                                  </span>
+                                  {b.flash_sale_end_time && (
+                                    <div style={{ fontSize: 11, color: '#DC2626', fontWeight: 600, marginTop: 2 }}>
+                                      ⏰ Ends: {new Date(b.flash_sale_end_time).toLocaleString()}
+                                    </div>
+                                  )}
+                                </td>
+                                <td>
+                                  <span style={{ fontSize: 12, fontFamily: 'monospace', color: '#334155' }}>{b.link_url || '/shop'}</span>
+                                </td>
+                                <td>
+                                  <button
+                                    className={`leafora-btn ${b.is_active ? 'leafora-btn-secondary' : 'leafora-btn-primary'}`}
+                                    style={{ padding: '4px 8px', fontSize: 11 }}
+                                    onClick={() => handleToggleBannerActive(b)}
+                                  >
+                                    {b.is_active ? 'Active' : 'Disabled'}
+                                  </button>
+                                </td>
+                                <td style={{ textAlign: 'right' }}>
+                                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
+                                    <button className="leafora-icon-btn" title="Edit Banner" onClick={() => handleOpenBannerModal(b)}>
+                                      <Edit size={15} />
+                                    </button>
+                                    <button className="leafora-icon-btn" title="Delete Banner" onClick={() => handleDeleteBannerItem(b.id)} style={{ color: '#DC2626' }}>
+                                      <Trash2 size={15} />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 3. PRODUCT SECTION CURATION SUB-TAB */}
+              {cmsSubTab === 'curation' && (
+                <div className="leafora-card">
+                  <div style={{ padding: '16px 20px', borderBottom: '1px solid #E2E8F0' }}>
+                    <h3 style={{ fontSize: 16, fontWeight: 700, color: '#0F172A' }}>Homepage Product Section Flags Matrix</h3>
+                    <p style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>
+                      Check or uncheck section flags to feature products on the Homepage under Featured, Trending, New Arrival, or Best Seller sections.
+                    </p>
+                  </div>
+
+                  <div className="table-responsive">
+                    <table className="leafora-table">
+                      <thead>
+                        <tr>
+                          <th>Product</th>
+                          <th>Price</th>
+                          <th style={{ textAlign: 'center' }}>Featured Solutions</th>
+                          <th style={{ textAlign: 'center' }}>Trending Products</th>
+                          <th style={{ textAlign: 'center' }}>New Arrivals</th>
+                          <th style={{ textAlign: 'center' }}>Best Sellers</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {loadingCms ? (
+                          <tr>
+                            <td colSpan="6" style={{ textAlign: 'center', padding: 40, color: '#6B7280' }}>
+                              <RefreshCw size={24} className="spin" style={{ marginBottom: 8 }} />
+                              <div>Loading products...</div>
+                            </td>
+                          </tr>
+                        ) : (
+                          curatedProducts.map(p => (
+                            <tr key={p.id}>
+                              <td>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                  <img src={p.image || '/assets/vitamin_c_serum.jpg'} alt="" style={{ width: 36, height: 36, borderRadius: 6, objectFit: 'cover', border: '1px solid #E2E8F0' }} />
+                                  <div>
+                                    <div style={{ fontWeight: 600, fontSize: 13, color: '#0F172A' }}>{p.name}</div>
+                                    <div style={{ fontSize: 11, color: '#64748B' }}>SKU: {p.sku}</div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td style={{ fontWeight: 700, color: '#0F172A' }}>${parseFloat(p.price || 0).toFixed(2)}</td>
+                              
+                              {/* Featured Checkbox */}
+                              <td style={{ textAlign: 'center' }}>
+                                <input
+                                  type="checkbox"
+                                  checked={p.is_featured ? true : false}
+                                  onChange={() => handleToggleProductCurationFlag(p.id, 'is_featured', p.is_featured)}
+                                  style={{ width: 18, height: 18, cursor: 'pointer', accentColor: '#16A34A' }}
+                                />
+                              </td>
+
+                              {/* Trending Checkbox */}
+                              <td style={{ textAlign: 'center' }}>
+                                <input
+                                  type="checkbox"
+                                  checked={p.is_trending ? true : false}
+                                  onChange={() => handleToggleProductCurationFlag(p.id, 'is_trending', p.is_trending)}
+                                  style={{ width: 18, height: 18, cursor: 'pointer', accentColor: '#D97706' }}
+                                />
+                              </td>
+
+                              {/* New Arrival Checkbox */}
+                              <td style={{ textAlign: 'center' }}>
+                                <input
+                                  type="checkbox"
+                                  checked={p.is_new_arrival ? true : false}
+                                  onChange={() => handleToggleProductCurationFlag(p.id, 'is_new_arrival', p.is_new_arrival)}
+                                  style={{ width: 18, height: 18, cursor: 'pointer', accentColor: '#2563EB' }}
+                                />
+                              </td>
+
+                              {/* Best Seller Checkbox */}
+                              <td style={{ textAlign: 'center' }}>
+                                <input
+                                  type="checkbox"
+                                  checked={p.is_best_seller ? true : false}
+                                  onChange={() => handleToggleProductCurationFlag(p.id, 'is_best_seller', p.is_best_seller)}
+                                  style={{ width: 18, height: 18, cursor: 'pointer', accentColor: '#9333EA' }}
+                                />
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* BANNER CREATE / EDIT MODAL */}
+              {bannerModalData && (
+                <div className="leafora-modal-overlay" onClick={() => setBannerModalData(null)}>
+                  <div className="leafora-modal" style={{ maxWidth: 650 }} onClick={(e) => e.stopPropagation()}>
+                    <div className="leafora-modal-header">
+                      <h3>{bannerForm.id ? 'Edit Banner' : 'Create New Banner'} ({cmsBannerTypeTab.toUpperCase()})</h3>
+                      <button className="close-btn" onClick={() => setBannerModalData(null)}><X size={18} /></button>
+                    </div>
+                    <form onSubmit={handleSaveBannerSubmit}>
+                      <div className="leafora-modal-body" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                        <div style={{ gridColumn: 'span 2' }}>
+                          <label className="leafora-form-label">Banner Title *</label>
+                          <input
+                            type="text"
+                            className="leafora-input"
+                            placeholder="e.g. Pharma-Grade Botanical Actives"
+                            value={bannerForm.title}
+                            onChange={(e) => setBannerForm({ ...bannerForm, title: e.target.value })}
+                            required
+                          />
+                        </div>
+
+                        <div style={{ gridColumn: 'span 2' }}>
+                          <label className="leafora-form-label">Subtitle / Sub-headline</label>
+                          <input
+                            type="text"
+                            className="leafora-input"
+                            placeholder="e.g. 100% Pure Organic Extracts Certified by Global Herbal Labs"
+                            value={bannerForm.subtitle}
+                            onChange={(e) => setBannerForm({ ...bannerForm, subtitle: e.target.value })}
+                          />
+                        </div>
+
+                        {/* Desktop Image Upload Slot */}
+                        <div style={{ gridColumn: 'span 2' }}>
+                          <label className="leafora-form-label">Desktop Banner Image URL *</label>
+                          <div style={{ display: 'flex', gap: 8 }}>
+                            <input
+                              type="text"
+                              className="leafora-input"
+                              placeholder="/assets/hero_banner_1.jpg or https://..."
+                              value={bannerForm.desktop_image_url}
+                              onChange={(e) => setBannerForm({ ...bannerForm, desktop_image_url: e.target.value })}
+                              required
+                            />
+                          </div>
+                        </div>
+
+                        {/* Mobile Image Upload Slot */}
+                        <div style={{ gridColumn: 'span 2' }}>
+                          <label className="leafora-form-label">Mobile Banner Image URL (Mobile Device Optimization)</label>
+                          <input
+                            type="text"
+                            className="leafora-input"
+                            placeholder="/assets/hero_banner_1_mobile.jpg (Optional, defaults to Desktop Image)"
+                            value={bannerForm.mobile_image_url}
+                            onChange={(e) => setBannerForm({ ...bannerForm, mobile_image_url: e.target.value })}
+                          />
+                        </div>
+
+                        <div>
+                          <label className="leafora-form-label">Target Link URL</label>
+                          <input
+                            type="text"
+                            className="leafora-input"
+                            placeholder="/shop or /category/skincare"
+                            value={bannerForm.link_url}
+                            onChange={(e) => setBannerForm({ ...bannerForm, link_url: e.target.value })}
+                          />
+                        </div>
+
+                        <div>
+                          <label className="leafora-form-label">Button CTA Text</label>
+                          <input
+                            type="text"
+                            className="leafora-input"
+                            placeholder="Shop Now, Explore, Claim Discount"
+                            value={bannerForm.button_text}
+                            onChange={(e) => setBannerForm({ ...bannerForm, button_text: e.target.value })}
+                          />
+                        </div>
+
+                        {cmsBannerTypeTab === 'flash_sale' && (
+                          <div style={{ gridColumn: 'span 2' }}>
+                            <label className="leafora-form-label">Flash Sale End Date & Time (Countdown Timer)</label>
+                            <input
+                              type="datetime-local"
+                              className="leafora-input"
+                              value={bannerForm.flash_sale_end_time}
+                              onChange={(e) => setBannerForm({ ...bannerForm, flash_sale_end_time: e.target.value })}
+                            />
+                          </div>
+                        )}
+
+                        <div>
+                          <label className="leafora-form-label">Display Order</label>
+                          <input
+                            type="number"
+                            className="leafora-input"
+                            value={bannerForm.display_order}
+                            onChange={(e) => setBannerForm({ ...bannerForm, display_order: e.target.value })}
+                          />
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 24 }}>
+                          <input
+                            type="checkbox"
+                            id="bannerActive"
+                            checked={bannerForm.is_active}
+                            onChange={(e) => setBannerForm({ ...bannerForm, is_active: e.target.checked })}
+                            style={{ width: 18, height: 18 }}
+                          />
+                          <label htmlFor="bannerActive" style={{ fontSize: 14, fontWeight: 600, color: '#0F172A', cursor: 'pointer' }}>Active on Homepage</label>
+                        </div>
+                      </div>
+
+                      <div className="leafora-modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                        <button type="button" className="leafora-btn leafora-btn-secondary" onClick={() => setBannerModalData(null)}>Cancel</button>
+                        <button type="submit" className="leafora-btn leafora-btn-primary">Save Banner</button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
+
+              {/* EDIT SECTION MODAL */}
+              {editSectionModalData && (
+                <div className="leafora-modal-overlay" onClick={() => setEditSectionModalData(null)}>
+                  <div className="leafora-modal" style={{ maxWidth: 500 }} onClick={(e) => e.stopPropagation()}>
+                    <div className="leafora-modal-header">
+                      <h3>Configure Section: {editSectionModalData.section_name}</h3>
+                      <button className="close-btn" onClick={() => setEditSectionModalData(null)}><X size={18} /></button>
+                    </div>
+                    <form onSubmit={handleSaveSectionSettings}>
+                      <div className="leafora-modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                        <div>
+                          <label className="leafora-form-label">Custom Display Title</label>
+                          <input
+                            type="text"
+                            className="leafora-input"
+                            placeholder={editSectionModalData.section_name}
+                            value={sectionForm.custom_title}
+                            onChange={(e) => setSectionForm({ ...sectionForm, custom_title: e.target.value })}
+                          />
+                        </div>
+
+                        <div>
+                          <label className="leafora-form-label">Custom Subtitle / Tagline</label>
+                          <input
+                            type="text"
+                            className="leafora-input"
+                            placeholder="Discover our top choices..."
+                            value={sectionForm.custom_subtitle}
+                            onChange={(e) => setSectionForm({ ...sectionForm, custom_subtitle: e.target.value })}
+                          />
+                        </div>
+
+                        <div>
+                          <label className="leafora-form-label">Max Items Limit (Number of items to show)</label>
+                          <input
+                            type="number"
+                            className="leafora-input"
+                            min="1"
+                            max="24"
+                            value={sectionForm.item_limit}
+                            onChange={(e) => setSectionForm({ ...sectionForm, item_limit: e.target.value })}
+                          />
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <input
+                            type="checkbox"
+                            id="secActive"
+                            checked={sectionForm.is_active}
+                            onChange={(e) => setSectionForm({ ...sectionForm, is_active: e.target.checked })}
+                            style={{ width: 18, height: 18 }}
+                          />
+                          <label htmlFor="secActive" style={{ fontSize: 14, fontWeight: 600, color: '#0F172A', cursor: 'pointer' }}>Visible on Homepage</label>
+                        </div>
+                      </div>
+
+                      <div className="leafora-modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                        <button type="button" className="leafora-btn leafora-btn-secondary" onClick={() => setEditSectionModalData(null)}>Cancel</button>
+                        <button type="submit" className="leafora-btn leafora-btn-primary">Save Section Settings</button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          {activeTab === 'settings' && (
+            <div className="leafora-settings-wrapper">
+              {/* Header Bar with Sub-tabs */}
+              <div className="leafora-card" style={{ padding: 20, marginBottom: 24 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+                  {/* Settings Sub-tabs */}
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    <button
+                      className={`leafora-subtab-btn ${settingsSubTab === 'store' ? 'active' : ''}`}
+                      onClick={() => setSettingsSubTab('store')}
+                    >
+                      <Settings size={15} style={{ marginRight: 6 }} /> Store & Branding
+                    </button>
+                    <button
+                      className={`leafora-subtab-btn ${settingsSubTab === 'rules' ? 'active' : ''}`}
+                      onClick={() => setSettingsSubTab('rules')}
+                    >
+                      <Globe size={15} style={{ marginRight: 6 }} /> SEO, Tax & Delivery Rules
+                    </button>
+                    <button
+                      className={`leafora-subtab-btn ${settingsSubTab === 'integrations' ? 'active' : ''}`}
+                      onClick={() => setSettingsSubTab('integrations')}
+                    >
+                      <Mail size={15} style={{ marginRight: 6 }} /> Integrations (SMTP, SMS & Gateways)
+                    </button>
+                    <button
+                      className={`leafora-subtab-btn ${settingsSubTab === 'admins' ? 'active' : ''}`}
+                      onClick={() => setSettingsSubTab('admins')}
+                    >
+                      <Users size={15} style={{ marginRight: 6 }} /> Admin Users & RBAC Roles
+                    </button>
+                    <button
+                      className={`leafora-subtab-btn ${settingsSubTab === 'logs' ? 'active' : ''}`}
+                      onClick={() => setSettingsSubTab('logs')}
+                    >
+                      <FileText size={15} style={{ marginRight: 6 }} /> Activity Logs & Login History
+                    </button>
+                    <button
+                      className={`leafora-subtab-btn ${settingsSubTab === 'security' ? 'active' : ''}`}
+                      onClick={() => setSettingsSubTab('security')}
+                    >
+                      <ShieldCheck size={15} style={{ marginRight: 6 }} /> Security & Backup
+                    </button>
+                  </div>
+
+                  {settingsSubTab === 'admins' && (
+                    <button className="leafora-btn leafora-btn-primary" onClick={() => handleOpenAdminUserModal(null)}>
+                      <Plus size={15} style={{ marginRight: 6 }} /> Add Admin User
+                    </button>
+                  )}
+                  {settingsSubTab === 'security' && (
+                    <button className="leafora-btn leafora-btn-secondary" onClick={handleExportBackup}>
+                      <Download size={15} style={{ marginRight: 6 }} /> Download DB Backup (.json)
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* 1. STORE & BRANDING SUB-TAB */}
+              {settingsSubTab === 'store' && (
+                <div className="leafora-card" style={{ padding: 24 }}>
+                  <h3 style={{ fontSize: 16, fontWeight: 700, color: '#0F172A', marginBottom: 20 }}>Store Profile & Logo Media Settings</h3>
+                  <form onSubmit={(e) => { e.preventDefault(); handleSaveSettingsGroup(storeSettingsForm, 'Store & Branding Settings'); }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                      <div>
+                        <label className="leafora-form-label">Store Legal Name *</label>
+                        <input
+                          type="text"
+                          className="leafora-input"
+                          value={storeSettingsForm.store_name}
+                          onChange={(e) => setStoreSettingsForm({ ...storeSettingsForm, store_name: e.target.value })}
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label className="leafora-form-label">Customer Support Email *</label>
+                        <input
+                          type="email"
+                          className="leafora-input"
+                          value={storeSettingsForm.support_email}
+                          onChange={(e) => setStoreSettingsForm({ ...storeSettingsForm, support_email: e.target.value })}
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label className="leafora-form-label">Support Contact Phone</label>
+                        <input
+                          type="text"
+                          className="leafora-input"
+                          value={storeSettingsForm.support_phone}
+                          onChange={(e) => setStoreSettingsForm({ ...storeSettingsForm, support_phone: e.target.value })}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="leafora-form-label">Default Currency Symbol</label>
+                        <select
+                          className="leafora-select"
+                          value={storeSettingsForm.store_currency}
+                          onChange={(e) => setStoreSettingsForm({ ...storeSettingsForm, store_currency: e.target.value })}
+                        >
+                          <option value="USD ($)">USD ($)</option>
+                          <option value="INR (₹)">INR (₹)</option>
+                          <option value="EUR (€)">EUR (€)</option>
+                          <option value="GBP (£)">GBP (£)</option>
+                        </select>
+                      </div>
+
+                      <div style={{ gridColumn: 'span 2' }}>
+                        <label className="leafora-form-label">Store Registered Physical Address</label>
+                        <textarea
+                          className="leafora-input"
+                          rows={2}
+                          value={storeSettingsForm.store_address}
+                          onChange={(e) => setStoreSettingsForm({ ...storeSettingsForm, store_address: e.target.value })}
+                        />
+                      </div>
+
+                      {/* Header Logo Upload Slot */}
+                      <div style={{ background: '#F8FAFC', padding: 16, borderRadius: 8, border: '1px solid #E2E8F0' }}>
+                        <label className="leafora-form-label">Header Logo Image URL</label>
+                        <input
+                          type="text"
+                          className="leafora-input"
+                          placeholder="/assets/leafora_logo_header.png"
+                          value={storeSettingsForm.header_logo_url}
+                          onChange={(e) => setStoreSettingsForm({ ...storeSettingsForm, header_logo_url: e.target.value })}
+                        />
+                        {storeSettingsForm.header_logo_url && (
+                          <div style={{ marginTop: 8, background: '#0F172A', padding: 8, borderRadius: 6, display: 'inline-block' }}>
+                            <img src={storeSettingsForm.header_logo_url} alt="Header Logo Preview" style={{ height: 28, objectFit: 'contain' }} />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Footer Logo Upload Slot */}
+                      <div style={{ background: '#F8FAFC', padding: 16, borderRadius: 8, border: '1px solid #E2E8F0' }}>
+                        <label className="leafora-form-label">Footer Logo Image URL</label>
+                        <input
+                          type="text"
+                          className="leafora-input"
+                          placeholder="/assets/leafora_logo_footer.png"
+                          value={storeSettingsForm.footer_logo_url}
+                          onChange={(e) => setStoreSettingsForm({ ...storeSettingsForm, footer_logo_url: e.target.value })}
+                        />
+                        {storeSettingsForm.footer_logo_url && (
+                          <div style={{ marginTop: 8, background: '#0F172A', padding: 8, borderRadius: 6, display: 'inline-block' }}>
+                            <img src={storeSettingsForm.footer_logo_url} alt="Footer Logo Preview" style={{ height: 28, objectFit: 'contain' }} />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Favicon Upload Slot */}
+                      <div style={{ gridColumn: 'span 2', background: '#F8FAFC', padding: 16, borderRadius: 8, border: '1px solid #E2E8F0' }}>
+                        <label className="leafora-form-label">Browser Favicon Icon URL (.ico / .png)</label>
+                        <input
+                          type="text"
+                          className="leafora-input"
+                          placeholder="/favicon.ico"
+                          value={storeSettingsForm.favicon_url}
+                          onChange={(e) => setStoreSettingsForm({ ...storeSettingsForm, favicon_url: e.target.value })}
+                        />
+                      </div>
+                    </div>
+
+                    <div style={{ marginTop: 24, display: 'flex', justifyContent: 'flex-end' }}>
+                      <button type="submit" className="leafora-btn leafora-btn-primary">Save Store Profile</button>
+                    </div>
+                  </form>
+                </div>
+              )}
+
+              {/* 2. SEO, TAX & DELIVERY RULES SUB-TAB */}
+              {settingsSubTab === 'rules' && (
+                <div className="leafora-card" style={{ padding: 24 }}>
+                  <h3 style={{ fontSize: 16, fontWeight: 700, color: '#0F172A', marginBottom: 20 }}>Global SEO, GST Tax & Shipping Fee Configuration</h3>
+                  <form onSubmit={(e) => { e.preventDefault(); handleSaveSettingsGroup(rulesSettingsForm, 'SEO, Tax & Delivery Rules'); }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                      <div style={{ gridColumn: 'span 2' }}>
+                        <h4 style={{ fontSize: 14, fontWeight: 700, color: '#475569', marginBottom: 12, borderBottom: '1px solid #E2E8F0', paddingBottom: 6 }}>
+                          🔍 Global Storefront SEO Metadata
+                        </h4>
+                      </div>
+
+                      <div style={{ gridColumn: 'span 2' }}>
+                        <label className="leafora-form-label">Global Meta Title Tag</label>
+                        <input
+                          type="text"
+                          className="leafora-input"
+                          value={rulesSettingsForm.meta_title}
+                          onChange={(e) => setRulesSettingsForm({ ...rulesSettingsForm, meta_title: e.target.value })}
+                        />
+                      </div>
+
+                      <div style={{ gridColumn: 'span 2' }}>
+                        <label className="leafora-form-label">Global Meta Description</label>
+                        <textarea
+                          className="leafora-input"
+                          rows={2}
+                          value={rulesSettingsForm.meta_description}
+                          onChange={(e) => setRulesSettingsForm({ ...rulesSettingsForm, meta_description: e.target.value })}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="leafora-form-label">Global Target Keywords</label>
+                        <input
+                          type="text"
+                          className="leafora-input"
+                          value={rulesSettingsForm.meta_keywords}
+                          onChange={(e) => setRulesSettingsForm({ ...rulesSettingsForm, meta_keywords: e.target.value })}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="leafora-form-label">Google Analytics Measurement ID</label>
+                        <input
+                          type="text"
+                          className="leafora-input"
+                          placeholder="G-XXXXXXXXXX"
+                          value={rulesSettingsForm.google_analytics_id}
+                          onChange={(e) => setRulesSettingsForm({ ...rulesSettingsForm, google_analytics_id: e.target.value })}
+                        />
+                      </div>
+
+                      <div style={{ gridColumn: 'span 2', marginTop: 12 }}>
+                        <h4 style={{ fontSize: 14, fontWeight: 700, color: '#475569', marginBottom: 12, borderBottom: '1px solid #E2E8F0', paddingBottom: 6 }}>
+                          🧾 GST Tax & Invoicing Rules
+                        </h4>
+                      </div>
+
+                      <div>
+                        <label className="leafora-form-label">GSTIN Business Registration Number</label>
+                        <input
+                          type="text"
+                          className="leafora-input"
+                          placeholder="36AAAAA0000A1Z5"
+                          value={rulesSettingsForm.gstin_number}
+                          onChange={(e) => setRulesSettingsForm({ ...rulesSettingsForm, gstin_number: e.target.value })}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="leafora-form-label">Default HSN Code for Tax Invoice</label>
+                        <input
+                          type="text"
+                          className="leafora-input"
+                          placeholder="30049011"
+                          value={rulesSettingsForm.hsn_code}
+                          onChange={(e) => setRulesSettingsForm({ ...rulesSettingsForm, hsn_code: e.target.value })}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="leafora-form-label">Default GST Tax Percentage (%)</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          className="leafora-input"
+                          value={rulesSettingsForm.default_tax_percent}
+                          onChange={(e) => setRulesSettingsForm({ ...rulesSettingsForm, default_tax_percent: e.target.value })}
+                        />
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 24 }}>
+                        <input
+                          type="checkbox"
+                          id="taxInc"
+                          checked={rulesSettingsForm.tax_included_in_price === 'true'}
+                          onChange={(e) => setRulesSettingsForm({ ...rulesSettingsForm, tax_included_in_price: e.target.checked ? 'true' : 'false' })}
+                          style={{ width: 18, height: 18 }}
+                        />
+                        <label htmlFor="taxInc" style={{ fontSize: 13, fontWeight: 600, color: '#0F172A', cursor: 'pointer' }}>Catalog product prices are inclusive of GST</label>
+                      </div>
+
+                      <div style={{ gridColumn: 'span 2', marginTop: 12 }}>
+                        <h4 style={{ fontSize: 14, fontWeight: 700, color: '#475569', marginBottom: 12, borderBottom: '1px solid #E2E8F0', paddingBottom: 6 }}>
+                          🚚 Delivery Charges & Free Shipping Rules
+                        </h4>
+                      </div>
+
+                      <div>
+                        <label className="leafora-form-label">Free Shipping Order Threshold ($)</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          className="leafora-input"
+                          value={rulesSettingsForm.free_shipping_threshold}
+                          onChange={(e) => setRulesSettingsForm({ ...rulesSettingsForm, free_shipping_threshold: e.target.value })}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="leafora-form-label">Standard Shipping Fee ($)</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          className="leafora-input"
+                          value={rulesSettingsForm.standard_shipping_fee}
+                          onChange={(e) => setRulesSettingsForm({ ...rulesSettingsForm, standard_shipping_fee: e.target.value })}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="leafora-form-label">Express Delivery Fee ($)</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          className="leafora-input"
+                          value={rulesSettingsForm.express_shipping_fee}
+                          onChange={(e) => setRulesSettingsForm({ ...rulesSettingsForm, express_shipping_fee: e.target.value })}
+                        />
+                      </div>
+                    </div>
+
+                    <div style={{ marginTop: 24, display: 'flex', justifyContent: 'flex-end' }}>
+                      <button type="submit" className="leafora-btn leafora-btn-primary">Save SEO, Tax & Delivery Rules</button>
+                    </div>
+                  </form>
+                </div>
+              )}
+
+              {/* 3. INTEGRATIONS (SMTP & SMS) SUB-TAB */}
+              {settingsSubTab === 'integrations' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                  {/* Email SMTP Settings */}
+                  <div className="leafora-card" style={{ padding: 24 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                      <h3 style={{ fontSize: 16, fontWeight: 700, color: '#0F172A' }}>Email SMTP Server Configuration</h3>
+                      <button type="button" className="leafora-btn leafora-btn-secondary" onClick={handleSendTestSmtpEmail}>
+                        ✉️ Send Test Email
+                      </button>
+                    </div>
+
+                    <form onSubmit={(e) => { e.preventDefault(); handleSaveSettingsGroup(integrationsForm, 'Email SMTP & SMS Settings'); }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                        <div>
+                          <label className="leafora-form-label">SMTP Hostname *</label>
+                          <input
+                            type="text"
+                            className="leafora-input"
+                            placeholder="smtp.sendgrid.net or smtp.gmail.com"
+                            value={integrationsForm.smtp_host}
+                            onChange={(e) => setIntegrationsForm({ ...integrationsForm, smtp_host: e.target.value })}
+                          />
+                        </div>
+
+                        <div>
+                          <label className="leafora-form-label">SMTP Port</label>
+                          <input
+                            type="text"
+                            className="leafora-input"
+                            placeholder="587 or 465"
+                            value={integrationsForm.smtp_port}
+                            onChange={(e) => setIntegrationsForm({ ...integrationsForm, smtp_port: e.target.value })}
+                          />
+                        </div>
+
+                        <div>
+                          <label className="leafora-form-label">SMTP Username</label>
+                          <input
+                            type="text"
+                            className="leafora-input"
+                            value={integrationsForm.smtp_username}
+                            onChange={(e) => setIntegrationsForm({ ...integrationsForm, smtp_username: e.target.value })}
+                          />
+                        </div>
+
+                        <div>
+                          <label className="leafora-form-label">SMTP Password / API Key</label>
+                          <input
+                            type="password"
+                            className="leafora-input"
+                            value={integrationsForm.smtp_password}
+                            onChange={(e) => setIntegrationsForm({ ...integrationsForm, smtp_password: e.target.value })}
+                          />
+                        </div>
+
+                        <div>
+                          <label className="leafora-form-label">Sender Name</label>
+                          <input
+                            type="text"
+                            className="leafora-input"
+                            value={integrationsForm.smtp_sender_name}
+                            onChange={(e) => setIntegrationsForm({ ...integrationsForm, smtp_sender_name: e.target.value })}
+                          />
+                        </div>
+
+                        <div>
+                          <label className="leafora-form-label">Sender Email Address</label>
+                          <input
+                            type="email"
+                            className="leafora-input"
+                            value={integrationsForm.smtp_sender_email}
+                            onChange={(e) => setIntegrationsForm({ ...integrationsForm, smtp_sender_email: e.target.value })}
+                          />
+                        </div>
+
+                        <div style={{ gridColumn: 'span 2', marginTop: 16 }}>
+                          <h4 style={{ fontSize: 14, fontWeight: 700, color: '#475569', marginBottom: 12, borderBottom: '1px solid #E2E8F0', paddingBottom: 6 }}>
+                            📱 SMS Gateway & OTP Notifications (MSG91 / Twilio)
+                          </h4>
+                        </div>
+
+                        <div>
+                          <label className="leafora-form-label">SMS Provider Gateway</label>
+                          <select
+                            className="leafora-select"
+                            value={integrationsForm.sms_provider}
+                            onChange={(e) => setIntegrationsForm({ ...integrationsForm, sms_provider: e.target.value })}
+                          >
+                            <option value="MSG91">MSG91 Enterprise</option>
+                            <option value="Twilio">Twilio SMS</option>
+                            <option value="Fast2SMS">Fast2SMS India</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="leafora-form-label">SMS API Auth Key</label>
+                          <input
+                            type="password"
+                            className="leafora-input"
+                            value={integrationsForm.sms_api_key}
+                            onChange={(e) => setIntegrationsForm({ ...integrationsForm, sms_api_key: e.target.value })}
+                          />
+                        </div>
+
+                        <div>
+                          <label className="leafora-form-label">Sender Header ID (6-Chars)</label>
+                          <input
+                            type="text"
+                            className="leafora-input"
+                            placeholder="LEAFOR"
+                            value={integrationsForm.sms_sender_id}
+                            onChange={(e) => setIntegrationsForm({ ...integrationsForm, sms_sender_id: e.target.value })}
+                          />
+                        </div>
+
+                        <div>
+                          <label className="leafora-form-label">DLT OTP Template ID</label>
+                          <input
+                            type="text"
+                            className="leafora-input"
+                            placeholder="TMP_OTP_9918"
+                            value={integrationsForm.sms_otp_template_id}
+                            onChange={(e) => setIntegrationsForm({ ...integrationsForm, sms_otp_template_id: e.target.value })}
+                          />
+                        </div>
+                      </div>
+
+                      <div style={{ marginTop: 24, display: 'flex', justifyContent: 'flex-end' }}>
+                        <button type="submit" className="leafora-btn leafora-btn-primary">Save Integration Settings</button>
+                      </div>
+                    </form>
+                  </div>
+
+                  {/* Shortcuts Card to Payment & Shiprocket */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                    <div className="leafora-card" style={{ padding: 20 }}>
+                      <h4 style={{ fontSize: 15, fontWeight: 700, color: '#0F172A', marginBottom: 4 }}>💳 Payment Gateways Config</h4>
+                      <p style={{ fontSize: 12, color: '#64748B', marginBottom: 12 }}>Configure Razorpay test keys, Stripe secret key, UPI VPA ID, and Cash on Delivery settings.</p>
+                      <button className="leafora-btn leafora-btn-secondary" style={{ padding: '6px 12px', fontSize: 12 }} onClick={() => setActiveTab('payments')}>
+                        Go to Payment Gateways →
+                      </button>
+                    </div>
+
+                    <div className="leafora-card" style={{ padding: 20 }}>
+                      <h4 style={{ fontSize: 15, fontWeight: 700, color: '#0F172A', marginBottom: 4 }}>🚀 Shiprocket Logistics API</h4>
+                      <p style={{ fontSize: 12, color: '#64748B', marginBottom: 12 }}>Configure Shiprocket API email, secret channel key, and warehouse pickup locations.</p>
+                      <button className="leafora-btn leafora-btn-secondary" style={{ padding: '6px 12px', fontSize: 12 }} onClick={() => setActiveTab('shiprocket')}>
+                        Go to Shiprocket Settings →
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 4. ADMIN USERS & RBAC ROLES SUB-TAB */}
+              {settingsSubTab === 'admins' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                  {/* Admin Users Table */}
+                  <div className="leafora-card">
+                    <div style={{ padding: '16px 20px', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <h3 style={{ fontSize: 16, fontWeight: 700, color: '#0F172A' }}>Admin User Directory & Access Control</h3>
+                      <button className="leafora-btn leafora-btn-primary" style={{ padding: '6px 14px', fontSize: 12 }} onClick={() => handleOpenAdminUserModal(null)}>
+                        + Add New Admin User
+                      </button>
+                    </div>
+
+                    <div className="table-responsive">
+                      <table className="leafora-table">
+                        <thead>
+                          <tr>
+                            <th>User ID</th>
+                            <th>Admin Name</th>
+                            <th>Email & Phone</th>
+                            <th>Role</th>
+                            <th>Granted Permissions</th>
+                            <th>Status</th>
+                            <th style={{ textAlign: 'right' }}>Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {loadingSettings ? (
+                            <tr>
+                              <td colSpan="7" style={{ textAlign: 'center', padding: 40, color: '#6B7280' }}>
+                                <RefreshCw size={24} className="spin" style={{ marginBottom: 8 }} />
+                                <div>Loading admin directory...</div>
+                              </td>
+                            </tr>
+                          ) : (
+                            systemUsersList.map(u => (
+                              <tr key={u.id}>
+                                <td>#{u.id}</td>
+                                <td><span style={{ fontWeight: 700, color: '#0F172A' }}>{u.name}</span></td>
+                                <td>
+                                  <div style={{ fontSize: 13, color: '#1E293B' }}>{u.email}</div>
+                                  <div style={{ fontSize: 11, color: '#64748B' }}>{u.phone || 'No phone'}</div>
+                                </td>
+                                <td>
+                                  <span style={{
+                                    fontSize: 11,
+                                    fontWeight: 700,
+                                    padding: '2px 8px',
+                                    borderRadius: 4,
+                                    background: u.role === 'Super Admin' ? '#FEF3C7' : '#F1F5F9',
+                                    color: u.role === 'Super Admin' ? '#D97706' : '#475569'
+                                  }}>
+                                    {u.role}
+                                  </span>
+                                </td>
+                                <td style={{ maxWidth: 220 }}>
+                                  <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                                    {Array.isArray(u.permissions) ? u.permissions.map((p, i) => (
+                                      <span key={i} style={{ fontSize: 10, background: '#E0E7FF', color: '#4338CA', padding: '1px 5px', borderRadius: 4, fontWeight: 600 }}>
+                                        {p}
+                                      </span>
+                                    )) : null}
+                                  </div>
+                                </td>
+                                <td>
+                                  <span style={{ fontSize: 11, fontWeight: 700, color: u.is_active ? '#16A34A' : '#DC2626' }}>
+                                    {u.is_active ? '✓ Active' : '✕ Suspended'}
+                                  </span>
+                                </td>
+                                <td style={{ textAlign: 'right' }}>
+                                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
+                                    <button className="leafora-icon-btn" title="Edit Admin Role" onClick={() => handleOpenAdminUserModal(u)}>
+                                      <Edit size={15} />
+                                    </button>
+                                    <button className="leafora-icon-btn" title="Revoke Admin Access" onClick={() => handleDeleteAdminUser(u.id)} style={{ color: '#DC2626' }}>
+                                      <Trash2 size={15} />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* RBAC Roles Matrix */}
+                  <div className="leafora-card" style={{ padding: 24 }}>
+                    <h3 style={{ fontSize: 16, fontWeight: 700, color: '#0F172A', marginBottom: 16 }}>Role-Based Access Control (RBAC) Permissions Matrix</h3>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16 }}>
+                      {systemRolesList.map(r => (
+                        <div key={r.id} style={{ background: '#F8FAFC', borderRadius: 8, padding: 16, border: '1px solid #E2E8F0' }}>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>{r.role_name}</div>
+                          <div style={{ fontSize: 12, color: '#64748B', marginTop: 4, minHeight: 36 }}>{r.description}</div>
+                          <div style={{ marginTop: 12, display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                            {Array.isArray(r.permissions) ? r.permissions.map((p, i) => (
+                              <span key={i} style={{ fontSize: 10, background: '#DCFCE7', color: '#15803D', padding: '2px 6px', borderRadius: 4, fontWeight: 700 }}>
+                                ✓ {p}
+                              </span>
+                            )) : null}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 5. ACTIVITY AUDIT LOGS & LOGIN HISTORY SUB-TAB */}
+              {settingsSubTab === 'logs' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                  {/* Activity Audit Logs */}
+                  <div className="leafora-card">
+                    <div style={{ padding: '16px 20px', borderBottom: '1px solid #E2E8F0' }}>
+                      <h3 style={{ fontSize: 16, fontWeight: 700, color: '#0F172A' }}>Administrative Action Audit Log</h3>
+                    </div>
+
+                    <div className="table-responsive">
+                      <table className="leafora-table">
+                        <thead>
+                          <tr>
+                            <th>Log ID</th>
+                            <th>Timestamp</th>
+                            <th>Admin Name</th>
+                            <th>Module</th>
+                            <th>Action Performed</th>
+                            <th>IP Address</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {loadingSettings ? (
+                            <tr>
+                              <td colSpan="6" style={{ textAlign: 'center', padding: 40, color: '#6B7280' }}>
+                                <RefreshCw size={24} className="spin" style={{ marginBottom: 8 }} />
+                                <div>Loading logs...</div>
+                              </td>
+                            </tr>
+                          ) : (
+                            activityLogsList.map(l => (
+                              <tr key={l.id}>
+                                <td>#{l.id}</td>
+                                <td style={{ fontSize: 12, color: '#64748B' }}>{new Date(l.created_at).toLocaleString()}</td>
+                                <td><span style={{ fontWeight: 600, color: '#0F172A' }}>{l.admin_name}</span></td>
+                                <td>
+                                  <span style={{ fontSize: 11, background: '#F1F5F9', color: '#334155', padding: '2px 8px', borderRadius: 4, fontWeight: 700 }}>
+                                    {l.module}
+                                  </span>
+                                </td>
+                                <td style={{ fontSize: 13, color: '#1E293B' }}>{l.action}</td>
+                                <td style={{ fontSize: 12, fontFamily: 'monospace', color: '#64748B' }}>{l.ip_address}</td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* Login History */}
+                  <div className="leafora-card">
+                    <div style={{ padding: '16px 20px', borderBottom: '1px solid #E2E8F0' }}>
+                      <h3 style={{ fontSize: 16, fontWeight: 700, color: '#0F172A' }}>Login Attempts & Session History</h3>
+                    </div>
+
+                    <div className="table-responsive">
+                      <table className="leafora-table">
+                        <thead>
+                          <tr>
+                            <th>Timestamp</th>
+                            <th>Admin Email</th>
+                            <th>Browser & OS</th>
+                            <th>IP Address</th>
+                            <th>Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {loginHistoryList.map(lh => (
+                            <tr key={lh.id}>
+                              <td style={{ fontSize: 12, color: '#64748B' }}>{new Date(lh.created_at).toLocaleString()}</td>
+                              <td style={{ fontWeight: 600, color: '#0F172A' }}>{lh.admin_email}</td>
+                              <td style={{ fontSize: 12, color: '#475569' }}>{lh.browser}</td>
+                              <td style={{ fontSize: 12, fontFamily: 'monospace' }}>{lh.ip_address}</td>
+                              <td>
+                                <span style={{
+                                  fontSize: 11,
+                                  fontWeight: 700,
+                                  padding: '2px 8px',
+                                  borderRadius: 4,
+                                  background: lh.status === 'Success' ? '#DCFCE7' : '#FEE2E2',
+                                  color: lh.status === 'Success' ? '#15803D' : '#B91C1C'
+                                }}>
+                                  {lh.status}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 6. SECURITY & BACKUP SUB-TAB */}
+              {settingsSubTab === 'security' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                  <div className="leafora-card" style={{ padding: 24 }}>
+                    <h3 style={{ fontSize: 16, fontWeight: 700, color: '#0F172A', marginBottom: 20 }}>Security Policies & System Backup Controls</h3>
+                    <form onSubmit={(e) => { e.preventDefault(); handleSaveSettingsGroup(securityForm, 'Security Settings'); }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                        <div>
+                          <label className="leafora-form-label">Session Idle Timeout (Minutes)</label>
+                          <input
+                            type="number"
+                            className="leafora-input"
+                            value={securityForm.security_session_timeout_mins}
+                            onChange={(e) => setSecurityForm({ ...securityForm, security_session_timeout_mins: e.target.value })}
+                          />
+                        </div>
+
+                        <div>
+                          <label className="leafora-form-label">Max Failed Login Attempts Threshold</label>
+                          <input
+                            type="number"
+                            className="leafora-input"
+                            value={securityForm.security_max_failed_attempts}
+                            onChange={(e) => setSecurityForm({ ...securityForm, security_max_failed_attempts: e.target.value })}
+                          />
+                        </div>
+
+                        <div style={{ gridColumn: 'span 2' }}>
+                          <label className="leafora-form-label">Admin IP Whitelist (Comma-separated IP addresses)</label>
+                          <input
+                            type="text"
+                            className="leafora-input"
+                            placeholder="127.0.0.1, 192.168.1.100"
+                            value={securityForm.security_ip_whitelist}
+                            onChange={(e) => setSecurityForm({ ...securityForm, security_ip_whitelist: e.target.value })}
+                          />
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12 }}>
+                          <input
+                            type="checkbox"
+                            id="sec2FA"
+                            checked={securityForm.security_2fa_enabled === 'true'}
+                            onChange={(e) => setSecurityForm({ ...securityForm, security_2fa_enabled: e.target.checked ? 'true' : 'false' })}
+                            style={{ width: 18, height: 18 }}
+                          />
+                          <label htmlFor="sec2FA" style={{ fontSize: 14, fontWeight: 600, color: '#0F172A', cursor: 'pointer' }}>Enforce Two-Factor Authentication (2FA) for All Admins</label>
+                        </div>
+                      </div>
+
+                      <div style={{ marginTop: 24, display: 'flex', justifyContent: 'flex-end' }}>
+                        <button type="submit" className="leafora-btn leafora-btn-primary">Save Security Preferences</button>
+                      </div>
+                    </form>
+                  </div>
+
+                  {/* Backup Card */}
+                  <div className="leafora-card" style={{ padding: 24, background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <h4 style={{ fontSize: 16, fontWeight: 700, color: '#0F172A' }}>💾 Full System Database Backup & Snapshot</h4>
+                        <p style={{ fontSize: 13, color: '#64748B', marginTop: 4 }}>
+                          Download an immediate JSON snapshot containing all system settings, admin accounts, and role configurations.
+                        </p>
+                      </div>
+                      <button className="leafora-btn leafora-btn-primary" onClick={handleExportBackup}>
+                        Download Database Backup (.json)
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* CREATE / EDIT ADMIN USER MODAL */}
+              {adminUserModal && (
+                <div className="leafora-modal-overlay" onClick={() => setAdminUserModal(null)}>
+                  <div className="leafora-modal" style={{ maxWidth: 500 }} onClick={(e) => e.stopPropagation()}>
+                    <div className="leafora-modal-header">
+                      <h3>{adminUserForm.id ? 'Edit Admin Account' : 'Create New Admin Account'}</h3>
+                      <button className="close-btn" onClick={() => setAdminUserModal(null)}><X size={18} /></button>
+                    </div>
+                    <form onSubmit={handleSaveAdminUserSubmit}>
+                      <div className="leafora-modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                        <div>
+                          <label className="leafora-form-label">Full Name *</label>
+                          <input
+                            type="text"
+                            className="leafora-input"
+                            value={adminUserForm.name}
+                            onChange={(e) => setAdminUserForm({ ...adminUserForm, name: e.target.value })}
+                            required
+                          />
+                        </div>
+
+                        <div>
+                          <label className="leafora-form-label">Email Address *</label>
+                          <input
+                            type="email"
+                            className="leafora-input"
+                            value={adminUserForm.email}
+                            onChange={(e) => setAdminUserForm({ ...adminUserForm, email: e.target.value })}
+                            required
+                          />
+                        </div>
+
+                        <div>
+                          <label className="leafora-form-label">Phone Number</label>
+                          <input
+                            type="text"
+                            className="leafora-input"
+                            value={adminUserForm.phone}
+                            onChange={(e) => setAdminUserForm({ ...adminUserForm, phone: e.target.value })}
+                          />
+                        </div>
+
+                        <div>
+                          <label className="leafora-form-label">Assigned Role</label>
+                          <select
+                            className="leafora-select"
+                            value={adminUserForm.role}
+                            onChange={(e) => setAdminUserForm({ ...adminUserForm, role: e.target.value })}
+                          >
+                            <option value="Super Admin">Super Admin</option>
+                            <option value="Store Manager">Store Manager</option>
+                            <option value="Fulfillment Manager">Fulfillment Manager</option>
+                            <option value="Customer Support">Customer Support</option>
+                          </select>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <input
+                            type="checkbox"
+                            id="userAct"
+                            checked={adminUserForm.is_active}
+                            onChange={(e) => setAdminUserForm({ ...adminUserForm, is_active: e.target.checked })}
+                            style={{ width: 18, height: 18 }}
+                          />
+                          <label htmlFor="userAct" style={{ fontSize: 14, fontWeight: 600, color: '#0F172A', cursor: 'pointer' }}>Account Active</label>
+                        </div>
+                      </div>
+
+                      <div className="leafora-modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                        <button type="button" className="leafora-btn leafora-btn-secondary" onClick={() => setAdminUserModal(null)}>Cancel</button>
+                        <button type="submit" className="leafora-btn leafora-btn-primary">Save Admin Account</button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          {['reports'].includes(activeTab) && (
             <div className="leafora-card" style={{ padding: 32, textAlign: 'center' }}>
               <h3 style={{ fontSize: 18, color: '#111827', textTransform: 'capitalize', marginBottom: 8 }}>{activeTab} Management Panel</h3>
               <p style={{ color: '#6B7280', fontSize: 13 }}>All records for {activeTab} are synchronized live with the database engine.</p>

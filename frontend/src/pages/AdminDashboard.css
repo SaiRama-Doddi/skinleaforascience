@@ -1746,4 +1746,60 @@ tr.selected-row {
   border: 1px solid #D8B4FE;
 }
 
+/* Reviews Management Styles */
+.leafora-subtab-btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid #E5E7EB;
+  background-color: #FFFFFF;
+  color: #4B5563;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  transition: all 0.2s ease;
+}
+
+.leafora-subtab-btn:hover {
+  background-color: #F9FAFB;
+  color: #111827;
+}
+
+.leafora-subtab-btn.active {
+  background-color: #0F172A;
+  color: #FFFFFF;
+  border-color: #0F172A;
+  box-shadow: 0 2px 4px rgba(15, 23, 42, 0.15);
+}
+
+.leafora-status-select {
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid #E5E7EB;
+  outline: none;
+  cursor: pointer;
+}
+
+.leafora-status-select.status-approved {
+  background-color: #DCFCE7;
+  color: #15803D;
+  border-color: #BBF7D0;
+}
+
+.leafora-status-select.status-pending {
+  background-color: #FEF3C7;
+  color: #B45309;
+  border-color: #FDE68A;
+}
+
+.leafora-status-select.status-rejected {
+  background-color: #FEE2E2;
+  color: #B91C1C;
+  border-color: #FECACA;
+}
+
+
 

@@ -79,13 +79,57 @@ router.get('/admin/payments/settlements', adminController.getPaymentSettlements)
 router.get('/admin/revenue/export', adminController.exportRevenueReport);
 
 // ─── ADMIN REVIEWS CONTROL ───
+router.get('/admin/reviews/analytics', adminController.getReviewAnalytics);
+router.get('/admin/reviews/export', adminController.exportReviewsCsv);
 router.get('/admin/reviews', adminController.getReviews);
+router.get('/admin/reviews/:id', adminController.getReviewDetails);
 router.put('/admin/reviews/:id', adminController.updateReviewStatus);
+router.post('/admin/reviews/:id/reply', adminController.replyToReview);
+router.post('/admin/reviews/:id/report-abuse', adminController.reportAbuseReview);
+router.post('/admin/reviews/:id/restore', adminController.restoreReview);
 router.delete('/admin/reviews/:id', adminController.deleteReview);
 
-// ─── ADMIN REFERRALS CONTROL ───
+// ─── ADMIN HOMEPAGE CMS CONTROL ───
+router.get('/admin/homepage/banners', adminController.getHomepageBanners);
+router.post('/admin/homepage/banners', adminController.createHomepageBanner);
+router.put('/admin/homepage/banners/:id', adminController.updateHomepageBanner);
+router.delete('/admin/homepage/banners/:id', adminController.deleteHomepageBanner);
+router.post('/admin/homepage/banners/reorder', adminController.reorderHomepageBanners);
+
+router.get('/admin/homepage/sections', adminController.getHomepageSections);
+router.put('/admin/homepage/sections/:id', adminController.updateHomepageSection);
+router.post('/admin/homepage/sections/reorder', adminController.reorderHomepageSections);
+
+router.get('/admin/homepage/curated-products', adminController.getCuratedProducts);
+router.post('/admin/homepage/curate-products', adminController.curateProducts);
+
+// ─── ADMIN SYSTEM SETTINGS & RBAC CONTROL ───
+router.get('/admin/system/settings', adminController.getSystemSettings);
+router.put('/admin/system/settings', adminController.updateSystemSettingsGroup);
+
+router.get('/admin/system/users', adminController.getSystemUsers);
+router.post('/admin/system/users', adminController.createSystemUser);
+router.put('/admin/system/users/:id', adminController.updateSystemUser);
+router.delete('/admin/system/users/:id', adminController.deleteSystemUser);
+
+router.get('/admin/system/roles', adminController.getSystemRoles);
+router.put('/admin/system/roles/:id', adminController.updateSystemRole);
+
+router.get('/admin/system/activity-logs', adminController.getActivityLogs);
+router.get('/admin/system/login-history', adminController.getLoginHistory);
+router.get('/admin/system/backup', adminController.exportSystemBackup);
+
+// ─── ADMIN REFERRALS & WALLET CONTROL ───
 router.get('/admin/referrals', adminController.getReferrals);
-router.put('/admin/referrals/:id', adminController.updateReferralStatus);
+router.get('/admin/referrals/settings', adminController.getReferralSettings);
+router.put('/admin/referrals/settings', adminController.updateReferralSettings);
+router.post('/admin/referrals/:id/status', adminController.updateReferralStatus);
+router.get('/admin/referrals/analytics', adminController.getReferralAnalytics);
+router.get('/admin/referrals/export', adminController.exportReferralsCsv);
+
+router.get('/admin/wallet/transactions', adminController.getWalletTransactions);
+router.post('/admin/wallet/adjustment', adminController.manualWalletAdjustment);
+router.get('/admin/wallet/export', adminController.exportWalletTransactionsCsv);
 
 // ─── ADMIN COUPONS CONTROL ───
 router.get('/admin/coupons', adminController.getCoupons);
@@ -124,5 +168,19 @@ router.post('/admin/shiprocket/ndr/:id/resolve', adminController.resolveShiprock
 router.get('/admin/shiprocket/manifests', adminController.getShiprocketManifests);
 router.post('/admin/shiprocket/generate-manifest', adminController.generateShiprocketManifest);
 
+// ─── SYSTEM SETTINGS & SYSTEM ADMIN ROUTES ───
+router.get('/admin/system/settings', adminController.getSystemSettings);
+router.put('/admin/system/settings', adminController.updateSystemSettingsGroup);
+router.get('/admin/system/users', adminController.getSystemUsers);
+router.post('/admin/system/users', adminController.createSystemUser);
+router.put('/admin/system/users/:id', adminController.updateSystemUser);
+router.delete('/admin/system/users/:id', adminController.deleteSystemUser);
+router.get('/admin/system/roles', adminController.getSystemRoles);
+router.put('/admin/system/roles/:id', adminController.updateSystemRole);
+router.get('/admin/system/activity-logs', adminController.getActivityLogs);
+router.get('/admin/system/login-history', adminController.getLoginHistory);
+router.get('/admin/system/export-backup', adminController.exportSystemBackup);
+
 module.exports = router;
+
 
