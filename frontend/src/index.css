@@ -51,6 +51,32 @@ body {
     radial-gradient(circle at 85% 85%, rgba(20, 184, 166, 0.1) 0%, transparent 50%);
   background-attachment: fixed;
   min-height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+/* Full Screen Width Light Mode for Admin Dashboard */
+body.admin-light-mode {
+  background-color: #F8F6F1 !important;
+  background-image: none !important;
+  color: #1F2937 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100% !important;
+  min-height: 100vh !important;
+}
+
+body.admin-light-mode #root,
+body.admin-light-mode .app-container,
+body.admin-light-mode .admin-layout,
+body.admin-light-mode .main-content,
+body.admin-light-mode .admin-main {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background-color: #F8F6F1 !important;
+  min-height: 100vh !important;
 }
 
 h1, h2, h3, h4, h5, h6 {

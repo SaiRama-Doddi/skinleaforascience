@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
@@ -11,10 +11,21 @@ function Layout() {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith('/admin');
 
+  useEffect(() => {
+    if (isAdminRoute) {
+      document.body.classList.add('admin-light-mode');
+    } else {
+      document.body.classList.remove('admin-light-mode');
+    }
+    return () => {
+      document.body.classList.remove('admin-light-mode');
+    };
+  }, [isAdminRoute]);
+
   return (
-    <div className="app-container">
+    <div className={isAdminRoute ? "app-container admin-layout" : "app-container"}>
       {!isAdminRoute && <Navbar />}
-      <main className="main-content">
+      <main className={isAdminRoute ? "main-content admin-main" : "main-content"}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/products" element={<Products />} />

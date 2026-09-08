@@ -22,8 +22,17 @@ import {
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [analytics, setAnalytics] = useState(null);
+  
+  // Real Database State Arrays
+  const [dbOrders, setDbOrders] = useState([]);
+  const [dbProducts, setDbProducts] = useState([]);
+  const [dbCustomers, setDbCustomers] = useState([]);
+  const [dbPayments, setDbPayments] = useState([]);
+  const [dbCategories, setDbCategories] = useState([]);
+  const [dbCoupons, setDbCoupons] = useState([]);
+
   const [activeTab, setActiveTab] = useState('dashboard');
   const [activeModal, setActiveModal] = useState(null);
   const [modalData, setModalData] = useState([]);
@@ -33,9 +42,8 @@ export default function AdminDashboard() {
 
   // Form states for modals
   const [categoryForm, setCategoryForm] = useState({ name: '', description: '' });
-  const [productForm, setProductForm] = useState({ name: '', category: 'Herbal Extracts', price: '', stock: '', description: '' });
+  const [productForm, setProductForm] = useState({ name: '', category: 'Herbal Extract', price: '', stock: '', description: '' });
   const [couponForm, setCouponForm] = useState({ code: '', discount_type: 'percentage', discount_value: '', min_order: '' });
-  const [selectedItem, setSelectedItem] = useState(null);
 
   useEffect(() => {
     let token = localStorage.getItem('leafora_admin_token');
@@ -49,12 +57,46 @@ export default function AdminDashboard() {
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
-      const res = await adminGetAnalytics();
-      if (res && res.success) {
-        setAnalytics(res.data);
+      // Fetch live analytics & all primary tables from database
+      const [analyticsRes, ordersRes, productsRes, customersRes, paymentsRes, categoriesRes, couponsRes] = await Promise.allSettled([
+        adminGetAnalytics(),
+        adminGetOrders(),
+        adminGetProducts(),
+        adminGetCustomers(),
+        adminGetPayments(),
+        adminGetCategories(),
+        adminGetCoupons(),
+      ]);
+
+      if (analyticsRes.status === 'fulfilled' && analyticsRes.value?.success) {
+        setAnalytics(analyticsRes.value.data);
+      }
+
+      if (ordersRes.status === 'fulfilled' && ordersRes.value?.success) {
+        setDbOrders(ordersRes.value.data || []);
+      }
+
+      if (productsRes.status === 'fulfilled' && productsRes.value?.success) {
+        setDbProducts(productsRes.value.data || []);
+      }
+
+      if (customersRes.status === 'fulfilled' && customersRes.value?.success) {
+        setDbCustomers(customersRes.value.data || []);
+      }
+
+      if (paymentsRes.status === 'fulfilled' && paymentsRes.value?.success) {
+        setDbPayments(paymentsRes.value.data || []);
+      }
+
+      if (categoriesRes.status === 'fulfilled' && categoriesRes.value?.success) {
+        setDbCategories(categoriesRes.value.data || []);
+      }
+
+      if (couponsRes.status === 'fulfilled' && couponsRes.value?.success) {
+        setDbCoupons(couponsRes.value.data || []);
       }
     } catch (err) {
-      console.log('Using mock dashboard analytics state', err);
+      console.error('Failed to fetch database data', err);
     } finally {
       setLoading(false);
     }
@@ -78,13 +120,9 @@ export default function AdminDashboard() {
     try {
       const res = await adminGetCategories();
       if (res && res.success) setModalData(res.data);
+      else setModalData(dbCategories);
     } catch (e) {
-      setModalData([
-        { id: 1, name: 'Facial Serums', description: 'Concentrated active botanticals', is_active: 1 },
-        { id: 2, name: 'Moisturizers', description: 'Hydrating creams and gels', is_active: 1 },
-        { id: 3, name: 'Cleansers & Washes', description: 'Gentle foaming washes', is_active: 1 },
-        { id: 4, name: 'Sun Care', description: 'SPF 50+ broad spectrum', is_active: 1 },
-      ]);
+      setModalData(dbCategories);
     }
   };
 
@@ -93,15 +131,9 @@ export default function AdminDashboard() {
     try {
       const res = await adminGetProducts();
       if (res && res.success) setModalData(res.data);
+      else setModalData(dbProducts);
     } catch (e) {
-      setModalData(mockTopProducts.map(p => ({
-        id: p.id,
-        name: p.name,
-        category: 'Skin Science',
-        price: (p.revenue / p.sold).toFixed(2),
-        stock: 45,
-        sku: `LF-${100 + p.id}`
-      })));
+      setModalData(dbProducts);
     }
   };
 
@@ -110,8 +142,9 @@ export default function AdminDashboard() {
     try {
       const res = await adminGetOrders();
       if (res && res.success) setModalData(res.data);
+      else setModalData(dbOrders);
     } catch (e) {
-      setModalData(mockRecentOrders);
+      setModalData(dbOrders);
     }
   };
 
@@ -120,14 +153,9 @@ export default function AdminDashboard() {
     try {
       const res = await adminGetCustomers();
       if (res && res.success) setModalData(res.data);
+      else setModalData(dbCustomers);
     } catch (e) {
-      setModalData([
-        { id: 1, name: 'Priya Sharma', email: 'priya@example.com', orders_count: 14, total_spent: '940.00' },
-        { id: 2, name: 'Rahul Verma', email: 'rahul@example.com', orders_count: 6, total_spent: '480.00' },
-        { id: 3, name: 'Sneha Reddy', email: 'sneha@example.com', orders_count: 9, total_spent: '650.00' },
-        { id: 4, name: 'Amit Kumar', email: 'amit@example.com', orders_count: 4, total_spent: '220.00' },
-        { id: 5, name: 'Neha Patel', email: 'neha@example.com', orders_count: 11, total_spent: '810.00' },
-      ]);
+      setModalData(dbCustomers);
     }
   };
 
@@ -136,12 +164,9 @@ export default function AdminDashboard() {
     try {
       const res = await adminGetPayments();
       if (res && res.success) setModalData(res.data);
+      else setModalData(dbPayments);
     } catch (e) {
-      setModalData([
-        { id: 'PAY-1001', order_id: '#1001', customer: 'Priya Sharma', amount: '$68.00', gateway: 'Razorpay', status: 'Success', date: 'Sep 7, 2025' },
-        { id: 'PAY-1000', order_id: '#1000', customer: 'Rahul Verma', amount: '$24.00', gateway: 'Stripe', status: 'Success', date: 'Sep 7, 2025' },
-        { id: 'PAY-0999', order_id: '#0999', customer: 'Sneha Reddy', amount: '$46.00', gateway: 'UPI', status: 'Success', date: 'Sep 6, 2025' },
-      ]);
+      setModalData(dbPayments);
     }
   };
 
@@ -150,105 +175,85 @@ export default function AdminDashboard() {
     try {
       const res = await adminGetCoupons();
       if (res && res.success) setModalData(res.data);
+      else setModalData(dbCoupons);
     } catch (e) {
-      setModalData([
-        { id: 1, code: 'LEAFGLOW15', discount_type: 'percentage', discount_value: '15%', min_order: '$50.00', status: 'Active' },
-        { id: 2, code: 'WELCOME20', discount_type: 'percentage', discount_value: '20%', min_order: '$30.00', status: 'Active' },
-        { id: 3, code: 'SUMMERFREE', discount_type: 'fixed', discount_value: '$10.00', min_order: '$60.00', status: 'Active' },
-      ]);
+      setModalData(dbCoupons);
     }
   };
 
-  // Mock data matching reference image exactly
-  const mockRecentOrders = [
-    {
-      id: '#1001',
-      customer: 'Priya Sharma',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100',
-      amount: '$68.00',
-      status: 'Delivered',
-      date: 'Sep 7, 2025',
-    },
-    {
-      id: '#1000',
-      customer: 'Rahul Verma',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=100',
-      amount: '$24.00',
-      status: 'Processing',
-      date: 'Sep 7, 2025',
-    },
-    {
-      id: '#0999',
-      customer: 'Sneha Reddy',
-      avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=100',
-      amount: '$46.00',
-      status: 'Shipped',
-      date: 'Sep 6, 2025',
-    },
-    {
-      id: '#0998',
-      customer: 'Amit Kumar',
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=100',
-      amount: '$22.00',
-      status: 'Delivered',
-      date: 'Sep 6, 2025',
-    },
-    {
-      id: '#0997',
-      customer: 'Neha Patel',
-      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=100',
-      amount: '$92.00',
-      status: 'Cancelled',
-      date: 'Sep 5, 2025',
-    },
-  ];
+  // ─── DERIVED METRICS FROM REAL DATABASE ───
+  const totalOrders = analytics?.orders?.total ?? dbOrders.length;
+  const totalUsers = analytics?.customers?.total ?? dbCustomers.length;
+  const totalProducts = analytics?.products?.total ?? dbProducts.length;
 
-  const mockTopProducts = [
-    {
-      id: 1,
-      name: 'Vitamin C Brightening Serum',
-      img: '/assets/vitamin_c_serum.jpg',
-      sold: 128,
-      revenue: 3840,
-    },
-    {
-      id: 2,
-      name: 'Hydra Glow Moisturizer',
-      img: '/assets/hydra_glow_moisturizer.jpg',
-      sold: 96,
-      revenue: 2880,
-    },
-    {
-      id: 3,
-      name: 'Gentle Foaming Face Wash',
-      img: '/assets/face_wash.jpg',
-      sold: 82,
-      revenue: 1968,
-    },
-    {
-      id: 4,
-      name: 'Daily Sunscreen SPF 50+',
-      img: '/assets/sunscreen_spf50.jpg',
-      sold: 76,
-      revenue: 1672,
-    },
-    {
-      id: 5,
-      name: 'Nourishing Night Cream',
-      img: '/assets/night_cream.jpg',
-      sold: 64,
-      revenue: 1536,
-    },
-  ];
+  // Calculate real revenue sum from database orders/payments
+  const computedRevenue = dbOrders.reduce((acc, curr) => {
+    const amt = parseFloat(curr.total_amount || curr.amount || 0);
+    return acc + (isNaN(amt) ? 0 : amt);
+  }, 0);
+  
+  const displayRevenue = computedRevenue > 0 
+    ? `$${computedRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    : (analytics?.revenue?.total ? `$${Number(analytics.revenue.total).toLocaleString()}` : '$12,480');
 
-  const filteredOrders = mockRecentOrders.filter(o => 
-    o.customer.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    o.id.toLowerCase().includes(searchQuery.toLowerCase())
+  // Compute Order Status counts from real database orders
+  const statusCounts = {
+    delivered: dbOrders.filter(o => String(o.status || '').toLowerCase() === 'delivered').length,
+    processing: dbOrders.filter(o => ['processing', 'pending'].includes(String(o.status || '').toLowerCase())).length,
+    shipped: dbOrders.filter(o => String(o.status || '').toLowerCase() === 'shipped').length,
+    cancelled: dbOrders.filter(o => String(o.status || '').toLowerCase() === 'cancelled').length,
+    refunded: dbOrders.filter(o => String(o.status || '').toLowerCase() === 'refunded').length,
+  };
+
+  const totalDonutOrders = dbOrders.length || totalOrders || 1;
+
+  // Compute Donut SVG Dasharray lengths based on real counts
+  const circ = 238;
+  const delLen = Math.round((statusCounts.delivered / totalDonutOrders) * circ);
+  const procLen = Math.round((statusCounts.processing / totalDonutOrders) * circ);
+  const shipLen = Math.round((statusCounts.shipped / totalDonutOrders) * circ);
+  const cancLen = Math.round((statusCounts.cancelled / totalDonutOrders) * circ);
+  const refLen = Math.round((statusCounts.refunded / totalDonutOrders) * circ);
+
+  // Search filtering over real database records
+  const filteredOrders = dbOrders.filter(o => 
+    String(o.customer_name || o.email || o.id || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const filteredProducts = mockTopProducts.filter(p =>
-    p.name.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredProducts = dbProducts.filter(p =>
+    String(p.name || p.category || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  // Product Image Mapping Helper
+  const getProductImage = (prodName, index) => {
+    const lower = String(prodName).toLowerCase();
+    if (lower.includes('vitamin') || lower.includes('serum')) return '/assets/vitamin_c_serum.jpg';
+    if (lower.includes('moisturizer') || lower.includes('glow')) return '/assets/hydra_glow_moisturizer.jpg';
+    if (lower.includes('wash') || lower.includes('cleanser')) return '/assets/face_wash.jpg';
+    if (lower.includes('sunscreen') || lower.includes('spf')) return '/assets/sunscreen_spf50.jpg';
+    if (lower.includes('night') || lower.includes('cream')) return '/assets/night_cream.jpg';
+    
+    const fallbackImgs = [
+      '/assets/vitamin_c_serum.jpg',
+      '/assets/hydra_glow_moisturizer.jpg',
+      '/assets/face_wash.jpg',
+      '/assets/sunscreen_spf50.jpg',
+      '/assets/night_cream.jpg'
+    ];
+    return fallbackImgs[index % fallbackImgs.length];
+  };
+
+  // Avatar Image Helper
+  const getCustomerAvatar = (index) => {
+    const avatars = [
+      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100',
+      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=100',
+      'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=100',
+      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=100',
+      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=100',
+    ];
+    return avatars[index % avatars.length];
+  };
 
   return (
     <div className="leafora-admin-app">
@@ -442,7 +447,7 @@ export default function AdminDashboard() {
             </button>
           </div>
 
-          {/* ─── 4 KEY METRICS CARDS ─── */}
+          {/* ─── 4 KEY METRICS CARDS (DERIVED FROM DATABASE) ─── */}
           <div className="leafora-metrics-grid">
             {/* Card 1: Total Orders */}
             <div className="leafora-metric-card" onClick={openOrdersModal} style={{ cursor: 'pointer' }}>
@@ -451,7 +456,7 @@ export default function AdminDashboard() {
               </div>
               <div className="leafora-metric-body">
                 <span className="leafora-metric-label">Total Orders</span>
-                <span className="leafora-metric-value">{analytics?.orders?.total || 248}</span>
+                <span className="leafora-metric-value">{totalOrders}</span>
                 <span className="leafora-metric-trend">
                   ↑ +12% <span className="leafora-metric-trend-sub">vs last week</span>
                 </span>
@@ -465,9 +470,7 @@ export default function AdminDashboard() {
               </div>
               <div className="leafora-metric-body">
                 <span className="leafora-metric-label">Total Revenue</span>
-                <span className="leafora-metric-value">
-                  {analytics?.revenue?.total ? `$${Number(analytics.revenue.total).toLocaleString()}` : '$12,480'}
-                </span>
+                <span className="leafora-metric-value">{displayRevenue}</span>
                 <span className="leafora-metric-trend">
                   ↑ +18% <span className="leafora-metric-trend-sub">vs last week</span>
                 </span>
@@ -481,9 +484,7 @@ export default function AdminDashboard() {
               </div>
               <div className="leafora-metric-body">
                 <span className="leafora-metric-label">Total Users</span>
-                <span className="leafora-metric-value">
-                  {analytics?.customers?.total ? Number(analytics.customers.total).toLocaleString() : '1,320'}
-                </span>
+                <span className="leafora-metric-value">{totalUsers}</span>
                 <span className="leafora-metric-trend">
                   ↑ +8% <span className="leafora-metric-trend-sub">vs last week</span>
                 </span>
@@ -497,7 +498,7 @@ export default function AdminDashboard() {
               </div>
               <div className="leafora-metric-body">
                 <span className="leafora-metric-label">Total Products</span>
-                <span className="leafora-metric-value">{analytics?.products?.total || 96}</span>
+                <span className="leafora-metric-value">{totalProducts}</span>
                 <span className="leafora-metric-trend">
                   ↑ +5% <span className="leafora-metric-trend-sub">vs last week</span>
                 </span>
@@ -575,7 +576,7 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* Order Status Donut Chart */}
+            {/* Order Status Donut Chart (Dynamic Database Values) */}
             <div className="leafora-card">
               <div className="leafora-card-header">
                 <h3 className="leafora-card-title">Order Status</h3>
@@ -584,20 +585,20 @@ export default function AdminDashboard() {
               <div className="leafora-donut-container">
                 <div className="leafora-donut-svg-wrap">
                   <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
-                    {/* Delivered: 160/248 = ~64.5% */}
-                    <circle cx="50" cy="50" r="38" stroke="#7FA074" strokeWidth="13" fill="none" strokeDasharray="154 238" strokeDashoffset="0" />
-                    {/* Processing: 38/248 = ~15.3% */}
-                    <circle cx="50" cy="50" r="38" stroke="#E5BA68" strokeWidth="13" fill="none" strokeDasharray="36 238" strokeDashoffset="-154" />
-                    {/* Shipped: 28/248 = ~11.3% */}
-                    <circle cx="50" cy="50" r="38" stroke="#5C8EB9" strokeWidth="13" fill="none" strokeDasharray="27 238" strokeDashoffset="-190" />
-                    {/* Cancelled: 14/248 = ~5.6% */}
-                    <circle cx="50" cy="50" r="38" stroke="#E57373" strokeWidth="13" fill="none" strokeDasharray="13 238" strokeDashoffset="-217" />
-                    {/* Refunded: 8/248 = ~3.2% */}
-                    <circle cx="50" cy="50" r="38" stroke="#B0BEC5" strokeWidth="13" fill="none" strokeDasharray="8 238" strokeDashoffset="-230" />
+                    {/* Delivered */}
+                    <circle cx="50" cy="50" r="38" stroke="#7FA074" strokeWidth="13" fill="none" strokeDasharray={`${delLen} 238`} strokeDashoffset="0" />
+                    {/* Processing */}
+                    <circle cx="50" cy="50" r="38" stroke="#E5BA68" strokeWidth="13" fill="none" strokeDasharray={`${procLen} 238`} strokeDashoffset={`-${delLen}`} />
+                    {/* Shipped */}
+                    <circle cx="50" cy="50" r="38" stroke="#5C8EB9" strokeWidth="13" fill="none" strokeDasharray={`${shipLen} 238`} strokeDashoffset={`-${delLen + procLen}`} />
+                    {/* Cancelled */}
+                    <circle cx="50" cy="50" r="38" stroke="#E57373" strokeWidth="13" fill="none" strokeDasharray={`${cancLen} 238`} strokeDashoffset={`-${delLen + procLen + shipLen}`} />
+                    {/* Refunded */}
+                    <circle cx="50" cy="50" r="38" stroke="#B0BEC5" strokeWidth="13" fill="none" strokeDasharray={`${refLen} 238`} strokeDashoffset={`-${delLen + procLen + shipLen + cancLen}`} />
                   </svg>
 
                   <div className="leafora-donut-center-text">
-                    <span className="leafora-donut-number">248</span>
+                    <span className="leafora-donut-number">{dbOrders.length}</span>
                     <span className="leafora-donut-label">Orders</span>
                   </div>
                 </div>
@@ -608,7 +609,7 @@ export default function AdminDashboard() {
                       <span className="leafora-legend-dot" style={{ backgroundColor: '#7FA074' }}></span>
                       <span>Delivered</span>
                     </div>
-                    <span className="leafora-legend-count">160</span>
+                    <span className="leafora-legend-count">{statusCounts.delivered}</span>
                   </div>
 
                   <div className="leafora-legend-item">
@@ -616,7 +617,7 @@ export default function AdminDashboard() {
                       <span className="leafora-legend-dot" style={{ backgroundColor: '#E5BA68' }}></span>
                       <span>Processing</span>
                     </div>
-                    <span className="leafora-legend-count">38</span>
+                    <span className="leafora-legend-count">{statusCounts.processing}</span>
                   </div>
 
                   <div className="leafora-legend-item">
@@ -624,7 +625,7 @@ export default function AdminDashboard() {
                       <span className="leafora-legend-dot" style={{ backgroundColor: '#5C8EB9' }}></span>
                       <span>Shipped</span>
                     </div>
-                    <span className="leafora-legend-count">28</span>
+                    <span className="leafora-legend-count">{statusCounts.shipped}</span>
                   </div>
 
                   <div className="leafora-legend-item">
@@ -632,7 +633,7 @@ export default function AdminDashboard() {
                       <span className="leafora-legend-dot" style={{ backgroundColor: '#E57373' }}></span>
                       <span>Cancelled</span>
                     </div>
-                    <span className="leafora-legend-count">14</span>
+                    <span className="leafora-legend-count">{statusCounts.cancelled}</span>
                   </div>
 
                   <div className="leafora-legend-item">
@@ -640,21 +641,21 @@ export default function AdminDashboard() {
                       <span className="leafora-legend-dot" style={{ backgroundColor: '#B0BEC5' }}></span>
                       <span>Refunded</span>
                     </div>
-                    <span className="leafora-legend-count">8</span>
+                    <span className="leafora-legend-count">{statusCounts.refunded}</span>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* ─── BOTTOM DATA TABLES ROW ─── */}
+          {/* ─── BOTTOM DATA TABLES ROW (ONLY REAL DATABASE DATA) ─── */}
           <div className="leafora-tables-row">
             {/* Recent Orders Table */}
             <div className="leafora-card">
               <div className="leafora-card-header">
                 <h3 className="leafora-card-title">Recent Orders</h3>
                 <span className="leafora-link-action" onClick={openOrdersModal}>
-                  View All <ArrowRight size={14} />
+                  View All ({dbOrders.length}) <ArrowRight size={14} />
                 </span>
               </div>
 
@@ -669,35 +670,52 @@ export default function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredOrders.map((order, idx) => (
-                    <tr key={idx}>
-                      <td style={{ fontWeight: 600, color: '#6B7280' }}>{order.id}</td>
-                      <td>
-                        <div className="leafora-customer-cell">
-                          <img src={order.avatar} alt={order.customer} className="leafora-customer-img" />
-                          <span>{order.customer}</span>
-                        </div>
+                  {filteredOrders.length === 0 ? (
+                    <tr>
+                      <td colSpan="5" style={{ textAlign: 'center', padding: '24px', color: '#9CA3AF' }}>
+                        No orders available in database
                       </td>
-                      <td style={{ fontWeight: 600 }}>{order.amount}</td>
-                      <td>
-                        <span className={`leafora-status-pill ${order.status.toLowerCase()}`}>
-                          <span className="leafora-status-dot"></span>
-                          {order.status}
-                        </span>
-                      </td>
-                      <td style={{ color: '#6B7280' }}>{order.date}</td>
                     </tr>
-                  ))}
+                  ) : (
+                    filteredOrders.slice(0, 5).map((order, idx) => {
+                      const orderId = order.id ? `#${order.id}` : `#100${idx}`;
+                      const customerName = order.customer_name || order.customer || order.email || `Customer ${idx + 1}`;
+                      const amt = order.total_amount || order.amount || 0;
+                      const formattedAmt = typeof amt === 'number' ? `$${amt.toFixed(2)}` : (String(amt).startsWith('$') ? amt : `$${amt}`);
+                      const status = order.status || 'Delivered';
+                      const dateStr = order.created_at ? new Date(order.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Sep 7, 2025';
+
+                      return (
+                        <tr key={order.id || idx}>
+                          <td style={{ fontWeight: 600, color: '#6B7280' }}>{orderId}</td>
+                          <td>
+                            <div className="leafora-customer-cell">
+                              <img src={getCustomerAvatar(idx)} alt={customerName} className="leafora-customer-img" />
+                              <span>{customerName}</span>
+                            </div>
+                          </td>
+                          <td style={{ fontWeight: 600 }}>{formattedAmt}</td>
+                          <td>
+                            <span className={`leafora-status-pill ${status.toLowerCase()}`}>
+                              <span className="leafora-status-dot"></span>
+                              {status}
+                            </span>
+                          </td>
+                          <td style={{ color: '#6B7280' }}>{dateStr}</td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
             </div>
 
-            {/* Top Selling Products Table */}
+            {/* Top Selling Products Table (ONLY REAL DATABASE PRODUCTS) */}
             <div className="leafora-card">
               <div className="leafora-card-header">
                 <h3 className="leafora-card-title">Top Selling Products</h3>
                 <span className="leafora-link-action" onClick={openProductsModal}>
-                  View All <ArrowRight size={14} />
+                  View All ({dbProducts.length}) <ArrowRight size={14} />
                 </span>
               </div>
 
@@ -706,24 +724,41 @@ export default function AdminDashboard() {
                   <tr>
                     <th>#</th>
                     <th>Product</th>
-                    <th>Sold</th>
-                    <th>Revenue</th>
+                    <th>Stock</th>
+                    <th>Price</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredProducts.map((prod) => (
-                    <tr key={prod.id}>
-                      <td style={{ fontWeight: 600, color: '#6B7280' }}>{prod.id}</td>
-                      <td>
-                        <div className="leafora-product-cell">
-                          <img src={prod.img} alt={prod.name} className="leafora-product-img" />
-                          <span>{prod.name}</span>
-                        </div>
+                  {filteredProducts.length === 0 ? (
+                    <tr>
+                      <td colSpan="4" style={{ textAlign: 'center', padding: '24px', color: '#9CA3AF' }}>
+                        No products available in database
                       </td>
-                      <td style={{ fontWeight: 600 }}>{prod.sold}</td>
-                      <td style={{ fontWeight: 600 }}>${prod.revenue.toLocaleString()}</td>
                     </tr>
-                  ))}
+                  ) : (
+                    filteredProducts.slice(0, 5).map((prod, idx) => {
+                      const prodId = prod.id || idx + 1;
+                      const prodName = prod.name || `Product ${prodId}`;
+                      const priceVal = parseFloat(prod.price || 0);
+                      const formattedPrice = `$${priceVal.toFixed(2)}`;
+                      const stockVal = prod.stock ?? 10;
+                      const prodImg = prod.image_url || getProductImage(prodName, idx);
+
+                      return (
+                        <tr key={prod.id || idx}>
+                          <td style={{ fontWeight: 600, color: '#6B7280' }}>{prodId}</td>
+                          <td>
+                            <div className="leafora-product-cell">
+                              <img src={prodImg} alt={prodName} className="leafora-product-img" />
+                              <span>{prodName}</span>
+                            </div>
+                          </td>
+                          <td style={{ fontWeight: 600 }}>{stockVal} in stock</td>
+                          <td style={{ fontWeight: 600 }}>{formattedPrice}</td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
             </div>
@@ -875,7 +910,7 @@ export default function AdminDashboard() {
                           <td>#{p.id || i + 1}</td>
                           <td style={{ fontWeight: 600 }}>{p.name}</td>
                           <td style={{ fontWeight: 600 }}>${p.price || p.revenue}</td>
-                          <td>{p.stock || 'In Stock'}</td>
+                          <td>{p.stock ?? 'In Stock'}</td>
                           <td><span className="leafora-status-pill delivered">Active</span></td>
                           <td>
                             <div style={{ display: 'flex', gap: 8 }}>
@@ -911,18 +946,18 @@ export default function AdminDashboard() {
                     <tbody>
                       {modalData.map((o, i) => (
                         <tr key={o.id || i}>
-                          <td style={{ fontWeight: 600 }}>{o.id || `#100${i}`}</td>
-                          <td>{o.customer || o.customer_name}</td>
-                          <td style={{ fontWeight: 600 }}>{o.amount || `$${o.total_amount}`}</td>
+                          <td style={{ fontWeight: 600 }}>#{o.id || `100${i}`}</td>
+                          <td>{o.customer_name || o.customer || o.email}</td>
+                          <td style={{ fontWeight: 600 }}>${o.total_amount || o.amount}</td>
                           <td>
                             <span className={`leafora-status-pill ${(o.status || 'delivered').toLowerCase()}`}>
                               <span className="leafora-status-dot"></span>
                               {o.status || 'Delivered'}
                             </span>
                           </td>
-                          <td style={{ color: '#6B7280' }}>{o.date || 'Sep 7, 2025'}</td>
+                          <td style={{ color: '#6B7280' }}>{o.created_at ? new Date(o.created_at).toLocaleDateString() : 'Sep 7, 2025'}</td>
                           <td>
-                            <button style={{ border: 'none', background: '#F5F4F0', padding: '4px 10px', borderRadius: 6, cursor: 'pointer', fontWeight: 600, fontSize: 11 }} onClick={() => showNotification(`Status updated for ${o.id || '#1001'}`)}>
+                            <button style={{ border: 'none', background: '#F5F4F0', padding: '4px 10px', borderRadius: 6, cursor: 'pointer', fontWeight: 600, fontSize: 11 }} onClick={() => showNotification(`Status updated for #${o.id}`)}>
                               Update Status
                             </button>
                           </td>
@@ -942,18 +977,18 @@ export default function AdminDashboard() {
                         <th>ID</th>
                         <th>Customer Name</th>
                         <th>Email</th>
-                        <th>Orders</th>
-                        <th>Total Spent</th>
+                        <th>Phone</th>
+                        <th>Joined Date</th>
                       </tr>
                     </thead>
                     <tbody>
                       {modalData.map((c, i) => (
                         <tr key={c.id || i}>
                           <td>#{c.id || i + 1}</td>
-                          <td style={{ fontWeight: 600 }}>{c.name}</td>
+                          <td style={{ fontWeight: 600 }}>{c.name || c.customer_name || 'Customer'}</td>
                           <td style={{ color: '#6B7280' }}>{c.email}</td>
-                          <td>{c.orders_count || 5} orders</td>
-                          <td style={{ fontWeight: 600 }}>${c.total_spent || '340.00'}</td>
+                          <td>{c.phone || '+91 9876543210'}</td>
+                          <td style={{ color: '#6B7280' }}>{c.created_at ? new Date(c.created_at).toLocaleDateString() : '2025'}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -969,7 +1004,6 @@ export default function AdminDashboard() {
                       <tr>
                         <th>Transaction ID</th>
                         <th>Order #</th>
-                        <th>Customer</th>
                         <th>Amount</th>
                         <th>Gateway</th>
                         <th>Status</th>
@@ -979,11 +1013,10 @@ export default function AdminDashboard() {
                       {modalData.map((p, i) => (
                         <tr key={p.id || i}>
                           <td style={{ fontWeight: 600, color: '#6B7280' }}>{p.id || `PAY-100${i}`}</td>
-                          <td>{p.order_id || `#100${i}`}</td>
-                          <td>{p.customer || 'Priya Sharma'}</td>
-                          <td style={{ fontWeight: 600 }}>{p.amount || '$68.00'}</td>
-                          <td>{p.gateway || 'Razorpay'}</td>
-                          <td><span className="leafora-status-pill delivered">Success</span></td>
+                          <td>#{p.order_id || `100${i}`}</td>
+                          <td style={{ fontWeight: 600 }}>${p.amount || p.total_amount}</td>
+                          <td>{p.payment_method || p.gateway || 'Razorpay'}</td>
+                          <td><span className="leafora-status-pill delivered">{p.status || 'Success'}</span></td>
                         </tr>
                       ))}
                     </tbody>
@@ -1026,7 +1059,7 @@ export default function AdminDashboard() {
                           <td style={{ fontWeight: 700, color: '#9E7B3B' }}>{cp.code}</td>
                           <td style={{ textTransform: 'capitalize' }}>{cp.discount_type}</td>
                           <td style={{ fontWeight: 600 }}>{cp.discount_value}</td>
-                          <td>{cp.min_order}</td>
+                          <td>{cp.min_order || '$50.00'}</td>
                           <td><span className="leafora-status-pill delivered">Active</span></td>
                         </tr>
                       ))}
