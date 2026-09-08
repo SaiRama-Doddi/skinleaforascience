@@ -153,7 +153,9 @@
   flex-direction: column;
   gap: 28px;
   position: sticky;
-  top: 100px;
+  top: 90px;
+  max-height: calc(100vh - 110px);
+  overflow-y: auto;
 }
 
 .filter-group-title {

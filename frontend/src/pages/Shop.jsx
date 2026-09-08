@@ -3,7 +3,7 @@ import {
   Search, Grid, List, Filter, Heart, ShoppingBag, Star, 
   ChevronRight, X, RotateCcw, CheckCircle2, ShieldCheck, Leaf, Award, Eye
 } from 'lucide-react';
-import { getProducts } from '../services/api';
+import { getProducts, getCategories } from '../services/api';
 import './Shop.css';
 
 // Initial shop catalog data matching the user's reference image exactly
@@ -219,7 +219,9 @@ export default function Shop() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
-  // Load API products if available
+  const [dbCategories, setDbCategories] = useState([]);
+
+  // Load API products & categories from Database
   useEffect(() => {
     getProducts()
       .then(res => {
@@ -244,7 +246,39 @@ export default function Shop() {
         }
       })
       .catch(() => console.warn('Using standard sample products for Shop page'));
+
+    getCategories()
+      .then(res => {
+        if (res?.data && Array.isArray(res.data)) {
+          setDbCategories(res.data);
+        }
+      })
+      .catch(() => {});
   }, []);
+
+  const categoryOptions = useMemo(() => {
+    const list = [{ name: 'All Products', count: products.length }];
+    if (dbCategories.length > 0) {
+      dbCategories.forEach(cat => {
+        const count = products.filter(p => 
+          p.category?.toLowerCase() === cat.name?.toLowerCase() ||
+          p.category_id === cat.id
+        ).length;
+        list.push({ name: cat.name, count, id: cat.id });
+      });
+    } else {
+      const catMap = {};
+      products.forEach(p => {
+        if (p.category) {
+          catMap[p.category] = (catMap[p.category] || 0) + 1;
+        }
+      });
+      Object.keys(catMap).forEach(catName => {
+        list.push({ name: catName, count: catMap[catName] });
+      });
+    }
+    return list;
+  }, [dbCategories, products]);
 
   const showToast = (msg) => {
     setToastMessage(msg);
@@ -336,50 +370,7 @@ export default function Shop() {
         </div>
       )}
 
-      {/* 1. HERO HEADER SECTION MATCHING REFERENCE IMAGE */}
-      <section className="shop-hero">
-        <div className="shop-hero-text">
-          <div className="shop-breadcrumbs">
-            Home / <span>Shop</span>
-          </div>
 
-          <h1 className="shop-hero-title">Shop Our Collection</h1>
-          <p className="shop-hero-sub">
-            Pure ingredients. Real results. Skincare for a brighter you.
-          </p>
-
-          <div className="hero-benefit-pills">
-            <div className="benefit-pill">
-              <div className="benefit-icon-circle">🍃</div>
-              <span>Natural Ingredients</span>
-            </div>
-            <div className="benefit-pill">
-              <div className="benefit-icon-circle">🧪</div>
-              <span>Dermatologist Tested</span>
-            </div>
-            <div className="benefit-pill">
-              <div className="benefit-icon-circle">🐰</div>
-              <span>Cruelty Free</span>
-            </div>
-            <div className="benefit-pill">
-              <div className="benefit-icon-circle">🤎</div>
-              <span>Safe for All Skin Types</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Hero Right Visual Column */}
-        <div className="shop-hero-visual">
-          <img 
-            src="https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?auto=format&fit=crop&w=800&q=80" 
-            alt="Leafora Skincare Collection Pedestal" 
-            className="hero-pedestal-img"
-          />
-          <div className="hero-side-headline">
-            Nature Nourishes You
-          </div>
-        </div>
-      </section>
 
       {/* 2. SHOP MAIN LAYOUT GRID (SIDEBAR + PRODUCTS AREA) */}
       <div className="shop-main-layout">
@@ -391,17 +382,7 @@ export default function Shop() {
           <div>
             <h3 className="filter-group-title">Categories</h3>
             <ul className="category-filter-list">
-              {[
-                { name: 'All Products', count: 32 },
-                { name: 'Cleansers', count: 6 },
-                { name: 'Moisturizers', count: 5 },
-                { name: 'Serums', count: 6 },
-                { name: 'Face Masks', count: 4 },
-                { name: 'Sunscreens', count: 4 },
-                { name: 'Eye Care', count: 3 },
-                { name: 'Body Care', count: 4 },
-                { name: 'Face Oils', count: 6 }
-              ].map(cat => (
+              {categoryOptions.map(cat => (
                 <li 
                   key={cat.name} 
                   className={`category-item ${selectedCategory === cat.name ? 'active' : ''}`}
@@ -689,13 +670,14 @@ export default function Shop() {
               <div>
                 <h4 style={{ fontWeight: 600, marginBottom: 10 }}>Categories</h4>
                 <ul className="category-filter-list">
-                  {['All Products', 'Cleansers', 'Moisturizers', 'Serums', 'Face Masks', 'Sunscreens', 'Eye Care', 'Body Care', 'Face Oils'].map(c => (
+                  {categoryOptions.map(c => (
                     <li 
-                      key={c} 
-                      className={`category-item ${selectedCategory === c ? 'active' : ''}`}
-                      onClick={() => { setSelectedCategory(c); setIsMobileFilterOpen(false); }}
+                      key={c.name} 
+                      className={`category-item ${selectedCategory === c.name ? 'active' : ''}`}
+                      onClick={() => { setSelectedCategory(c.name); setIsMobileFilterOpen(false); }}
                     >
-                      {c}
+                      <span>{c.name}</span>
+                      <span className="cat-count">({c.count})</span>
                     </li>
                   ))}
                 </ul>
