@@ -65,21 +65,8 @@ export default function Navbar() {
       <div className="top-announcement-bar">
         <div className="top-bar-inner">
           <span className="announcement-text">
-            🚚 <strong>Free Shipping</strong> on Orders Above $50 | Natural Skincare for a Healthier You
+            🚚 <strong>Free Shipping</strong> on Orders Above ₹999 | Natural Skincare for a Healthier You
           </span>
-          <div className="top-bar-right">
-            <span style={{ fontSize: 12, color: '#78716C' }}>USD ($) ▾</span>
-            {user ? (
-              <span style={{ fontSize: 12, color: '#059669', fontWeight: 600 }}>Hi, {user.name.split(' ')[0]}!</span>
-            ) : (
-              <Link to="/login" className="top-bar-link">
-                <User size={13} /> Account
-              </Link>
-            )}
-            <Link to="/products" className="top-bar-link" style={{ fontWeight: 600 }}>
-              <ShoppingBag size={13} /> Cart ({cartCount})
-            </Link>
-          </div>
         </div>
       </div>
 
@@ -141,7 +128,7 @@ export default function Navbar() {
                     <img src={item.image_url || '/assets/vitamin_c_serum.jpg'} alt={item.name} style={{ width: 32, height: 32, borderRadius: 6, objectFit: 'contain' }} />
                     <div>
                       <div style={{ fontSize: 13, fontWeight: 600, color: '#292524' }}>{item.name}</div>
-                      <div style={{ fontSize: 11, color: '#A67C52', fontWeight: 700 }}>${item.price}</div>
+                      <div style={{ fontSize: 11, color: '#A67C52', fontWeight: 700 }}>₹{item.price}</div>
                     </div>
                   </Link>
                 ))}
@@ -149,7 +136,7 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* USER ACCOUNT BADGE / ADMIN PORTAL */}
+          {/* USER ACCOUNT BADGE & CART BUTTON IN NAVBAR */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             {user ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#F4EFEA', padding: '4px 12px 4px 6px', borderRadius: 30, border: '1px solid #E7E0D6' }}>
@@ -158,7 +145,7 @@ export default function Navbar() {
                   alt={user.name} 
                   style={{ width: 28, height: 28, borderRadius: '50%', background: '#A67C52' }} 
                 />
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#292524' }}>${parseFloat(user.wallet_balance || 0).toFixed(2)}</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#292524' }}>₹{parseFloat(user.wallet_balance || 0).toFixed(2)}</span>
                 <button 
                   onClick={handleLogout} 
                   title="Sign Out" 
@@ -174,18 +161,24 @@ export default function Navbar() {
             )}
 
             <Link 
-              to="/admin/login" 
+              to="/products" 
               style={{ 
-                fontSize: 12,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                fontSize: 13,
                 fontWeight: 700,
-                color: '#57534E',
+                color: '#FFFFFF',
+                background: '#A67C52',
+                padding: '7px 16px',
+                borderRadius: 20,
                 textDecoration: 'none',
-                background: '#E7E0D6',
-                padding: '6px 12px',
-                borderRadius: 20
+                transition: 'background-color 0.2s ease'
               }}
+              className="navbar-cart-btn"
             >
-              Admin Portal
+              <ShoppingBag size={15} />
+              <span>Cart ({cartCount})</span>
             </Link>
           </div>
 
@@ -199,33 +192,28 @@ export default function Navbar() {
             onMouseLeave={() => setShowMegaMenu(false)}
           >
             <div className="mega-menu-inner">
-              <div className="mega-column">
-                <h4>Cleansers & Toners</h4>
-                <ul>
-                  <li><Link to="/products">Gentle Foaming Cleanser</Link></li>
-                  <li><Link to="/products">Exfoliating Scrub</Link></li>
-                  <li><Link to="/products">Hydrating Botanical Toner</Link></li>
-                  <li><Link to="/products">Micellar Cleansing Water</Link></li>
-                </ul>
-              </div>
-              <div className="mega-column">
-                <h4>Serums & Treatments</h4>
-                <ul>
-                  <li><Link to="/products">Vitamin C Radiance Serum</Link></li>
-                  <li><Link to="/products">Hyaluronic Acid Booster</Link></li>
-                  <li><Link to="/products">Retinol Night Concentrate</Link></li>
-                  <li><Link to="/products">Niacinamide Pore Serum</Link></li>
-                </ul>
-              </div>
-              <div className="mega-column">
-                <h4>Moisturizers & Sun Protection</h4>
-                <ul>
-                  <li><Link to="/products">Hydra Glow Cream</Link></li>
-                  <li><Link to="/products">Daily SPF 50+ Sunscreen</Link></li>
-                  <li><Link to="/products">Overnight Nourishing Balm</Link></li>
-                  <li><Link to="/products">Barrier Repair Gel</Link></li>
-                </ul>
-              </div>
+              {categories.length > 0 ? (
+                categories.slice(0, 3).map(cat => (
+                  <div className="mega-column" key={cat.id}>
+                    <h4>{cat.name}</h4>
+                    <p style={{ fontSize: 12, color: '#78716C', marginBottom: 8 }}>
+                      {cat.description || 'Formulated with pure botanical science.'}
+                    </p>
+                    <ul>
+                      <li>
+                        <Link to={`/products?category=${encodeURIComponent(cat.slug || cat.name)}`}>
+                          Browse {cat.name} Collection
+                        </Link>
+                      </li>
+                    </ul>
+                  </div>
+                ))
+              ) : (
+                <div className="mega-column">
+                  <h4>Categories</h4>
+                  <p style={{ fontSize: 12, color: '#78716C' }}>No categories available in database.</p>
+                </div>
+              )}
               <div className="mega-column" style={{ background: '#FAF7F2', padding: 16, borderRadius: 14 }}>
                 <h4 style={{ color: '#292524' }}>🌿 Pure Ingredients Guarantee</h4>
                 <p style={{ fontSize: 12, color: '#78716C', lineHeight: 1.5, marginTop: 4 }}>

@@ -79,7 +79,7 @@ export default function ProductCard({ product }) {
         <div>
           <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)', display: 'block' }}>Unit Price</span>
           <span style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--primary-emerald)' }}>
-            ${Number(product.price).toFixed(2)}
+            ₹{Number(product.price).toFixed(2)}
           </span>
         </div>
 

@@ -74,24 +74,24 @@
 /* 1. HERO BANNER SECTION WITH HERO.PNG BACKGROUND */
 .hero-banner-container-pixel {
   width: 100%;
-  max-width: 1360px;
-  margin: 0 auto;
-  padding: 24px 24px 40px 24px;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
 }
 
 .hero-section-pixel {
   position: relative;
   width: 100%;
-  min-height: 520px;
-  border-radius: 24px;
+  min-height: 540px;
+  border-radius: 0;
   background-position: center right;
   background-size: cover;
   background-repeat: no-repeat;
-  padding: 60px 56px;
+  padding: 80px max(24px, calc((100vw - 1320px) / 2 + 40px));
   display: flex;
   align-items: center;
   overflow: hidden;
-  box-shadow: 0 12px 32px rgba(166, 124, 82, 0.08);
+  box-shadow: none;
 }
 
 .hero-left-col-pixel {

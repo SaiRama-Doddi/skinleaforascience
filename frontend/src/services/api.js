@@ -36,7 +36,7 @@ api.interceptors.response.use(
 export const checkHealth = () => api.get('/health');
 export const getProducts = () => api.get('/products');
 export const getProductById = (id) => api.get(`/products/${id}`);
-export const getCategories = (params) => api.get('/admin/categories', { params });
+export const getCategories = (params) => api.get('/categories', { params });
 
 // Admin Auth API
 export const adminSendOtp = (email) => api.post('/admin/send-otp', { email });

@@ -1,66 +1,41 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   ArrowRight, Leaf, ShieldCheck, Heart, ShoppingBag, Star, 
-  ChevronRight, Sparkles, Globe, Share2, MessageCircle, CheckCircle2
+  ChevronRight, Sparkles, Globe, Share2, MessageCircle, CheckCircle2, Loader2
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { getCategories, getProducts } from '../services/api';
 import heroImg from '../assets/hero.png';
 import './Home.css';
 
-// 8 Circular Categories data using robust local assets & high-reliability botanical icons
-const CIRCULAR_CATEGORIES = [
-  { id: 'cleansers', name: 'Cleansers', icon: '/assets/face_wash.jpg' },
-  { id: 'moisturizers', name: 'Moisturizers', icon: '/assets/hydra_glow_moisturizer.jpg' },
-  { id: 'serums', name: 'Serums', icon: '/assets/vitamin_c_serum.jpg' },
-  { id: 'masks', name: 'Face Masks', icon: '/assets/night_cream.jpg' },
-  { id: 'sunscreen', name: 'Sunscreens', icon: '/assets/sunscreen_spf50.jpg' },
-  { id: 'eyecare', name: 'Eye Care', icon: '/assets/vitamin_c_serum.jpg' },
-  { id: 'bodycare', name: 'Body Care', icon: '/assets/face_wash.jpg' },
-  { id: 'oils', name: 'Face Oils', icon: '/assets/hydra_glow_moisturizer.jpg' }
-];
-
-// 4 Bestseller Products matching reference image
-const BESTSELLER_PRODUCTS = [
-  {
-    id: 1,
-    name: 'Gentle Foaming Face Wash',
-    brand: 'Leafora',
-    price: 18.00,
-    rating: 4.9,
-    reviews: 124,
-    image: '/assets/face_wash.jpg'
-  },
-  {
-    id: 2,
-    name: 'Vitamin C Brightening Serum',
-    brand: 'Leafora',
-    price: 28.00,
-    rating: 4.8,
-    reviews: 98,
-    image: '/assets/vitamin_c_serum.jpg'
-  },
-  {
-    id: 3,
-    name: 'Hydra Glow Moisturizer',
-    brand: 'Leafora',
-    price: 24.00,
-    rating: 5.0,
-    reviews: 156,
-    image: '/assets/hydra_glow_moisturizer.jpg'
-  },
-  {
-    id: 4,
-    name: 'Daily Sunscreen SPF 50+',
-    brand: 'Leafora',
-    price: 22.00,
-    rating: 4.9,
-    reviews: 112,
-    image: '/assets/sunscreen_spf50.jpg'
-  }
-];
-
 export default function Home() {
   const [toastMsg, setToastMsg] = useState(null);
+  const [categories, setCategories] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [loadingCats, setLoadingCats] = useState(true);
+  const [loadingProds, setLoadingProds] = useState(true);
+
+  useEffect(() => {
+    // Fetch categories dynamically from backend API / database
+    getCategories()
+      .then((res) => {
+        if (res && res.data) {
+          setCategories(res.data);
+        }
+      })
+      .catch((err) => console.error('Error fetching categories from database:', err))
+      .finally(() => setLoadingCats(false));
+
+    // Fetch products dynamically from backend API / database
+    getProducts()
+      .then((res) => {
+        if (res && res.data) {
+          setProducts(res.data);
+        }
+      })
+      .catch((err) => console.error('Error fetching products from database:', err))
+      .finally(() => setLoadingProds(false));
+  }, []);
 
   const showToast = (msg) => {
     setToastMsg(msg);
@@ -91,7 +66,7 @@ export default function Home() {
               Pure ingredients. Proven science. Skincare that brings out your natural glow.
             </p>
 
-            <Link to="/shop" className="btn-bronze-pill-pixel">
+            <Link to="/products" className="btn-bronze-pill-pixel">
               Shop Now <ArrowRight size={16} />
             </Link>
 
@@ -116,7 +91,7 @@ export default function Home() {
         </section>
       </div>
 
-      {/* 2. SHOP BY CATEGORY (8 CIRCULAR PILLS) */}
+      {/* 2. SHOP BY CATEGORY (DYNAMICALLY LOADED FROM DATABASE) */}
       <section className="category-section-pixel">
         <div className="category-container-pixel">
           <div className="category-flex-header-pixel">
@@ -124,32 +99,43 @@ export default function Home() {
               <span className="section-tag-gold-pixel">EXPLORE OUR RANGE</span>
               <h2 className="section-title-serif-pixel" style={{ margin: 0 }}>Shop by Category</h2>
             </div>
-            <Link to="/shop" className="link-view-all-pixel">
+            <Link to="/products" className="link-view-all-pixel">
               View All Categories <ChevronRight size={16} />
             </Link>
           </div>
 
-          <div className="category-pills-grid-pixel">
-            {CIRCULAR_CATEGORIES.map(cat => (
-              <Link key={cat.id} to="/shop" className="category-pill-card-pixel">
-                <div className="category-circle-box-pixel">
-                  <img 
-                    src={cat.icon} 
-                    alt={cat.name} 
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = '/assets/face_wash.jpg';
-                    }}
-                  />
-                </div>
-                <span className="category-pill-name-pixel">{cat.name}</span>
-              </Link>
-            ))}
-          </div>
+          {loadingCats ? (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 0', gap: 10, color: '#A67C52' }}>
+              <Loader2 className="animate-spin" size={24} />
+              <span>Loading categories from database...</span>
+            </div>
+          ) : categories.length > 0 ? (
+            <div className="category-pills-grid-pixel" style={{ gridTemplateColumns: `repeat(${Math.min(categories.length, 8)}, 1fr)` }}>
+              {categories.map(cat => (
+                <Link key={cat.id} to={`/products?category=${encodeURIComponent(cat.slug || cat.name)}`} className="category-pill-card-pixel">
+                  <div className="category-circle-box-pixel">
+                    <img 
+                      src={cat.image_url || cat.icon_url || '/assets/face_wash.jpg'} 
+                      alt={cat.name} 
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = '/assets/face_wash.jpg';
+                      }}
+                    />
+                  </div>
+                  <span className="category-pill-name-pixel">{cat.name}</span>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div style={{ padding: '30px 0', textAlign: 'center', color: '#78716C', fontSize: '0.95rem' }}>
+              No categories currently available in database.
+            </div>
+          )}
         </div>
       </section>
 
-      {/* 3. BESTSELLERS GRID (4 PRODUCT CARDS + 1 TALL GOLDEN PROMO CARD) */}
+      {/* 3. BESTSELLERS GRID (DYNAMICALLY LOADED FROM DATABASE) */}
       <section className="bestsellers-section-pixel">
         <div className="bestsellers-container-pixel">
           <div className="category-flex-header-pixel">
@@ -160,59 +146,70 @@ export default function Home() {
                 Discover our most popular skincare essentials for healthy, radiant skin.
               </p>
             </div>
-            <Link to="/shop" className="link-view-all-pixel">
+            <Link to="/products" className="link-view-all-pixel">
               View All Products <ChevronRight size={16} />
             </Link>
           </div>
 
-          {/* Grid Layout: 4 Product Cards + 1 Tall Golden Promo Card */}
-          <div className="bestseller-layout-grid-pixel">
-            {BESTSELLER_PRODUCTS.map(item => (
-              <div key={item.id} className="product-card-pixel">
-                <div className="product-img-wrap-pixel">
-                  <img src={item.image} alt={item.name} />
-                </div>
-                <div>
-                  <span className="product-brand-pixel">{item.brand}</span>
-                  <h3 className="product-title-pixel">{item.name}</h3>
-                  <div className="product-stars-pixel">
-                    {[...Array(5)].map((_, i) => <Star key={i} size={12} fill="#A67C52" color="#A67C52" />)}
-                    <span>({item.reviews})</span>
+          {loadingProds ? (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 0', gap: 10, color: '#A67C52' }}>
+              <Loader2 className="animate-spin" size={24} />
+              <span>Loading products from database...</span>
+            </div>
+          ) : products.length > 0 ? (
+            /* Grid Layout: Database Products + 1 Tall Golden Promo Card */
+            <div className="bestseller-layout-grid-pixel">
+              {products.slice(0, 4).map(item => (
+                <div key={item.id} className="product-card-pixel">
+                  <div className="product-img-wrap-pixel">
+                    <img src={item.image_url || '/assets/face_wash.jpg'} alt={item.name} />
+                  </div>
+                  <div>
+                    <span className="product-brand-pixel">{item.brand || 'Leafora'}</span>
+                    <h3 className="product-title-pixel">{item.name}</h3>
+                    <div className="product-stars-pixel">
+                      {[...Array(5)].map((_, i) => <Star key={i} size={12} fill="#A67C52" color="#A67C52" />)}
+                      <span>({item.reviews || 0})</span>
+                    </div>
+                  </div>
+
+                  <div className="product-bottom-row-pixel">
+                    <span className="product-price-pixel">₹{Number(item.price).toFixed(2)}</span>
+                    <button 
+                      className="btn-icon-cart-pixel"
+                      onClick={() => showToast(`Added "${item.name}" to your bag!`)}
+                    >
+                      <ShoppingBag size={15} />
+                    </button>
                   </div>
                 </div>
+              ))}
 
-                <div className="product-bottom-row-pixel">
-                  <span className="product-price-pixel">${Number(item.price).toFixed(2)}</span>
-                  <button 
-                    className="btn-icon-cart-pixel"
-                    onClick={() => showToast(`Added "${item.name}" to your bag!`)}
-                  >
-                    <ShoppingBag size={15} />
-                  </button>
+              {/* TALL GOLDEN PROMO CARD */}
+              <div className="tall-golden-promo-card-pixel">
+                <img 
+                  src="/assets/leafora_golden_promo.jpg" 
+                  alt="Nature Meets Science Promo Background"
+                  style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.25, zIndex: 1 }} 
+                />
+                <div style={{ position: 'relative', zIndex: 2 }}>
+                  <h3 className="promo-title-gold-pixel">
+                    NATURE MEETS SCIENCE FOR HEALTHY RADIANT SKIN
+                  </h3>
+                </div>
+
+                <div style={{ position: 'relative', zIndex: 2 }}>
+                  <Link to="/products" className="btn-gold-white-pixel">
+                    Shop Collection <ArrowRight size={14} />
+                  </Link>
                 </div>
               </div>
-            ))}
-
-            {/* TALL GOLDEN PROMO CARD (EXACT MATCH TO REFERENCE IMAGE) */}
-            <div className="tall-golden-promo-card-pixel">
-              <img 
-                src="/assets/leafora_golden_promo.jpg" 
-                alt="Nature Meets Science Promo Background"
-                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.25, zIndex: 1 }} 
-              />
-              <div style={{ position: 'relative', zIndex: 2 }}>
-                <h3 className="promo-title-gold-pixel">
-                  NATURE MEETS SCIENCE FOR HEALTHY RADIANT SKIN
-                </h3>
-              </div>
-
-              <div style={{ position: 'relative', zIndex: 2 }}>
-                <Link to="/shop" className="btn-gold-white-pixel">
-                  Shop Collection <ArrowRight size={14} />
-                </Link>
-              </div>
             </div>
-          </div>
+          ) : (
+            <div style={{ padding: '30px 0', textAlign: 'center', color: '#78716C', fontSize: '0.95rem' }}>
+              No products currently available in database.
+            </div>
+          )}
         </div>
       </section>
 

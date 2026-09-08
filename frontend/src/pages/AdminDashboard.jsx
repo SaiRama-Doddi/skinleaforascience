@@ -2474,8 +2474,8 @@ export default function AdminDashboard() {
   }, 0);
   
   const displayRevenue = computedRevenue > 0 
-    ? `$${computedRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-    : (analytics?.revenue?.total ? `$${Number(analytics.revenue.total).toLocaleString()}` : '$12,480');
+    ? `₹${computedRevenue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    : (analytics?.revenue?.total ? `₹${Number(analytics.revenue.total).toLocaleString('en-IN')}` : '₹12,480');
 
   // Compute Order Status counts from real database orders
   const statusCounts = {
@@ -2654,77 +2654,77 @@ export default function AdminDashboard() {
             </li>
             <li 
               className={`leafora-nav-item ${activeTab === 'categories' ? 'active' : ''}`}
-              onClick={() => { setActiveTab('categories'); openCategoriesModal(); }}
+              onClick={() => setActiveTab('categories')}
             >
               <Grid className="leafora-nav-icon" />
               <span>Categories</span>
             </li>
             <li 
               className={`leafora-nav-item ${activeTab === 'products' ? 'active' : ''}`}
-              onClick={() => { setActiveTab('products'); openProductsModal(); }}
+              onClick={() => setActiveTab('products')}
             >
               <Package className="leafora-nav-icon" />
               <span>Products</span>
             </li>
             <li 
               className={`leafora-nav-item ${activeTab === 'orders' ? 'active' : ''}`}
-              onClick={() => { setActiveTab('orders'); openOrdersModal(); }}
+              onClick={() => setActiveTab('orders')}
             >
               <ShoppingCart className="leafora-nav-icon" />
               <span>Orders</span>
             </li>
             <li 
               className={`leafora-nav-item ${activeTab === 'shiprocket' ? 'active' : ''}`}
-              onClick={() => { setActiveTab('shiprocket'); openShiprocketModal(); }}
+              onClick={() => setActiveTab('shiprocket')}
             >
               <Truck className="leafora-nav-icon" />
               <span>Shiprocket</span>
             </li>
             <li 
               className={`leafora-nav-item ${activeTab === 'payments' ? 'active' : ''}`}
-              onClick={() => { setActiveTab('payments'); openPaymentsModal(); }}
+              onClick={() => setActiveTab('payments')}
             >
               <CreditCard className="leafora-nav-icon" />
               <span>Payments</span>
             </li>
             <li 
               className={`leafora-nav-item ${activeTab === 'users' ? 'active' : ''}`}
-              onClick={() => { setActiveTab('users'); openCustomersModal(); }}
+              onClick={() => setActiveTab('users')}
             >
               <Users className="leafora-nav-icon" />
               <span>Users</span>
             </li>
             <li 
               className={`leafora-nav-item ${activeTab === 'coupons' ? 'active' : ''}`}
-              onClick={() => { setActiveTab('coupons'); openCouponsModal(); }}
+              onClick={() => setActiveTab('coupons')}
             >
               <Tag className="leafora-nav-icon" />
               <span>Coupons</span>
             </li>
             <li 
               className={`leafora-nav-item ${activeTab === 'reviews' ? 'active' : ''}`}
-              onClick={() => showNotification('Reviews management active')}
+              onClick={() => setActiveTab('reviews')}
             >
               <Star className="leafora-nav-icon" />
               <span>Reviews</span>
             </li>
             <li 
               className={`leafora-nav-item ${activeTab === 'marketing' ? 'active' : ''}`}
-              onClick={() => showNotification('Marketing automation suite loaded')}
+              onClick={() => setActiveTab('marketing')}
             >
               <Megaphone className="leafora-nav-icon" />
               <span>Marketing</span>
             </li>
             <li 
               className={`leafora-nav-item ${activeTab === 'reports' ? 'active' : ''}`}
-              onClick={() => showNotification('Analytics reports generated')}
+              onClick={() => setActiveTab('reports')}
             >
               <BarChart2 className="leafora-nav-icon" />
               <span>Reports</span>
             </li>
             <li 
               className={`leafora-nav-item ${activeTab === 'settings' ? 'active' : ''}`}
-              onClick={() => showNotification('System settings menu opened')}
+              onClick={() => setActiveTab('settings')}
             >
               <Settings className="leafora-nav-icon" />
               <span>Settings</span>
@@ -2736,7 +2736,7 @@ export default function AdminDashboard() {
         <div className="leafora-promo-card">
           <svg className="leafora-promo-bg-leaf" viewBox="0 0 100 100" fill="none">
             <path d="M10 80C10 80 40 40 80 20C80 20 60 70 20 90Z" fill="#C5A059" stroke="#C5A059" strokeWidth="1.5" />
-            <path d="M25 85C45 65 65 45 80 20" stroke="#FAF8F5" strokeWidth="2" />
+            <path d="M25 85C45 65 45 45 80 20" stroke="#FAF8F5" strokeWidth="2" />
           </svg>
           <p className="leafora-promo-quote">
             Good<br />Skin<br />Brighter<br />Tomorrows
@@ -2867,7 +2867,7 @@ export default function AdminDashboard() {
             <>
               {/* 4 Key Metrics Grid */}
               <div className="leafora-metrics-grid">
-                <div className="leafora-metric-card" onClick={openOrdersModal} style={{ cursor: 'pointer' }}>
+                <div className="leafora-metric-card" onClick={() => setActiveTab('orders')} style={{ cursor: 'pointer' }}>
                   <div className="leafora-metric-icon-wrap orders"><ShoppingCart size={22} /></div>
                   <div className="leafora-metric-body">
                     <span className="leafora-metric-label">Total Orders</span>
@@ -2876,16 +2876,16 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                <div className="leafora-metric-card" onClick={openPaymentsModal} style={{ cursor: 'pointer' }}>
-                  <div className="leafora-metric-icon-wrap revenue"><span style={{ fontSize: 22, fontWeight: 700 }}>$</span></div>
+                <div className="leafora-metric-card" onClick={() => setActiveTab('payments')} style={{ cursor: 'pointer' }}>
+                  <div className="leafora-metric-icon-wrap revenue"><span style={{ fontSize: 22, fontWeight: 700 }}>₹</span></div>
                   <div className="leafora-metric-body">
                     <span className="leafora-metric-label">Total Revenue</span>
-                    <span className="leafora-metric-value">{displayRevenue}</span>
+                    <span className="leafora-metric-value">₹{analytics ? Number(analytics.revenue?.total || 12480).toLocaleString('en-IN') : '12,480'}</span>
                     <span className="leafora-metric-trend">↑ +18% <span className="leafora-metric-trend-sub">vs last week</span></span>
                   </div>
                 </div>
 
-                <div className="leafora-metric-card" onClick={openCustomersModal} style={{ cursor: 'pointer' }}>
+                <div className="leafora-metric-card" onClick={() => setActiveTab('users')} style={{ cursor: 'pointer' }}>
                   <div className="leafora-metric-icon-wrap users"><Users size={22} /></div>
                   <div className="leafora-metric-body">
                     <span className="leafora-metric-label">Total Users</span>
@@ -2894,7 +2894,7 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                <div className="leafora-metric-card" onClick={openProductsModal} style={{ cursor: 'pointer' }}>
+                <div className="leafora-metric-card" onClick={() => setActiveTab('products')} style={{ cursor: 'pointer' }}>
                   <div className="leafora-metric-icon-wrap products"><Package size={22} /></div>
                   <div className="leafora-metric-body">
                     <span className="leafora-metric-label">Total Products</span>

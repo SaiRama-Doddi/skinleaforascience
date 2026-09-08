@@ -9,9 +9,10 @@ const router = express.Router();
 // Health Check Endpoint
 router.get('/health', getHealthStatus);
 
-// Public Product Endpoints
+// Public Product & Category Endpoints
 router.get('/products', getAllProducts);
 router.get('/products/:id', getProductById);
+router.get('/categories', adminController.getCategories);
 
 // ─── USER AUTHENTICATION ENDPOINTS ───
 router.post('/auth/register', authController.registerUser);

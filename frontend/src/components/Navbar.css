@@ -23,18 +23,17 @@
   max-width: 1320px;
   margin: 0 auto;
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
+  text-align: center;
 }
 
 .announcement-text {
   color: #475569;
 }
 
-.top-bar-right {
-  display: flex;
-  align-items: center;
-  gap: 18px;
+.navbar-cart-btn:hover {
+  background-color: #8C653E !important;
 }
 
 .top-bar-link {

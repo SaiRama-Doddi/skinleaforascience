@@ -422,7 +422,7 @@ export default function Shop() {
           <div className="price-slider-box">
             <div className="price-range-inputs">
               <span>Price Range</span>
-              <span>$0 — ${priceMax}</span>
+              <span>₹0 — ₹{priceMax}</span>
             </div>
             <input 
               type="range" 
@@ -603,9 +603,9 @@ export default function Shop() {
                     </div>
 
                     <div className="shop-card-price-row">
-                      <span className="price-main">${Number(product.price).toFixed(2)}</span>
+                      <span className="price-main">₹{Number(product.price).toFixed(2)}</span>
                       {product.originalPrice && (
-                        <span className="price-original">${Number(product.originalPrice).toFixed(2)}</span>
+                        <span className="price-original">₹{Number(product.originalPrice).toFixed(2)}</span>
                       )}
                     </div>
                   </div>
@@ -702,7 +702,7 @@ export default function Shop() {
               </div>
 
               <div>
-                <h4 style={{ fontWeight: 600, marginBottom: 10 }}>Price Limit: ${priceMax}</h4>
+                <h4 style={{ fontWeight: 600, marginBottom: 10 }}>Price Limit: ₹{priceMax}</h4>
                 <input 
                   type="range" 
                   min="10" 
@@ -745,7 +745,7 @@ export default function Shop() {
                 </div>
 
                 <div className="price-main" style={{ fontSize: '1.6rem', color: 'var(--leafora-text-dark)', marginBottom: 16 }}>
-                  ${Number(quickViewProduct.price).toFixed(2)}
+                  ₹{Number(quickViewProduct.price).toFixed(2)}
                 </div>
 
                 <p style={{ color: '#475569', lineHeight: 1.6, marginBottom: 20 }}>

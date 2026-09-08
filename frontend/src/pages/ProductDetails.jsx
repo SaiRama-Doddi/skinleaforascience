@@ -240,9 +240,9 @@ export default function ProductDetails() {
 
           {/* Price Row */}
           <div className="pdp-price-box">
-            <span className="pdp-price-current">${Number(product.price).toFixed(2)}</span>
+            <span className="pdp-price-current">₹{Number(product.price).toFixed(2)}</span>
             {product.originalPrice && (
-              <span className="pdp-price-original">${Number(product.originalPrice).toFixed(2)}</span>
+              <span className="pdp-price-original">₹{Number(product.originalPrice).toFixed(2)}</span>
             )}
             {product.discount && <span className="pdp-discount-badge">{product.discount}</span>}
           </div>
@@ -302,7 +302,7 @@ export default function ProductDetails() {
               <Truck size={20} color="var(--leafora-bronze)" />
               <div>
                 <div className="trust-item-title">Free Shipping</div>
-                <div className="trust-item-sub">On orders above $50</div>
+                <div className="trust-item-sub">On orders above ₹999</div>
               </div>
             </div>
 
