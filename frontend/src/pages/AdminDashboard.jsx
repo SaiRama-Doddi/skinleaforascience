@@ -66,6 +66,7 @@ export default function AdminDashboard() {
   const [actionMessage, setActionMessage] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [dateRange, setDateRange] = useState('Sep 1, 2025 - Sep 7, 2025');
+  const [showAdminProfileMenu, setShowAdminProfileMenu] = useState(false);
 
   // Form states & Category Management State
   const [categoryViewTab, setCategoryViewTab] = useState('catalog'); // 'catalog' | 'trash'
@@ -2800,6 +2801,14 @@ export default function AdminDashboard() {
               <Settings className="leafora-nav-icon" />
               <span>Settings</span>
             </li>
+            <li 
+              className="leafora-nav-item leafora-nav-logout"
+              onClick={handleLogout}
+              title="Sign Out of Admin Portal"
+            >
+              <LogOut className="leafora-nav-icon logout-icon" />
+              <span>Sign Out</span>
+            </li>
           </ul>
         </div>
 
@@ -2846,14 +2855,47 @@ export default function AdminDashboard() {
               <span className="leafora-notif-badge">4</span>
             </button>
 
-            <div className="leafora-admin-profile" onClick={handleLogout} title="Click to Logout">
-              <div className="leafora-avatar">SA</div>
-              <div className="leafora-admin-info">
-                <span className="leafora-admin-name">Sai Admin</span>
-                <span className="leafora-admin-role">Admin</span>
+            <div style={{ position: 'relative' }}>
+              <div 
+                className="leafora-admin-profile" 
+                onClick={() => setShowAdminProfileMenu(!showAdminProfileMenu)} 
+                title="Admin Profile Options"
+              >
+                <div className="leafora-avatar">SA</div>
+                <div className="leafora-admin-info">
+                  <span className="leafora-admin-name">Sai Admin</span>
+                  <span className="leafora-admin-role">Super Admin</span>
+                </div>
+                <ChevronDown size={14} color="#6B7280" />
               </div>
-              <ChevronDown size={14} color="#6B7280" />
+
+              {/* ADMIN PROFILE DROPDOWN MENU */}
+              {showAdminProfileMenu && (
+                <div className="admin-profile-dropdown-menu">
+                  <div className="dropdown-head">
+                    <strong>Sai Admin</strong>
+                    <small>admin@leaforalifescience.com</small>
+                  </div>
+                  <div className="dropdown-divider" />
+                  <button className="dropdown-item-btn" onClick={() => { setActiveTab('settings'); setShowAdminProfileMenu(false); }}>
+                    <Settings size={15} /> System Settings
+                  </button>
+                  <button className="dropdown-item-btn logout" onClick={handleLogout}>
+                    <LogOut size={15} /> Sign Out
+                  </button>
+                </div>
+              )}
             </div>
+
+            {/* DIRECT SIGN OUT BUTTON IN HEADER */}
+            <button 
+              className="admin-header-signout-btn" 
+              onClick={handleLogout} 
+              title="Sign Out of Admin Portal"
+            >
+              <LogOut size={16} />
+              <span>Sign Out</span>
+            </button>
           </div>
         </header>
 

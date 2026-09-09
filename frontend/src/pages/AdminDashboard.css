@@ -1906,6 +1906,123 @@ tr.selected-row {
   }
 }
 
+/* ─── DEDICATED ADMIN SIGN OUT CONTROLS ─── */
+.admin-header-signout-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #FEF2F2;
+  color: #DC2626;
+  border: 1px solid #FECACA;
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.admin-header-signout-btn:hover {
+  background-color: #DC2626;
+  color: #FFFFFF;
+  border-color: #DC2626;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
+}
+
+.leafora-nav-logout {
+  margin-top: 8px;
+  border-top: 1px solid #EFECE6;
+  padding-top: 12px !important;
+  color: #DC2626 !important;
+}
+
+.leafora-nav-logout .logout-icon {
+  color: #DC2626 !important;
+}
+
+.leafora-nav-logout:hover {
+  background-color: #FEF2F2 !important;
+  color: #B91C1C !important;
+}
+
+/* ADMIN PROFILE DROPDOWN MENU */
+.admin-profile-dropdown-menu {
+  position: absolute;
+  top: 48px;
+  right: 0;
+  width: 220px;
+  background: #FFFFFF;
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+  border: 1px solid #EFECE6;
+  padding: 10px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  animation: dropdownFade 0.2s ease;
+}
+
+@keyframes dropdownFade {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.admin-profile-dropdown-menu .dropdown-head {
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-profile-dropdown-menu .dropdown-head strong {
+  font-size: 13px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.admin-profile-dropdown-menu .dropdown-head small {
+  font-size: 11px;
+  color: #6B7280;
+  margin-top: 2px;
+}
+
+.admin-profile-dropdown-menu .dropdown-divider {
+  height: 1px;
+  background: #EFECE6;
+  margin: 6px 0;
+}
+
+.admin-profile-dropdown-menu .dropdown-item-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.18s ease;
+}
+
+.admin-profile-dropdown-menu .dropdown-item-btn:hover {
+  background: #F4EDE4;
+  color: #8C6A3C;
+}
+
+.admin-profile-dropdown-menu .dropdown-item-btn.logout {
+  color: #DC2626;
+}
+
+.admin-profile-dropdown-menu .dropdown-item-btn.logout:hover {
+  background: #FEF2F2;
+  color: #B91C1C;
+}
+
 
 
 
