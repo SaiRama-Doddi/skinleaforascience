@@ -222,16 +222,21 @@ export default function Navbar() {
               </Link>
             ) : (
               <div className="user-badge-nav desktop-only">
-                <img 
-                  src={user.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.name)}`} 
-                  alt={user.name} 
-                  className="user-avatar-img"
-                />
-                <span className="user-wallet-val">₹{parseFloat(user.wallet_balance || 0).toFixed(2)}</span>
+                <Link to="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none', color: 'inherit' }}>
+                  <img 
+                    src={user.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.name || 'User')}`} 
+                    alt={user.name} 
+                    className="user-avatar-img"
+                  />
+                  <span style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--leafora-green)' }}>
+                    {user.first_name || (user.name ? user.name.split(' ')[0] : 'Account')}
+                  </span>
+                </Link>
                 <button 
                   onClick={handleLogout} 
                   title="Sign Out" 
                   className="btn-logout-icon"
+                  style={{ marginLeft: 6 }}
                 >
                   <LogOut size={15} />
                 </button>

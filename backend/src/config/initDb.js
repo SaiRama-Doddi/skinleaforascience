@@ -272,6 +272,8 @@ const initDb = async () => {
 
     // Auto-migrate missing columns for existing customers table
     const custCols = [
+      "ALTER TABLE customers ADD COLUMN first_name VARCHAR(100) DEFAULT NULL AFTER name",
+      "ALTER TABLE customers ADD COLUMN last_name VARCHAR(100) DEFAULT NULL AFTER first_name",
       "ALTER TABLE customers ADD COLUMN wallet_balance DECIMAL(10, 2) DEFAULT 0.00 AFTER total_spent",
       "ALTER TABLE customers ADD COLUMN loyalty_points INT DEFAULT 0 AFTER wallet_balance",
       "ALTER TABLE customers ADD COLUMN referral_earnings DECIMAL(10, 2) DEFAULT 0.00 AFTER loyalty_points",
@@ -293,6 +295,8 @@ const initDb = async () => {
       CREATE TABLE IF NOT EXISTS customer_addresses (
         id INT AUTO_INCREMENT PRIMARY KEY,
         customer_id INT NOT NULL,
+        name VARCHAR(255) DEFAULT NULL,
+        phone VARCHAR(50) DEFAULT NULL,
         type VARCHAR(50) DEFAULT 'Shipping',
         address_line1 VARCHAR(255) NOT NULL,
         address_line2 VARCHAR(255),
@@ -305,6 +309,14 @@ const initDb = async () => {
         INDEX idx_addr_cust_id (customer_id)
       );
     `);
+
+    const addrCols = [
+      "ALTER TABLE customer_addresses ADD COLUMN name VARCHAR(255) DEFAULT NULL AFTER customer_id",
+      "ALTER TABLE customer_addresses ADD COLUMN phone VARCHAR(50) DEFAULT NULL AFTER name"
+    ];
+    for (const query of addrCols) {
+      try { await pool.query(query); } catch (e) {}
+    }
 
     // 6c. Customer Wishlist Relational Table
     await pool.query(`

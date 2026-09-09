@@ -11,17 +11,24 @@ const generateToken = () => {
   return crypto.randomBytes(32).toString('hex');
 };
 
+const { sendWelcomeRegistrationEmail } = require('../services/mailer');
+
 // 1. REGISTER USER
 const registerUser = async (req, res) => {
   try {
-    const { name, email, phone, password, terms_accepted } = req.body;
+    const { first_name, last_name, name, email, mobile, phone, password, confirm_password, terms_accepted } = req.body;
 
-    if (!email || !password || !name) {
-      return res.status(400).json({ success: false, message: 'Full name, email address, and password are required.' });
+    const fn = first_name || (name ? name.split(' ')[0] : '');
+    const ln = last_name || (name ? name.split(' ').slice(1).join(' ') : '');
+    const fullName = (name || `${fn} ${ln}`).trim();
+    const userPhone = mobile || phone || '';
+
+    if (!email || !password || !fn) {
+      return res.status(400).json({ success: false, message: 'First name, email address, and password are required.' });
     }
 
-    if (!terms_accepted) {
-      return res.status(400).json({ success: false, message: 'You must agree to the Terms of Service & Privacy Policy to create an account.' });
+    if (confirm_password && password !== confirm_password) {
+      return res.status(400).json({ success: false, message: 'Password and Confirm Password do not match.' });
     }
 
     // Email format validation
@@ -31,8 +38,8 @@ const registerUser = async (req, res) => {
     }
 
     // Check password length
-    if (password.length < 8) {
-      return res.status(400).json({ success: false, message: 'Password must be at least 8 characters long.' });
+    if (password.length < 6) {
+      return res.status(400).json({ success: false, message: 'Password must be at least 6 characters long.' });
     }
 
     // Check if customer email already exists
@@ -55,40 +62,61 @@ const registerUser = async (req, res) => {
     let insertId = Date.now();
     try {
       const [result] = await pool.query(
-        `INSERT INTO customers (name, email, phone, password_hash, terms_accepted_at, wallet_balance, loyalty_points, status)
-         VALUES (?, ?, ?, ?, NOW(), ?, 100, 'Active')`,
-        [name.trim(), email.trim().toLowerCase(), phone || '', hashed, signupBonus]
+        `INSERT INTO customers (name, first_name, last_name, email, phone, password_hash, terms_accepted_at, wallet_balance, loyalty_points, status)
+         VALUES (?, ?, ?, ?, ?, ?, NOW(), ?, 100, 'Active')`,
+        [fullName, fn, ln, email.trim().toLowerCase(), userPhone, hashed, signupBonus]
       );
       if (result && result.insertId) {
         insertId = result.insertId;
       }
     } catch (e) {
-      console.warn('Register DB query fallback:', e.message);
+      console.warn('Register DB query primary failed, running standard fallback:', e.message);
+      try {
+        const [result] = await pool.query(
+          `INSERT INTO customers (name, email, phone, password_hash, terms_accepted_at, wallet_balance, loyalty_points, status)
+           VALUES (?, ?, ?, ?, NOW(), ?, 100, 'Active')`,
+          [fullName, email.trim().toLowerCase(), userPhone, hashed, signupBonus]
+        );
+        if (result && result.insertId) {
+          insertId = result.insertId;
+        }
+      } catch (err2) {
+        console.error('Register DB fallback query error:', err2.message);
+      }
+    }
+
+    // Send Registration Welcome Email via Nodemailer
+    try {
+      sendWelcomeRegistrationEmail(email.trim().toLowerCase(), fn);
+    } catch (e) {
+      console.warn('Mailer trigger error:', e.message);
     }
 
     // Log Activity
     try {
       await pool.query(
         `INSERT INTO activity_logs (admin_name, module, action, ip_address) VALUES (?, ?, ?, ?)`,
-        ['Customer Registration', 'Authentication', `New customer account created: ${name} (${email})`, req.ip || '127.0.0.1']
+        ['Customer Registration', 'Authentication', `New customer account created: ${fullName} (${email})`, req.ip || '127.0.0.1']
       );
     } catch (e) {}
 
     const userProfile = {
       id: insertId,
-      name: name.trim(),
+      first_name: fn,
+      last_name: ln,
+      name: fullName,
       email: email.trim().toLowerCase(),
-      phone: phone || '',
+      phone: userPhone,
       wallet_balance: signupBonus,
       loyalty_points: 100,
       loyalty_tier: 'Silver',
-      avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`,
+      avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(fullName)}`,
       token
     };
 
     return res.status(201).json({
       success: true,
-      message: 'Account created successfully! Welcome to Leafora Life Science.',
+      message: 'Account created successfully! Welcome to Leafora Life Sciences.',
       user: userProfile,
       token
     });

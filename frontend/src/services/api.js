@@ -202,5 +202,15 @@ export const userForgotPassword = (data) => api.post('/auth/forgot-password', da
 export const userResetPassword = (data) => api.post('/auth/reset-password', data);
 export const userGetCurrentUser = () => api.get('/auth/me');
 
+// ─── USER DASHBOARD & CHECKOUT APIS ───
+export const userGetProfile = (email) => api.get('/user/profile', { params: { email } });
+export const userUpdateProfile = (data) => api.put('/user/profile', data);
+export const userGetAddresses = (email) => api.get('/user/addresses', { params: { email } });
+export const userAddAddress = (data) => api.post('/user/addresses', data);
+export const userDeleteAddress = (id) => api.delete(`/user/addresses/${id}`);
+export const userGetOrders = (email) => api.get('/user/orders', { params: { email } });
+export const userGetWishlist = (email) => api.get('/user/wishlist', { params: { email } });
+export const placeOrder = (orderData) => api.post('/orders/place', orderData);
+
 export default api;
 

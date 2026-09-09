@@ -4,6 +4,8 @@ const { getAllProducts, getProductById } = require('../controllers/productContro
 const adminController = require('../controllers/adminController');
 const authController = require('../controllers/authController');
 
+const userController = require('../controllers/userController');
+
 const router = express.Router();
 
 // Health Check Endpoint
@@ -20,6 +22,16 @@ router.post('/auth/login', authController.loginUser);
 router.post('/auth/forgot-password', authController.forgotPassword);
 router.post('/auth/reset-password', authController.resetPassword);
 router.get('/auth/me', authController.getCurrentUser);
+
+// ─── USER DASHBOARD & CHECKOUT ENDPOINTS ───
+router.get('/user/profile', userController.getUserProfile);
+router.put('/user/profile', userController.updateUserProfile);
+router.get('/user/addresses', userController.getUserAddresses);
+router.post('/user/addresses', userController.addUserAddress);
+router.delete('/user/addresses/:id', userController.deleteUserAddress);
+router.get('/user/orders', userController.getUserOrders);
+router.get('/user/wishlist', userController.getUserWishlist);
+router.post('/orders/place', userController.placeUserOrder);
 
 // ─── ADMIN AUTHENTICATION ───
 router.post('/admin/send-otp', adminController.sendOtp);

@@ -16,6 +16,8 @@ export default function AuthPage({ initialMode = 'login', onAuthSuccess, isModal
   const modeParam = searchParams.get('mode');
   const [mode, setMode] = useState(modeParam || initialMode);
 
+  const redirectUrl = searchParams.get('redirect') || '/dashboard';
+
   // Form input states
   const [loginForm, setLoginForm] = useState({
     email: localStorage.getItem('leafora_remember_email') || '',
@@ -24,12 +26,13 @@ export default function AuthPage({ initialMode = 'login', onAuthSuccess, isModal
   });
 
   const [signupForm, setSignupForm] = useState({
-    name: '',
+    first_name: '',
+    last_name: '',
     email: '',
-    phone: '',
+    mobile: '',
     password: '',
     confirm_password: '',
-    terms_accepted: false
+    terms_accepted: true
   });
 
   const [forgotForm, setForgotForm] = useState({
@@ -57,7 +60,7 @@ export default function AuthPage({ initialMode = 'login', onAuthSuccess, isModal
     if (!pass) return { score: 0, label: '', color: '#E2E8F0', percent: 0, checks: { length: false, uppercase: false, number: false, symbol: false } };
     
     const checks = {
-      length: pass.length >= 8,
+      length: pass.length >= 6,
       uppercase: /[A-Z]/.test(pass),
       number: /[0-9]/.test(pass),
       symbol: /[^A-Za-z0-9]/.test(pass)
@@ -99,14 +102,14 @@ export default function AuthPage({ initialMode = 'login', onAuthSuccess, isModal
     setAlert(null);
 
     if (!loginForm.email || !loginForm.password) {
-      setAlert({ type: 'error', text: 'Please fill in both email and password.' });
+      setAlert({ type: 'error', text: 'Please fill in both email address and password.' });
       return;
     }
 
     setLoading(true);
     try {
       const res = await userLogin(loginForm);
-      const data = res.data;
+      const data = res?.data || res;
 
       if (data && data.success) {
         // Save remember me preference
@@ -129,13 +132,13 @@ export default function AuthPage({ initialMode = 'login', onAuthSuccess, isModal
         setTimeout(() => {
           if (onAuthSuccess) onAuthSuccess(data.user);
           if (onClose) onClose();
-          if (!isModal) navigate('/');
+          if (!isModal) navigate(redirectUrl);
         }, 800);
       } else {
-        setAlert({ type: 'error', text: data.message || 'Invalid email or password.' });
+        setAlert({ type: 'error', text: data?.message || 'Invalid email or password.' });
       }
     } catch (err) {
-      const msg = err.response?.data?.message || 'Login failed. Please check your internet connection.';
+      const msg = err?.message || err?.response?.data?.message || 'Login failed. Please check your credentials.';
       setAlert({ type: 'error', text: msg });
     } finally {
       setLoading(false);
@@ -147,30 +150,25 @@ export default function AuthPage({ initialMode = 'login', onAuthSuccess, isModal
     e.preventDefault();
     setAlert(null);
 
-    if (!signupForm.name || !signupForm.email || !signupForm.password) {
-      setAlert({ type: 'error', text: 'Please complete all required fields.' });
+    if (!signupForm.first_name || !signupForm.email || !signupForm.mobile || !signupForm.password) {
+      setAlert({ type: 'error', text: 'Please fill in all required registration fields.' });
       return;
     }
 
-    if (signupForm.password.length < 8) {
-      setAlert({ type: 'error', text: 'Password must be at least 8 characters long.' });
+    if (signupForm.password.length < 6) {
+      setAlert({ type: 'error', text: 'Password must be at least 6 characters long.' });
       return;
     }
 
     if (signupForm.password !== signupForm.confirm_password) {
-      setAlert({ type: 'error', text: 'Passwords do not match. Please re-enter your password.' });
-      return;
-    }
-
-    if (!signupForm.terms_accepted) {
-      setAlert({ type: 'error', text: 'You must agree to the Terms of Service & Privacy Policy to register.' });
+      setAlert({ type: 'error', text: 'Password and Confirm Password do not match.' });
       return;
     }
 
     setLoading(true);
     try {
       const res = await userRegister(signupForm);
-      const data = res.data;
+      const data = res?.data || res;
 
       if (data && data.success) {
         if (data.token) {
@@ -178,18 +176,18 @@ export default function AuthPage({ initialMode = 'login', onAuthSuccess, isModal
           localStorage.setItem('leafora_user_profile', JSON.stringify(data.user));
         }
 
-        setAlert({ type: 'success', text: data.message || 'Account created successfully!' });
+        setAlert({ type: 'success', text: data.message || 'Account registered successfully! Confirmation email dispatched.' });
 
         setTimeout(() => {
           if (onAuthSuccess) onAuthSuccess(data.user);
           if (onClose) onClose();
-          if (!isModal) navigate('/');
-        }, 1000);
+          if (!isModal) navigate(redirectUrl);
+        }, 1200);
       } else {
-        setAlert({ type: 'error', text: data.message || 'Registration failed.' });
+        setAlert({ type: 'error', text: data?.message || 'Registration failed.' });
       }
     } catch (err) {
-      const msg = err.response?.data?.message || 'Registration failed. Please try again.';
+      const msg = err?.message || err?.response?.data?.message || 'Registration failed. Please try again.';
       setAlert({ type: 'error', text: msg });
     } finally {
       setLoading(false);
@@ -209,7 +207,7 @@ export default function AuthPage({ initialMode = 'login', onAuthSuccess, isModal
     setLoading(true);
     try {
       const res = await userForgotPassword({ email: forgotForm.email });
-      const data = res.data;
+      const data = res?.data || res;
 
       if (data && data.success) {
         setAlert({ 
@@ -218,10 +216,10 @@ export default function AuthPage({ initialMode = 'login', onAuthSuccess, isModal
         });
         setForgotForm(prev => ({ ...prev, step: 2, otp: data.demo_otp || '' }));
       } else {
-        setAlert({ type: 'error', text: data.message || 'Email not found.' });
+        setAlert({ type: 'error', text: data?.message || 'Email not found.' });
       }
     } catch (err) {
-      const msg = err.response?.data?.message || 'Error requesting password reset.';
+      const msg = err?.message || err?.response?.data?.message || 'Error requesting password reset.';
       setAlert({ type: 'error', text: msg });
     } finally {
       setLoading(false);
@@ -255,7 +253,7 @@ export default function AuthPage({ initialMode = 'login', onAuthSuccess, isModal
         otp: forgotForm.otp,
         new_password: forgotForm.new_password
       });
-      const data = res.data;
+      const data = res?.data || res;
 
       if (data && data.success) {
         setAlert({ type: 'success', text: 'Password reset successful! You can now log in.' });
@@ -264,10 +262,10 @@ export default function AuthPage({ initialMode = 'login', onAuthSuccess, isModal
           setLoginForm(prev => ({ ...prev, email: forgotForm.email }));
         }, 1200);
       } else {
-        setAlert({ type: 'error', text: data.message || 'Invalid OTP code.' });
+        setAlert({ type: 'error', text: data?.message || 'Invalid OTP code.' });
       }
     } catch (err) {
-      const msg = err.response?.data?.message || 'Failed to reset password.';
+      const msg = err?.message || err?.response?.data?.message || 'Failed to reset password.';
       setAlert({ type: 'error', text: msg });
     } finally {
       setLoading(false);
@@ -460,18 +458,34 @@ export default function AuthPage({ initialMode = 'login', onAuthSuccess, isModal
                 <p>Join Leafora to get 100 Instant Bonus Points & exclusive perks.</p>
               </div>
 
-              <div className="form-group">
-                <label className="form-label">Full Name *</label>
-                <div className="input-field-wrapper">
-                  <User size={18} className="field-icon" />
-                  <input
-                    type="text"
-                    className="form-input"
-                    placeholder="e.g. Eleanor Vance"
-                    value={signupForm.name}
-                    onChange={(e) => setSignupForm({ ...signupForm, name: e.target.value })}
-                    required
-                  />
+              <div className="form-grid-2">
+                <div className="form-group">
+                  <label className="form-label">First Name *</label>
+                  <div className="input-field-wrapper">
+                    <User size={18} className="field-icon" />
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="e.g. Sai Rama"
+                      value={signupForm.first_name}
+                      onChange={(e) => setSignupForm({ ...signupForm, first_name: e.target.value })}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Last Name</label>
+                  <div className="input-field-wrapper">
+                    <User size={18} className="field-icon" />
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="e.g. Doddi"
+                      value={signupForm.last_name}
+                      onChange={(e) => setSignupForm({ ...signupForm, last_name: e.target.value })}
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -492,15 +506,16 @@ export default function AuthPage({ initialMode = 'login', onAuthSuccess, isModal
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Mobile Phone (Optional)</label>
+                  <label className="form-label">Mobile Number *</label>
                   <div className="input-field-wrapper">
                     <Phone size={18} className="field-icon" />
                     <input
                       type="tel"
                       className="form-input"
-                      placeholder="+1 (555) 019-2834"
-                      value={signupForm.phone}
-                      onChange={(e) => setSignupForm({ ...signupForm, phone: e.target.value })}
+                      placeholder="+91 9876543210"
+                      value={signupForm.mobile}
+                      onChange={(e) => setSignupForm({ ...signupForm, mobile: e.target.value })}
+                      required
                     />
                   </div>
                 </div>
