@@ -335,44 +335,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 6. CLEAN FOOTER MATCHING REFERENCE IMAGE */}
-      <footer className="footer-pixel">
-        <div className="footer-inner-pixel">
-          <div className="footer-top-row-pixel">
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ width: 38, height: 38, borderRadius: '50%', backgroundColor: '#A67C52', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
-                <Leaf size={20} />
-              </div>
-              <span style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.45rem', fontWeight: 700, color: '#1F2937' }}>
-                LeafOra <span style={{ fontSize: '0.65rem', display: 'block', textTransform: 'uppercase', letterSpacing: 1.2, color: '#A67C52' }}>LIFE SCIENCES</span>
-              </span>
-            </div>
-
-            <ul className="footer-nav-list-pixel">
-              <li><Link to="/">Home</Link></li>
-              <li><Link to="/shop">Shop</Link></li>
-              <li><Link to="/shop">Skincare</Link></li>
-              <li><Link to="/shop">About Us</Link></li>
-              <li><Link to="/shop">Contact</Link></li>
-            </ul>
-
-            <div className="footer-social-row-pixel">
-              <a href="https://instagram.com" className="social-circle-btn-pixel"><Globe size={16} /></a>
-              <a href="https://facebook.com" className="social-circle-btn-pixel"><Share2 size={16} /></a>
-              <a href="https://pinterest.com" className="social-circle-btn-pixel"><MessageCircle size={16} /></a>
-            </div>
-          </div>
-
-          <div className="footer-bottom-copy-pixel">
-            <div>
-              © 2025 LeafOra Life Sciences. All rights reserved.
-            </div>
-            <div>
-              Skincare for a Healthier You | Made with ♥ for a Better Tomorrow
-            </div>
-          </div>
-        </div>
-      </footer>
 
     </div>
   );
