@@ -6,6 +6,7 @@ import {
   ChevronDown, ChevronUp, Sparkles, Leaf, Award, Eye, X
 } from 'lucide-react';
 import { getProductById, getProducts } from '../services/api';
+import { addToCart } from '../services/cartService';
 import './ProductDetails.css';
 
 // Default Product Data matching reference image exactly
@@ -84,6 +85,7 @@ export default function ProductDetails() {
   const navigate = useNavigate();
   const { id } = useParams();
   const [product, setProduct] = useState(DEFAULT_PRODUCT_DETAILS);
+  const [relatedProducts, setRelatedProducts] = useState(RELATED_PRODUCTS);
   
   // Interactive UI States
   const [selectedImgIndex, setSelectedImgIndex] = useState(0);
@@ -96,7 +98,7 @@ export default function ProductDetails() {
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const [expandedFaqIndex, setExpandedFaqIndex] = useState(0);
 
-  // Fetch product dynamically if route parameter present
+  // Fetch product dynamically if route parameter present & fetch DB related products
   useEffect(() => {
     window.scrollTo(0, 0);
     setSelectedImgIndex(0);
@@ -108,12 +110,22 @@ export default function ProductDetails() {
               ...prev,
               ...res.data,
               price: Number(res.data.price) || prev.price,
-              gallery: res.data.images && res.data.images.length > 0 ? res.data.images : prev.gallery
+              gallery: res.data.images && res.data.images.length > 0 ? res.data.images : [res.data.image_url || prev.gallery[0]]
             }));
           }
         })
         .catch(() => console.warn('Using default sample details for PDP'));
     }
+
+    // Fetch database products for You May Also Like section
+    getProducts()
+      .then(res => {
+        if (res?.data && res.data.length > 0) {
+          const filtered = res.data.filter(p => String(p.id) !== String(id));
+          setRelatedProducts(filtered.length > 0 ? filtered.slice(0, 4) : res.data.slice(0, 4));
+        }
+      })
+      .catch(() => {});
   }, [id]);
 
   const showToast = (msg) => {
@@ -286,7 +298,10 @@ export default function ProductDetails() {
 
             <button 
               className="btn-pdp-add-cart"
-              onClick={() => showToast(`Added ${quantity} x "${product.name}" to your shopping bag!`)}
+              onClick={() => {
+                addToCart(product, quantity);
+                showToast(`Added ${quantity} x "${product.name}" to your shopping bag!`);
+              }}
             >
               <ShoppingBag size={18} /> Add to Cart
             </button>
@@ -299,60 +314,61 @@ export default function ProductDetails() {
             Buy Now
           </button>
 
-          {/* Trust Badges Bar */}
-          <div className="trust-badges-bar">
-            <div className="trust-item">
-              <Truck size={20} color="var(--leafora-bronze)" />
-              <div>
-                <div className="trust-item-title">Free Shipping</div>
-                <div className="trust-item-sub">On orders above ₹999</div>
-              </div>
-            </div>
-
-            <div className="trust-item">
-              <RotateCcw size={20} color="var(--leafora-bronze)" />
-              <div>
-                <div className="trust-item-title">Easy Returns</div>
-                <div className="trust-item-sub">Hassle-free returns</div>
-              </div>
-            </div>
-
-            <div className="trust-item">
-              <ShieldCheck size={20} color="var(--leafora-bronze)" />
-              <div>
-                <div className="trust-item-title">Secure Payments</div>
-                <div className="trust-item-sub">100% protected</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Delivery Date Checker */}
-          <div className="delivery-checker-box">
-            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--leafora-text-dark)', display: 'flex', alignItems: 'center', gap: 6 }}>
-              <MapPin size={16} color="var(--leafora-bronze)" /> Check Delivery Date & Availability
-            </span>
-            <form onSubmit={handleCheckPincode} className="pincode-input-row">
-              <input 
-                type="text" 
-                placeholder="Enter ZIP / Pincode..."
-                value={pincode}
-                onChange={(e) => setPincode(e.target.value)}
-              />
-              <button type="submit" className="btn-check-pincode">Check</button>
-            </form>
-            {deliveryResult && (
-              <div className="delivery-result-text">
-                <CheckCircle2 size={14} /> {deliveryResult}
-              </div>
-            )}
-          </div>
-
           <div style={{ display: 'flex', gap: 16 }}>
             <button className="btn-write-review" style={{ display: 'flex', alignItems: 'center', gap: 6 }} onClick={handleShareProduct}>
               <Share2 size={14} /> Share Product
             </button>
           </div>
 
+        </div>
+      </div>
+
+      {/* FULL WIDTH TRUST & DELIVERY STRIP */}
+      <div className="pdp-trust-delivery-strip">
+        <div className="trust-badges-bar">
+          <div className="trust-item">
+            <Truck size={20} color="var(--leafora-bronze)" />
+            <div>
+              <div className="trust-item-title">Free Shipping</div>
+              <div className="trust-item-sub">On orders above ₹999</div>
+            </div>
+          </div>
+
+          <div className="trust-item">
+            <RotateCcw size={20} color="var(--leafora-bronze)" />
+            <div>
+              <div className="trust-item-title">Easy Returns</div>
+              <div className="trust-item-sub">Hassle-free returns</div>
+            </div>
+          </div>
+
+          <div className="trust-item">
+            <ShieldCheck size={20} color="var(--leafora-bronze)" />
+            <div>
+              <div className="trust-item-title">Secure Payments</div>
+              <div className="trust-item-sub">100% protected</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="delivery-checker-box">
+          <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--leafora-text-dark)', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <MapPin size={16} color="var(--leafora-bronze)" /> Check Delivery & Pincode
+          </span>
+          <form onSubmit={handleCheckPincode} className="pincode-input-row">
+            <input 
+              type="text" 
+              placeholder="Enter Pincode..."
+              value={pincode}
+              onChange={(e) => setPincode(e.target.value)}
+            />
+            <button type="submit" className="btn-check-pincode">Check</button>
+          </form>
+          {deliveryResult && (
+            <div className="delivery-result-text">
+              <CheckCircle2 size={14} /> {deliveryResult}
+            </div>
+          )}
         </div>
       </div>
 
@@ -384,46 +400,20 @@ export default function ProductDetails() {
             <div className="tab-left-content">
               <h3>Product Details</h3>
               <p>
-                Leafora Gentle Foaming Face Wash is crafted with the goodness of nature to purify your skin without stripping its natural moisture. Enriched with Aloe Vera, Green Tea and Niacinamide, it cleanses deeply, soothes irritation and leaves your skin fresh, smooth and radiant.
+                {product.description || 'Leafora Gentle Foaming Face Wash is crafted with the goodness of nature to purify your skin without stripping its natural moisture.'}
               </p>
 
               <table className="specs-table">
                 <tbody>
-                  <tr><td>Brand</td><td>{product.brand}</td></tr>
-                  <tr><td>Product Type</td><td>{product.productType}</td></tr>
-                  <tr><td>Skin Type</td><td>{product.skinType}</td></tr>
-                  <tr><td>Size</td><td>{product.size}</td></tr>
-                  <tr><td>Target Concerns</td><td>{product.targetConcerns}</td></tr>
-                  <tr><td>Formulation</td><td>{product.formulation}</td></tr>
-                  <tr><td>Shelf Life</td><td>{product.shelfLife}</td></tr>
+                  <tr><td>Brand</td><td>{product.brand || 'Leafora Life Sciences'}</td></tr>
+                  <tr><td>Product Type</td><td>{product.productType || 'Botanical Skincare'}</td></tr>
+                  <tr><td>Skin Type</td><td>{product.skinType || 'All Skin Types'}</td></tr>
+                  <tr><td>Size</td><td>{product.size || '100 ml'}</td></tr>
+                  <tr><td>Target Concerns</td><td>{product.targetConcerns || 'Cleanses, Hydrates & Soothes'}</td></tr>
+                  <tr><td>Formulation</td><td>{product.formulation || 'Sulfate Free, Paraben Free, Cruelty Free'}</td></tr>
+                  <tr><td>Shelf Life</td><td>{product.shelfLife || '24 Months'}</td></tr>
                 </tbody>
               </table>
-            </div>
-
-            {/* Right Promo Banner matching image */}
-            <div className="tab-promo-banner">
-              <img 
-                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80" 
-                alt="Cleanse Refresh Glow Naturally" 
-                className="promo-banner-img"
-              />
-              <div className="promo-banner-content">
-                <h4>Cleanse. Refresh. Glow Naturally.</h4>
-                <div className="promo-three-icons">
-                  <div className="promo-icon-item">
-                    <div className="circle-icon-box">🫧</div>
-                    <span>Deep Cleanses</span>
-                  </div>
-                  <div className="promo-icon-item">
-                    <div className="circle-icon-box">💧</div>
-                    <span>Hydrates & Soothes</span>
-                  </div>
-                  <div className="promo-icon-item">
-                    <div className="circle-icon-box">🌿</div>
-                    <span>Maintains Skin Balance</span>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         )}
@@ -583,7 +573,7 @@ export default function ProductDetails() {
         </div>
 
         <div className="related-products-grid">
-          {RELATED_PRODUCTS.map(item => (
+          {relatedProducts.map(item => (
             <div 
               key={item.id} 
               className="shop-card"
@@ -595,25 +585,29 @@ export default function ProductDetails() {
             >
               <div className="card-img-container">
                 <button className="btn-wishlist-heart" onClick={(e) => { e.stopPropagation(); showToast('Saved to Wishlist ♥'); }}><Heart size={16} /></button>
-                <img src={item.image} alt={item.name} />
+                <img 
+                  src={item.image_url || item.image || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZHg9IjEwMCIgZmlsbD0iI0YzRjRGNiIvPjwvc3ZnPg=='} 
+                  alt={item.name} 
+                />
               </div>
               <div className="shop-card-info">
-                <span className="shop-card-brand">Leafora</span>
+                <span className="shop-card-brand">{item.brand || 'Leafora'}</span>
                 <h3 className="shop-card-title">{item.name}</h3>
                 <div className="shop-card-rating">
                   <div className="stars-row">
                     {[...Array(5)].map((_, i) => <Star key={i} size={12} fill="#A67C52" color="#A67C52" />)}
                   </div>
-                  <span>({item.reviews})</span>
+                  <span>({item.reviews_count || item.reviews || 12})</span>
                 </div>
                 <div className="shop-card-price-row">
-                  <span className="price-main">₹{Number(item.price).toFixed(2)}</span>
+                  <span className="price-main">₹{parseFloat(item.price || 0).toFixed(2)}</span>
                 </div>
               </div>
               <button 
                 className="btn-card-add-cart"
                 onClick={(e) => {
                   e.stopPropagation();
+                  addToCart(item, 1);
                   showToast(`Added "${item.name}" to your bag!`);
                 }}
               >

@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
+const compression = require('compression');
 const path = require('path');
 const apiRoutes = require('./routes/api');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
@@ -9,6 +10,7 @@ const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 const app = express();
 
 // Middleware
+app.use(compression());
 app.use(
   helmet({
     contentSecurityPolicy: false, // Allow single page app inline styles/assets

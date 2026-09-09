@@ -5,6 +5,7 @@ import {
   ChevronRight, X, RotateCcw, CheckCircle2, ShieldCheck, Leaf, Award, Eye
 } from 'lucide-react';
 import { getProducts, getCategories } from '../services/api';
+import { addToCart } from '../services/cartService';
 import './Shop.css';
 
 // Initial shop catalog data matching the user's reference image exactly
@@ -602,7 +603,7 @@ export default function Shop() {
                   <div className={viewMode === 'list' ? 'list-card-actions' : ''} onClick={(e) => e.stopPropagation()}>
                     <button 
                       className="btn-card-add-cart"
-                      onClick={(e) => { e.stopPropagation(); showToast(`Added "${product.name}" to your botanical shopping bag!`); }}
+                      onClick={(e) => { e.stopPropagation(); addToCart(product, 1); showToast(`Added "${product.name}" to your botanical shopping bag!`); }}
                     >
                       <ShoppingBag size={15} /> Add to Cart
                     </button>
@@ -742,7 +743,7 @@ export default function Shop() {
                 </p>
 
                 <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                  <button className="btn-card-add-cart" onClick={() => { showToast(`Added "${quickViewProduct.name}" to your bag!`); setQuickViewProduct(null); }}>
+                  <button className="btn-card-add-cart" onClick={() => { addToCart(quickViewProduct, 1); showToast(`Added "${quickViewProduct.name}" to your bag!`); setQuickViewProduct(null); }}>
                     <ShoppingBag size={16} /> Add to Cart
                   </button>
                   <button 

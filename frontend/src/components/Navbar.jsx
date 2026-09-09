@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Leaf, User, LogOut, Wallet, Search, ShoppingBag, ChevronDown, Sparkles, ShieldCheck, Menu, X } from 'lucide-react';
+import { Leaf, User, LogOut, Wallet, Search, ShoppingBag, ChevronDown, Sparkles, ShieldCheck, Menu, X, Trash2 } from 'lucide-react';
 import { checkHealth, getCategories, getProducts } from '../services/api';
+import { getCart, getCartCount, getCartSubtotal, updateCartQuantity, removeFromCart } from '../services/cartService';
 import './Navbar.css';
 
 export default function Navbar() {
   const [apiStatus, setApiStatus] = useState('checking');
   const [user, setUser] = useState(null);
   const [cartCount, setCartCount] = useState(0);
+  const [cartItems, setCartItems] = useState([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [showMegaMenu, setShowMegaMenu] = useState(false);
@@ -35,6 +38,21 @@ export default function Navbar() {
         if (res && res.data) setCategories(res.data);
       })
       .catch(() => {});
+
+    // Sync Cart state live
+    const updateCartState = () => {
+      setCartCount(getCartCount());
+      setCartItems(getCart());
+    };
+    updateCartState();
+
+    window.addEventListener('leafora_cart_updated', updateCartState);
+    window.addEventListener('storage', updateCartState);
+
+    return () => {
+      window.removeEventListener('leafora_cart_updated', updateCartState);
+      window.removeEventListener('storage', updateCartState);
+    };
   }, [location.pathname]);
 
   // Live search handler
@@ -177,7 +195,7 @@ export default function Navbar() {
                     className="search-result-item"
                     onClick={() => { setSearchQuery(''); setSearchResults([]); setIsMobileMenuOpen(false); }}
                   >
-                    <img src={item.image_url || '/assets/vitamin_c_serum.jpg'} alt={item.name} style={{ width: 32, height: 32, borderRadius: 6, objectFit: 'contain' }} />
+                    <img src={item.image_url || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZHg9IjEwMCIgZmlsbD0iI0YzRjRGNiIvPjwvc3ZnPg=='} alt={item.name} style={{ width: 32, height: 32, borderRadius: 6, objectFit: 'contain' }} />
                     <div>
                       <div style={{ fontSize: 13, fontWeight: 600, color: '#292524' }}>{item.name}</div>
                       <div style={{ fontSize: 11, color: '#A67C52', fontWeight: 700 }}>₹{item.price}</div>
@@ -220,14 +238,15 @@ export default function Navbar() {
               </div>
             )}
 
-            <Link 
-              to="/products" 
+            <button 
+              type="button"
               className="navbar-cart-btn"
+              onClick={() => setIsCartOpen(true)}
             >
               <ShoppingBag size={20} />
               <span className="cart-btn-label">Cart </span>
               <span className="cart-badge-count">{cartCount || 0}</span>
-            </Link>
+            </button>
           </div>
 
         </div>
@@ -273,6 +292,123 @@ export default function Navbar() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* MINI CART SLIDE-OUT DRAWER */}
+        {isCartOpen && (
+          <>
+            <div className="cart-drawer-overlay" onClick={() => setIsCartOpen(false)} />
+            <div className="cart-drawer-panel">
+              <div className="cart-drawer-header">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <ShoppingBag size={22} color="#A67C52" />
+                  <h3 style={{ margin: 0, fontFamily: 'Playfair Display, serif', fontSize: '1.25rem', color: '#1F2937' }}>
+                    Your Shopping Bag <span style={{ fontSize: '0.85rem', color: '#64748B', fontWeight: 400 }}>({cartCount})</span>
+                  </h3>
+                </div>
+                <button className="btn-mobile-close" onClick={() => setIsCartOpen(false)} aria-label="Close cart">
+                  <X size={22} />
+                </button>
+              </div>
+
+              <div className="cart-drawer-body">
+                {cartItems.length > 0 && (
+                  <div className="cart-shipping-banner">
+                    {getCartSubtotal() >= 999 ? (
+                      <div className="cart-shipping-unlocked">
+                        🎉 <strong>Free Delivery Unlocked!</strong> You saved shipping fees.
+                      </div>
+                    ) : (
+                      <div className="cart-shipping-progress">
+                        <span>Add <strong>₹{(999 - getCartSubtotal()).toFixed(2)}</strong> more for <strong>Free Delivery</strong></span>
+                        <div className="cart-progress-bar-bg">
+                          <div 
+                            className="cart-progress-bar-fill" 
+                            style={{ width: `${Math.min(100, (getCartSubtotal() / 999) * 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {cartItems.length === 0 ? (
+                  <div className="cart-empty-state">
+                    <ShoppingBag size={52} color="#D1D5DB" style={{ margin: '0 auto 16px auto' }} />
+                    <h4 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.15rem', color: '#1F2937', marginBottom: 8 }}>Your bag is empty</h4>
+                    <p style={{ fontSize: '0.88rem', color: '#64748B', marginBottom: 24 }}>Explore our pure botanical skincare formulations.</p>
+                    <Link to="/products" className="cart-checkout-btn" onClick={() => setIsCartOpen(false)} style={{ display: 'inline-flex', width: 'auto', padding: '12px 28px' }}>
+                      Shop Best Sellers
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="cart-items-list">
+                    {cartItems.map(item => (
+                      <div key={item.id} className="cart-item-card">
+                        <div className="cart-item-top">
+                          <img 
+                            src={item.image_url || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZHg9IjEwMCIgZmlsbD0iI0YzRjRGNiIvPjwvc3ZnPg=='} 
+                            alt={item.name} 
+                            className="cart-item-thumb" 
+                          />
+                          <div className="cart-item-details">
+                            <div className="cart-item-title">{item.name}</div>
+                            <div className="cart-item-unit-price">
+                              ₹{parseFloat(item.price || 0).toFixed(2)}
+                            </div>
+                          </div>
+                          <button 
+                            className="cart-item-remove-btn"
+                            onClick={() => removeFromCart(item.id)}
+                            title="Remove item"
+                            aria-label="Remove item"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+
+                        <div className="cart-item-bottom">
+                          <div className="cart-item-qty-stepper">
+                            <button 
+                              className="qty-btn"
+                              onClick={() => updateCartQuantity(item.id, item.quantity - 1)}
+                              aria-label="Decrease quantity"
+                            >-</button>
+                            <span className="qty-val">{item.quantity}</span>
+                            <button 
+                              className="qty-btn"
+                              onClick={() => updateCartQuantity(item.id, item.quantity + 1)}
+                              aria-label="Increase quantity"
+                            >+</button>
+                          </div>
+                          <div className="cart-item-line-total">
+                            <span className="line-total-label">Total:</span>
+                            <span className="line-total-val">₹{(parseFloat(item.price || 0) * item.quantity).toFixed(2)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {cartItems.length > 0 && (
+                <div className="cart-drawer-footer">
+                  <div className="cart-footer-summary-row">
+                    <span className="cart-footer-subtotal-label">Subtotal</span>
+                    <span className="cart-footer-subtotal-val">₹{getCartSubtotal().toFixed(2)}</span>
+                  </div>
+                  <Link 
+                    to="/cart" 
+                    className="cart-checkout-btn" 
+                    onClick={() => setIsCartOpen(false)}
+                  >
+                    Proceed to Checkout →
+                  </Link>
+                </div>
+              )}
+            </div>
+          </>
         )}
       </header>
     </div>

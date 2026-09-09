@@ -6,6 +6,7 @@ import Home from './pages/Home';
 import Shop from './pages/Shop';
 import Products from './pages/Products';
 import ProductDetails from './pages/ProductDetails';
+import Cart from './pages/Cart';
 import AuthPage from './pages/AuthPage';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
@@ -34,6 +35,7 @@ function Layout() {
           <Route path="/" element={<Home />} />
           <Route path="/shop" element={<Shop />} />
           <Route path="/products" element={<Shop />} />
+          <Route path="/cart" element={<Cart />} />
           <Route path="/product/:id" element={<ProductDetails />} />
           <Route path="/products/:id" element={<ProductDetails />} />
           <Route path="/login" element={<AuthPage initialMode="login" />} />

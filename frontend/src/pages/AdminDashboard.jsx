@@ -75,7 +75,7 @@ export default function AdminDashboard() {
     level: 'category',
     slug: '',
     description: '',
-    image_url: '/assets/vitamin_c_serum.jpg',
+    image_url: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiB2aWV3Qm94PSIwIDAgMjAwIDIwMCI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNGM0Y0RjYiLz48cGF0aCBkPSJNMTAwIDYwIEM3MCA2MCA1MCA4MCA1MCAxMTAgQzUwIDE0MCA3MCAxNTAgMTAwIDE1MCBDMTMwIDE1MCAxNTAgMTQwIDE1MCAxMTAgQzE1MCA4MCAxMzAgNjAgMTAwIDYwIFoiIGZpbGw9IiNBNjdDNTIiIG9wYWNpdHk9IjAuNCIvPjx0ZXh0IHg9IjEwMCIgeT0iMTgwIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMiIgZmlsbD0iIzlDQTNBRiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+TGVhZm9yYTwvdGV4dD48L3N2Zz4=',
     icon_url: '',
     banner_url: '',
     meta_title: '',
@@ -1170,7 +1170,7 @@ export default function AdminDashboard() {
       level: categoryForm.level || (categoryForm.parent_id ? 'sub_category' : 'category'),
       slug: categoryForm.slug || undefined,
       description: categoryForm.description || '',
-      image_url: categoryForm.image_url || '/assets/vitamin_c_serum.jpg',
+      image_url: categoryForm.image_url || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiB2aWV3Qm94PSIwIDAgMjAwIDIwMCI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNGM0Y0RjYiLz48cGF0aCBkPSJNMTAwIDYwIEM3MCA2MCA1MCA4MCA1MCAxMTAgQzUwIDE0MCA3MCAxNTAgMTAwIDE1MCBDMTMwIDE1MCAxNTAgMTQwIDE1MCAxMTAgQzE1MCA4MCAxMzAgNjAgMTAwIDYwIFoiIGZpbGw9IiNBNjdDNTIiIG9wYWNpdHk9IjAuNCIvPjx0ZXh0IHg9IjEwMCIgeT0iMTgwIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMiIgZmlsbD0iIzlDQTNBRiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+TGVhZm9yYTwvdGV4dD48L3N2Zz4=',
       icon_url: categoryForm.icon_url || '',
       banner_url: categoryForm.banner_url || '',
       meta_title: categoryForm.meta_title || categoryForm.name,
@@ -1213,7 +1213,7 @@ export default function AdminDashboard() {
       level: cat.level || 'category',
       slug: cat.slug || '',
       description: cat.description || '',
-      image_url: cat.image_url || '/assets/vitamin_c_serum.jpg',
+      image_url: cat.image_url || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiB2aWV3Qm94PSIwIDAgMjAwIDIwMCI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNGM0Y0RjYiLz48cGF0aCBkPSJNMTAwIDYwIEM3MCA2MCA1MCA4MCA1MCAxMTAgQzUwIDE0MCA3MCAxNTAgMTAwIDE1MCBDMTMwIDE1MCAxNTAgMTQwIDE1MCAxMTAgQzE1MCA4MCAxMzAgNjAgMTAwIDYwIFoiIGZpbGw9IiNBNjdDNTIiIG9wYWNpdHk9IjAuNCIvPjx0ZXh0IHg9IjEwMCIgeT0iMTgwIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMiIgZmlsbD0iIzlDQTNBRiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+TGVhZm9yYTwvdGV4dD48L3N2Zz4=',
       icon_url: cat.icon_url || '',
       banner_url: cat.banner_url || '',
       meta_title: cat.meta_title || '',
@@ -1542,7 +1542,7 @@ export default function AdminDashboard() {
     if (!productForm.name.trim() || productForm.price === '') return;
 
     const validImages = productForm.images.filter(Boolean);
-    const primaryImg = validImages[0] || '/assets/vitamin_c_serum.jpg';
+    const primaryImg = validImages[0] || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiB2aWV3Qm94PSIwIDAgMjAwIDIwMCI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNGM0Y0RjYiLz48cGF0aCBkPSJNMTAwIDYwIEM3MCA2MCA1MCA4MCA1MCAxMTAgQzUwIDE0MCA3MCAxNTAgMTAwIDE1MCBDMTMwIDE1MCAxNTAgMTQwIDE1MCAxMTAgQzE1MCA4MCAxMzAgNjAgMTAwIDYwIFoiIGZpbGw9IiNBNjdDNTIiIG9wYWNpdHk9IjAuNCIvPjx0ZXh0IHg9IjEwMCIgeT0iMTgwIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMiIgZmlsbD0iIzlDQTNBRiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+TGVhZm9yYTwvdGV4dD48L3N2Zz4=';
 
     const payload = {
       name: productForm.name.trim(),
@@ -1832,7 +1832,7 @@ export default function AdminDashboard() {
         setOrderDetailDrawer({
           order,
           items: [
-            { id: 1, product_name: 'LeafExtract Pharma Grade', price: 49.99, quantity: 2, total_price: 99.98, sku: 'LFA-VITC-01', product_image: '/assets/vitamin_c_serum.jpg' }
+            { id: 1, product_name: 'LeafExtract Pharma Grade', price: 49.99, quantity: 2, total_price: 99.98, sku: 'LFA-VITC-01', product_image: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiB2aWV3Qm94PSIwIDAgMjAwIDIwMCI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNGM0Y0RjYiLz48cGF0aCBkPSJNMTAwIDYwIEM3MCA2MCA1MCA4MCA1MCAxMTAgQzUwIDE0MCA3MCAxNTAgMTAwIDE1MCBDMTMwIDE1MCAxNTAgMTQwIDE1MCAxMTAgQzE1MCA4MCAxMzAgNjAgMTAwIDYwIFoiIGZpbGw9IiNBNjdDNTIiIG9wYWNpdHk9IjAuNCIvPjx0ZXh0IHg9IjEwMCIgeT0iMTgwIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMiIgZmlsbD0iIzlDQTNBRiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+TGVhZm9yYTwvdGV4dD48L3N2Zz4=' }
           ],
           timeline: [
             { id: 1, title: 'Order Placed', description: `Order #${order.id} received.`, status: 'Pending', created_at: order.created_at }
@@ -1888,7 +1888,7 @@ export default function AdminDashboard() {
     const ordId = actionPromptModal.order.id;
     try {
       await adminRefundOrder(ordId, actionForm.amount, actionForm.reason);
-      showNotification(`Refund of $${actionForm.amount || 0} processed for Order #${ordId}.`);
+      showNotification(`Refund of ₹${actionForm.amount || 0} processed for Order #${ordId}.`);
     } catch (err) {
       showNotification(`Refund processed.`);
     }
@@ -2617,14 +2617,14 @@ export default function AdminDashboard() {
   // Product Image Mapping Helper
   const getProductImage = (prodName, index) => {
     const lower = String(prodName).toLowerCase();
-    if (lower.includes('vitamin') || lower.includes('serum')) return '/assets/vitamin_c_serum.jpg';
+    if (lower.includes('vitamin') || lower.includes('serum')) return 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiB2aWV3Qm94PSIwIDAgMjAwIDIwMCI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNGM0Y0RjYiLz48cGF0aCBkPSJNMTAwIDYwIEM3MCA2MCA1MCA4MCA1MCAxMTAgQzUwIDE0MCA3MCAxNTAgMTAwIDE1MCBDMTMwIDE1MCAxNTAgMTQwIDE1MCAxMTAgQzE1MCA4MCAxMzAgNjAgMTAwIDYwIFoiIGZpbGw9IiNBNjdDNTIiIG9wYWNpdHk9IjAuNCIvPjx0ZXh0IHg9IjEwMCIgeT0iMTgwIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMiIgZmlsbD0iIzlDQTNBRiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+TGVhZm9yYTwvdGV4dD48L3N2Zz4=';
     if (lower.includes('moisturizer') || lower.includes('glow')) return '/assets/hydra_glow_moisturizer.jpg';
     if (lower.includes('wash') || lower.includes('cleanser')) return '/assets/face_wash.jpg';
     if (lower.includes('sunscreen') || lower.includes('spf')) return '/assets/sunscreen_spf50.jpg';
     if (lower.includes('night') || lower.includes('cream')) return '/assets/night_cream.jpg';
     
     const fallbackImgs = [
-      '/assets/vitamin_c_serum.jpg',
+      'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiB2aWV3Qm94PSIwIDAgMjAwIDIwMCI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNGM0Y0RjYiLz48cGF0aCBkPSJNMTAwIDYwIEM3MCA2MCA1MCA4MCA1MCAxMTAgQzUwIDE0MCA3MCAxNTAgMTAwIDE1MCBDMTMwIDE1MCAxNTAgMTQwIDE1MCAxMTAgQzE1MCA4MCAxMzAgNjAgMTAwIDYwIFoiIGZpbGw9IiNBNjdDNTIiIG9wYWNpdHk9IjAuNCIvPjx0ZXh0IHg9IjEwMCIgeT0iMTgwIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMiIgZmlsbD0iIzlDQTNBRiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+TGVhZm9yYTwvdGV4dD48L3N2Zz4=',
       '/assets/hydra_glow_moisturizer.jpg',
       '/assets/face_wash.jpg',
       '/assets/sunscreen_spf50.jpg',
@@ -3061,7 +3061,7 @@ export default function AdminDashboard() {
                           const orderId = order.id ? `#${order.id}` : `#100${idx}`;
                           const customerName = order.customer_name || order.customer || order.email || `Customer ${idx + 1}`;
                           const amt = order.total_amount || order.amount || 0;
-                          const formattedAmt = typeof amt === 'number' ? `$${amt.toFixed(2)}` : (String(amt).startsWith('$') ? amt : `$${amt}`);
+                          const formattedAmt = typeof amt === 'number' ? `₹${amt.toFixed(2)}` : (String(amt).startsWith('₹') ? amt : `₹${amt.replace(/^\$/, '')}`);
                           const status = order.status || 'Delivered';
                           const dateStr = order.created_at ? new Date(order.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Sep 7, 2025';
                           return (
@@ -3096,7 +3096,7 @@ export default function AdminDashboard() {
                           const prodId = prod.id || idx + 1;
                           const prodName = prod.name || `Product ${prodId}`;
                           const priceVal = parseFloat(prod.price || 0);
-                          const formattedPrice = `$${priceVal.toFixed(2)}`;
+                          const formattedPrice = `₹${priceVal.toFixed(2)}`;
                           const stockVal = prod.stock ?? 10;
                           const prodImg = prod.image_url || getProductImage(prodName, idx);
                           return (
@@ -3640,7 +3640,7 @@ export default function AdminDashboard() {
 
                           <td>
                             <div className="leafora-cat-media-cell">
-                              <img src={cat.image_url || '/assets/vitamin_c_serum.jpg'} alt={cat.name} className="leafora-cat-thumb" title="Thumbnail" />
+                              <img src={cat.image_url || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiB2aWV3Qm94PSIwIDAgMjAwIDIwMCI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNGM0Y0RjYiLz48cGF0aCBkPSJNMTAwIDYwIEM3MCA2MCA1MCA4MCA1MCAxMTAgQzUwIDE0MCA3MCAxNTAgMTAwIDE1MCBDMTMwIDE1MCAxNTAgMTQwIDE1MCAxMTAgQzE1MCA4MCAxMzAgNjAgMTAwIDYwIFoiIGZpbGw9IiNBNjdDNTIiIG9wYWNpdHk9IjAuNCIvPjx0ZXh0IHg9IjEwMCIgeT0iMTgwIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMiIgZmlsbD0iIzlDQTNBRiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+TGVhZm9yYTwvdGV4dD48L3N2Zz4='} alt={cat.name} className="leafora-cat-thumb" title="Thumbnail" />
                               {cat.icon_url && <img src={cat.icon_url} alt="Icon" className="leafora-cat-icon-thumb" title="Icon" />}
                             </div>
                           </td>
@@ -4467,7 +4467,7 @@ export default function AdminDashboard() {
 
                           <td>
                             <div style={{ fontWeight: 700, color: '#111827', fontSize: 14 }}>
-                              ${parseFloat(prod.price || 0).toFixed(2)}
+                              ₹{parseFloat(prod.price || 0).toFixed(2)}
                             </div>
                             {Array.isArray(prod.variants) && prod.variants.length > 0 && (
                               <span className="leafora-badge" style={{ backgroundColor: '#E0E7FF', color: '#3730A3' }}>
@@ -4590,7 +4590,7 @@ export default function AdminDashboard() {
                       {/* Cover & Gallery Carousel */}
                       <div className="leafora-drawer-gallery">
                         <img
-                          src={Array.isArray(previewProduct.images) && previewProduct.images.length > 0 ? previewProduct.images[0] : (previewProduct.image_url || '/assets/vitamin_c_serum.jpg')}
+                          src={Array.isArray(previewProduct.images) && previewProduct.images.length > 0 ? previewProduct.images[0] : (previewProduct.image_url || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiB2aWV3Qm94PSIwIDAgMjAwIDIwMCI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNGM0Y0RjYiLz48cGF0aCBkPSJNMTAwIDYwIEM3MCA2MCA1MCA4MCA1MCAxMTAgQzUwIDE0MCA3MCAxNTAgMTAwIDE1MCBDMTMwIDE1MCAxNTAgMTQwIDE1MCAxMTAgQzE1MCA4MCAxMzAgNjAgMTAwIDYwIFoiIGZpbGw9IiNBNjdDNTIiIG9wYWNpdHk9IjAuNCIvPjx0ZXh0IHg9IjEwMCIgeT0iMTgwIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMiIgZmlsbD0iIzlDQTNBRiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+TGVhZm9yYTwvdGV4dD48L3N2Zz4=')}
                           alt={previewProduct.name}
                           className="leafora-drawer-hero-img"
                         />
@@ -4605,7 +4605,7 @@ export default function AdminDashboard() {
                       <div className="leafora-drawer-stats-grid">
                         <div className="leafora-drawer-stat-box">
                           <span className="leafora-drawer-stat-label">Retail Price</span>
-                          <span className="leafora-drawer-stat-val">${parseFloat(previewProduct.price || 0).toFixed(2)}</span>
+                          <span className="leafora-drawer-stat-val">₹{parseFloat(previewProduct.price || 0).toFixed(2)}</span>
                         </div>
                         <div className="leafora-drawer-stat-box">
                           <span className="leafora-drawer-stat-label">Available Stock</span>
@@ -4642,7 +4642,7 @@ export default function AdminDashboard() {
                                 <tr key={idx}>
                                   <td style={{ fontWeight: 600 }}>{v.variant_name}</td>
                                   <td style={{ fontFamily: 'monospace' }}>{v.sku}</td>
-                                  <td>${parseFloat(v.price || 0).toFixed(2)}</td>
+                                  <td>₹{parseFloat(v.price || 0).toFixed(2)}</td>
                                   <td>{v.stock}</td>
                                 </tr>
                               ))}
@@ -5092,14 +5092,14 @@ export default function AdminDashboard() {
                                   <tr key={idx}>
                                     <td>
                                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                        <img src={item.product_image || '/assets/vitamin_c_serum.jpg'} alt={item.product_name} style={{ width: 32, height: 32, borderRadius: 4, objectFit: 'cover' }} />
+                                        <img src={item.product_image || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiB2aWV3Qm94PSIwIDAgMjAwIDIwMCI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNGM0Y0RjYiLz48cGF0aCBkPSJNMTAwIDYwIEM3MCA2MCA1MCA4MCA1MCAxMTAgQzUwIDE0MCA3MCAxNTAgMTAwIDE1MCBDMTMwIDE1MCAxNTAgMTQwIDE1MCAxMTAgQzE1MCA4MCAxMzAgNjAgMTAwIDYwIFoiIGZpbGw9IiNBNjdDNTIiIG9wYWNpdHk9IjAuNCIvPjx0ZXh0IHg9IjEwMCIgeT0iMTgwIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMiIgZmlsbD0iIzlDQTNBRiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+TGVhZm9yYTwvdGV4dD48L3N2Zz4='} alt={item.product_name} style={{ width: 32, height: 32, borderRadius: 4, objectFit: 'cover' }} />
                                         <span style={{ fontWeight: 600 }}>{item.product_name}</span>
                                       </div>
                                     </td>
                                     <td style={{ fontFamily: 'monospace', color: '#6B7280' }}>{item.sku || 'N/A'} {item.variant_name && `(${item.variant_name})`}</td>
                                     <td style={{ fontWeight: 700 }}>x{item.quantity}</td>
-                                    <td>${parseFloat(item.price || 0).toFixed(2)}</td>
-                                    <td style={{ fontWeight: 700 }}>${parseFloat(item.total_price || (item.price * item.quantity)).toFixed(2)}</td>
+                                    <td>₹{parseFloat(item.price || 0).toFixed(2)}</td>
+                                    <td style={{ fontWeight: 700 }}>₹{parseFloat(item.total_price || (item.price * item.quantity)).toFixed(2)}</td>
                                   </tr>
                                 ))
                               )}
@@ -5109,15 +5109,15 @@ export default function AdminDashboard() {
                           <div style={{ marginTop: 16, background: '#FAF8F5', border: '1px solid #EFECE6', borderRadius: 8, padding: 14 }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
                               <span style={{ color: '#6B7280' }}>Subtotal:</span>
-                              <span style={{ fontWeight: 600 }}>${parseFloat(orderDetailDrawer.order?.subtotal || orderDetailDrawer.order?.total_amount || 0).toFixed(2)}</span>
+                              <span style={{ fontWeight: 600 }}>₹{parseFloat(orderDetailDrawer.order?.subtotal || orderDetailDrawer.order?.total_amount || 0).toFixed(2)}</span>
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
                               <span style={{ color: '#6B7280' }}>Tax:</span>
-                              <span style={{ fontWeight: 600 }}>${parseFloat(orderDetailDrawer.order?.tax_amount || 0).toFixed(2)}</span>
+                              <span style={{ fontWeight: 600 }}>₹{parseFloat(orderDetailDrawer.order?.tax_amount || 0).toFixed(2)}</span>
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
                               <span style={{ color: '#6B7280' }}>Shipping Fee:</span>
-                              <span style={{ fontWeight: 600 }}>${parseFloat(orderDetailDrawer.order?.shipping_fee || 0).toFixed(2)}</span>
+                              <span style={{ fontWeight: 600 }}>₹{parseFloat(orderDetailDrawer.order?.shipping_fee || 0).toFixed(2)}</span>
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 8, color: '#DC2626' }}>
                               <span>Discount Applied:</span>
@@ -5125,7 +5125,7 @@ export default function AdminDashboard() {
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, fontWeight: 700, paddingTop: 8, borderTop: '1px solid #E5E7EB', color: '#111827' }}>
                               <span>Grand Total:</span>
-                              <span style={{ color: '#A37F3F' }}>${parseFloat(orderDetailDrawer.order?.total_amount || 0).toFixed(2)}</span>
+                              <span style={{ color: '#A37F3F' }}>₹{parseFloat(orderDetailDrawer.order?.total_amount || 0).toFixed(2)}</span>
                             </div>
                           </div>
                         </div>
@@ -5432,8 +5432,8 @@ export default function AdminDashboard() {
                                   <td>{it.product_name}</td>
                                   <td>{it.sku || 'N/A'}</td>
                                   <td>{it.quantity}</td>
-                                  <td>${parseFloat(it.price || 0).toFixed(2)}</td>
-                                  <td>${parseFloat(it.total_price || (it.price * it.quantity)).toFixed(2)}</td>
+                                  <td>₹{parseFloat(it.price || 0).toFixed(2)}</td>
+                                  <td>₹{parseFloat(it.total_price || (it.price * it.quantity)).toFixed(2)}</td>
                                 </tr>
                               ))}
                             </tbody>
@@ -5441,10 +5441,10 @@ export default function AdminDashboard() {
 
                           <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                             <div style={{ width: 220, fontSize: 12.5, lineHeight: 1.8 }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Subtotal:</span><span>${parseFloat(printableModal.order?.subtotal || printableModal.order?.total_amount || 0).toFixed(2)}</span></div>
-                              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Tax:</span><span>${parseFloat(printableModal.order?.tax_amount || 0).toFixed(2)}</span></div>
-                              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Shipping:</span><span>${parseFloat(printableModal.order?.shipping_fee || 0).toFixed(2)}</span></div>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: 15, borderTop: '2px solid #A37F3F', paddingTop: 6, marginTop: 6, color: '#A37F3F' }}><span>Total Paid:</span><span>${parseFloat(printableModal.order?.total_amount || 0).toFixed(2)}</span></div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Subtotal:</span><span>₹{parseFloat(printableModal.order?.subtotal || printableModal.order?.total_amount || 0).toFixed(2)}</span></div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Tax:</span><span>₹{parseFloat(printableModal.order?.tax_amount || 0).toFixed(2)}</span></div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Shipping:</span><span>₹{parseFloat(printableModal.order?.shipping_fee || 0).toFixed(2)}</span></div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: 15, borderTop: '2px solid #A37F3F', paddingTop: 6, marginTop: 6, color: '#A37F3F' }}><span>Total Paid:</span><span>₹{parseFloat(printableModal.order?.total_amount || 0).toFixed(2)}</span></div>
                             </div>
                           </div>
                         </div>
@@ -5871,12 +5871,12 @@ export default function AdminDashboard() {
                               </span>
                               <div style={{ fontSize: 10.5, color: '#9CA3AF' }}>{p.payment_method || 'Online'}</div>
                             </td>
-                            <td style={{ fontWeight: 700, color: '#111827' }}>${parseFloat(p.amount || 0).toFixed(2)}</td>
+                            <td style={{ fontWeight: 700, color: '#111827' }}>₹{parseFloat(p.amount || 0).toFixed(2)}</td>
                             <td>
                               {parseFloat(p.refunded_amount || 0) > 0 ? (
                                 <span style={{ fontWeight: 600, color: '#DC2626' }}>-${parseFloat(p.refunded_amount).toFixed(2)}</span>
                               ) : (
-                                <span style={{ color: '#9CA3AF' }}>$0.00</span>
+                                <span style={{ color: '#9CA3AF' }}>₹0.00</span>
                               )}
                             </td>
                             <td>
@@ -6080,7 +6080,7 @@ export default function AdminDashboard() {
                     </p>
 
                     <div style={{ background: '#FAF8F5', border: '1px solid #EFECE6', borderRadius: 8, padding: 12, fontSize: 12, marginBottom: 14 }}>
-                      <div><strong>COD Handling Fee:</strong> $0.00 | <strong>Phone Verification:</strong> Enabled</div>
+                      <div><strong>COD Handling Fee:</strong> ₹0.00 | <strong>Phone Verification:</strong> Enabled</div>
                     </div>
 
                     <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -6126,7 +6126,7 @@ export default function AdminDashboard() {
                             <div style={{ fontWeight: 600 }}>{p.customer_name || 'Customer'}</div>
                             <div style={{ fontSize: 11, color: '#6B7280' }}>{p.customer_email}</div>
                           </td>
-                          <td style={{ fontWeight: 800, fontSize: 14, color: '#111827' }}>${parseFloat(p.amount || 0).toFixed(2)}</td>
+                          <td style={{ fontWeight: 800, fontSize: 14, color: '#111827' }}>₹{parseFloat(p.amount || 0).toFixed(2)}</td>
                           <td>
                             <span className={`leafora-status-pill ${p.cod_collected ? 'delivered' : 'cancelled'}`}>
                               {p.cod_collected ? 'Collected & Deposited' : 'Pending Delivery Collection'}
@@ -6224,9 +6224,9 @@ export default function AdminDashboard() {
                           <td style={{ fontWeight: 700, color: '#A37F3F', fontFamily: 'monospace' }}>{setl.settlement_batch_id}</td>
                           <td style={{ fontWeight: 600 }}>{setl.gateway}</td>
                           <td><span className="leafora-badge" style={{ backgroundColor: '#DBEAFE', color: '#1E40AF' }}>{setl.total_transactions} txns</span></td>
-                          <td style={{ fontWeight: 700 }}>${parseFloat(setl.gross_amount || 0).toFixed(2)}</td>
+                          <td style={{ fontWeight: 700 }}>₹{parseFloat(setl.gross_amount || 0).toFixed(2)}</td>
                           <td style={{ color: '#DC2626' }}>-${(parseFloat(setl.mdr_fee || 0) + parseFloat(setl.tax_amount || 0)).toFixed(2)}</td>
-                          <td style={{ fontWeight: 800, color: '#16A34A', fontSize: 13 }}>${parseFloat(setl.net_settled_amount || 0).toFixed(2)}</td>
+                          <td style={{ fontWeight: 800, color: '#16A34A', fontSize: 13 }}>₹{parseFloat(setl.net_settled_amount || 0).toFixed(2)}</td>
                           <td style={{ color: '#6B7280' }}>{new Date(setl.settlement_date).toLocaleDateString()}</td>
                           <td><span className="leafora-status-pill delivered">{setl.status}</span></td>
                         </tr>
@@ -6264,7 +6264,7 @@ export default function AdminDashboard() {
                             <div style={{ fontSize: 11, color: '#6B7280' }}>{p.customer_email}</div>
                           </td>
                           <td style={{ fontWeight: 700 }}>#{p.order_number || `ORD-${p.order_id}`}</td>
-                          <td style={{ fontWeight: 800 }}>${parseFloat(p.amount || 0).toFixed(2)}</td>
+                          <td style={{ fontWeight: 800 }}>₹{parseFloat(p.amount || 0).toFixed(2)}</td>
                           <td style={{ color: '#DC2626', fontSize: 11.5, maxWidth: 280 }}>{p.failure_reason || 'OTP Session Timed Out'}</td>
                           <td><span className="leafora-badge" style={{ backgroundColor: '#F3F4F6', color: '#374151' }}>{p.retry_count || 0} Sent</span></td>
                           <td>
@@ -6296,7 +6296,7 @@ export default function AdminDashboard() {
                 <form onSubmit={handleIssuePaymentRefundSubmit}>
                   <div className="leafora-form-group">
                     <label className="leafora-form-label">Total Original Amount Paid</label>
-                    <input type="text" className="leafora-cat-input" value={`$${parseFloat(showPartialRefundModal.amount || 0).toFixed(2)}`} disabled readOnly />
+                    <input type="text" className="leafora-cat-input" value={`₹${parseFloat(showPartialRefundModal.amount || 0).toFixed(2)}`} disabled readOnly />
                   </div>
 
                   <div className="leafora-form-group">
@@ -6600,16 +6600,16 @@ export default function AdminDashboard() {
                               📦 {cust.orders_count ?? 0} Orders
                             </span>
                             <div style={{ fontSize: 10, color: '#9CA3AF', marginTop: 2 }}>
-                              Spent: ${parseFloat(cust.total_spent || 0).toFixed(2)}
+                              Spent: ₹{parseFloat(cust.total_spent || 0).toFixed(2)}
                             </div>
                           </td>
 
                           <td>
                             <div style={{ fontSize: 12, fontWeight: 700, color: '#16A34A', display: 'flex', alignItems: 'center', gap: 4 }}>
-                              <Wallet size={13} /> ${parseFloat(cust.wallet_balance || 0).toFixed(2)}
+                              <Wallet size={13} /> ₹{parseFloat(cust.wallet_balance || 0).toFixed(2)}
                             </div>
                             <div style={{ fontSize: 11, color: '#6B7280', display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
-                              <Gift size={11} color="#D97706" /> {cust.loyalty_points || 0} pts | Ref: ${parseFloat(cust.referral_earnings || 0).toFixed(2)}
+                              <Gift size={11} color="#D97706" /> {cust.loyalty_points || 0} pts | Ref: ₹{parseFloat(cust.referral_earnings || 0).toFixed(2)}
                             </div>
                           </td>
 
@@ -6836,7 +6836,7 @@ export default function AdminDashboard() {
                             <div style={{ fontSize: 12.5, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                               <div><strong>Phone Number:</strong> {customerDetailDrawer.customer?.phone || 'N/A'}</div>
                               <div><strong>Account Status:</strong> <span className={`leafora-status-pill ${customerDetailDrawer.customer?.status === 'Active' ? 'delivered' : 'cancelled'}`}>{customerDetailDrawer.customer?.status}</span></div>
-                              <div><strong>Total Lifetime Spent:</strong> ${parseFloat(customerDetailDrawer.customer?.total_spent || 0).toFixed(2)}</div>
+                              <div><strong>Total Lifetime Spent:</strong> ₹{parseFloat(customerDetailDrawer.customer?.total_spent || 0).toFixed(2)}</div>
                               <div><strong>Member Since:</strong> {customerDetailDrawer.customer?.created_at ? new Date(customerDetailDrawer.customer.created_at).toLocaleDateString() : '2025'}</div>
                             </div>
                           </div>
@@ -6857,7 +6857,7 @@ export default function AdminDashboard() {
                                 {customerDetailDrawer.orders.map((ord, idx) => (
                                   <tr key={ord.id || idx}>
                                     <td style={{ fontWeight: 700 }}>#{ord.order_number || ord.id}</td>
-                                    <td style={{ fontWeight: 600 }}>${parseFloat(ord.total_amount || 0).toFixed(2)}</td>
+                                    <td style={{ fontWeight: 600 }}>₹{parseFloat(ord.total_amount || 0).toFixed(2)}</td>
                                     <td><span className={`leafora-status-pill ${(ord.status || 'pending').toLowerCase()}`}>{ord.status || 'Pending'}</span></td>
                                     <td><span className="leafora-badge" style={{ backgroundColor: '#DCFCE7', color: '#166534' }}>{ord.payment_status || 'Paid'}</span></td>
                                     <td style={{ color: '#6B7280' }}>{ord.created_at ? new Date(ord.created_at).toLocaleDateString() : '2025'}</td>
@@ -6878,12 +6878,12 @@ export default function AdminDashboard() {
                             <div style={{ display: 'grid', gap: 10 }}>
                               {customerDetailDrawer.wishlist.map((item, idx) => (
                                 <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 12, border: '1px solid #E5E7EB', borderRadius: 8, padding: 10 }}>
-                                  <img src={item.image_url || '/assets/vitamin_c_serum.jpg'} alt={item.name} style={{ width: 44, height: 44, borderRadius: 6, objectFit: 'cover' }} />
+                                  <img src={item.image_url || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiB2aWV3Qm94PSIwIDAgMjAwIDIwMCI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNGM0Y0RjYiLz48cGF0aCBkPSJNMTAwIDYwIEM3MCA2MCA1MCA4MCA1MCAxMTAgQzUwIDE0MCA3MCAxNTAgMTAwIDE1MCBDMTMwIDE1MCAxNTAgMTQwIDE1MCAxMTAgQzE1MCA4MCAxMzAgNjAgMTAwIDYwIFoiIGZpbGw9IiNBNjdDNTIiIG9wYWNpdHk9IjAuNCIvPjx0ZXh0IHg9IjEwMCIgeT0iMTgwIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMiIgZmlsbD0iIzlDQTNBRiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+TGVhZm9yYTwvdGV4dD48L3N2Zz4='} alt={item.name} style={{ width: 44, height: 44, borderRadius: 6, objectFit: 'cover' }} />
                                   <div style={{ flex: 1 }}>
                                     <div style={{ fontWeight: 700, fontSize: 13, color: '#111827' }}>{item.name}</div>
                                     <div style={{ fontSize: 11, color: '#6B7280' }}>Category: {item.category}</div>
                                   </div>
-                                  <div style={{ fontWeight: 700, fontSize: 13, color: '#A37F3F' }}>${parseFloat(item.price || 0).toFixed(2)}</div>
+                                  <div style={{ fontWeight: 700, fontSize: 13, color: '#A37F3F' }}>₹{parseFloat(item.price || 0).toFixed(2)}</div>
                                 </div>
                               ))}
                             </div>
@@ -6900,12 +6900,12 @@ export default function AdminDashboard() {
                             <div style={{ display: 'grid', gap: 10 }}>
                               {customerDetailDrawer.cart.map((cItem, idx) => (
                                 <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 12, border: '1px solid #E5E7EB', borderRadius: 8, padding: 10 }}>
-                                  <img src={cItem.image_url || '/assets/vitamin_c_serum.jpg'} alt={cItem.name} style={{ width: 44, height: 44, borderRadius: 6, objectFit: 'cover' }} />
+                                  <img src={cItem.image_url || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiB2aWV3Qm94PSIwIDAgMjAwIDIwMCI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNGM0Y0RjYiLz48cGF0aCBkPSJNMTAwIDYwIEM3MCA2MCA1MCA4MCA1MCAxMTAgQzUwIDE0MCA3MCAxNTAgMTAwIDE1MCBDMTMwIDE1MCAxNTAgMTQwIDE1MCAxMTAgQzE1MCA4MCAxMzAgNjAgMTAwIDYwIFoiIGZpbGw9IiNBNjdDNTIiIG9wYWNpdHk9IjAuNCIvPjx0ZXh0IHg9IjEwMCIgeT0iMTgwIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMiIgZmlsbD0iIzlDQTNBRiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+TGVhZm9yYTwvdGV4dD48L3N2Zz4='} alt={cItem.name} style={{ width: 44, height: 44, borderRadius: 6, objectFit: 'cover' }} />
                                   <div style={{ flex: 1 }}>
                                     <div style={{ fontWeight: 700, fontSize: 13, color: '#111827' }}>{cItem.name}</div>
                                     <div style={{ fontSize: 11, color: '#6B7280' }}>Quantity: {cItem.quantity}</div>
                                   </div>
-                                  <div style={{ fontWeight: 700, fontSize: 13, color: '#111827' }}>${(parseFloat(cItem.price || 0) * cItem.quantity).toFixed(2)}</div>
+                                  <div style={{ fontWeight: 700, fontSize: 13, color: '#111827' }}>₹{(parseFloat(cItem.price || 0) * cItem.quantity).toFixed(2)}</div>
                                 </div>
                               ))}
                             </div>
@@ -6976,7 +6976,7 @@ export default function AdminDashboard() {
                     <form onSubmit={handleSaveWalletPoints}>
                       <div className="leafora-prod-form-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginTop: 12 }}>
                         <div className="leafora-form-group">
-                          <label className="leafora-form-label">Wallet Balance ($)</label>
+                          <label className="leafora-form-label">Wallet Balance (₹)</label>
                           <input
                             type="number"
                             step="0.01"
@@ -9399,7 +9399,7 @@ export default function AdminDashboard() {
                       </div>
 
                       <div className="leafora-form-group">
-                        <label className="leafora-form-label">Max Wallet Balance Cap ($)</label>
+                        <label className="leafora-form-label">Max Wallet Balance Cap (₹)</label>
                         <input
                           type="number"
                           step="0.01"
@@ -9546,7 +9546,7 @@ export default function AdminDashboard() {
                         <option value="">-- Choose Customer --</option>
                         {dbCustomers.map(c => (
                           <option key={c.id} value={c.id}>
-                            {c.name} ({c.email}) - Current Bal: ${parseFloat(c.wallet_balance || 0).toFixed(2)}
+                            {c.name} ({c.email}) - Current Bal: ₹{parseFloat(c.wallet_balance || 0).toFixed(2)}
                           </option>
                         ))}
                       </select>
@@ -10499,14 +10499,14 @@ export default function AdminDashboard() {
                             <tr key={p.id}>
                               <td>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                  <img src={p.image || '/assets/vitamin_c_serum.jpg'} alt="" style={{ width: 36, height: 36, borderRadius: 6, objectFit: 'cover', border: '1px solid #E2E8F0' }} />
+                                  <img src={p.image || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiB2aWV3Qm94PSIwIDAgMjAwIDIwMCI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNGM0Y0RjYiLz48cGF0aCBkPSJNMTAwIDYwIEM3MCA2MCA1MCA4MCA1MCAxMTAgQzUwIDE0MCA3MCAxNTAgMTAwIDE1MCBDMTMwIDE1MCAxNTAgMTQwIDE1MCAxMTAgQzE1MCA4MCAxMzAgNjAgMTAwIDYwIFoiIGZpbGw9IiNBNjdDNTIiIG9wYWNpdHk9IjAuNCIvPjx0ZXh0IHg9IjEwMCIgeT0iMTgwIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMiIgZmlsbD0iIzlDQTNBRiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+TGVhZm9yYTwvdGV4dD48L3N2Zz4='} alt="" style={{ width: 36, height: 36, borderRadius: 6, objectFit: 'cover', border: '1px solid #E2E8F0' }} />
                                   <div>
                                     <div style={{ fontWeight: 600, fontSize: 13, color: '#0F172A' }}>{p.name}</div>
                                     <div style={{ fontSize: 11, color: '#64748B' }}>SKU: {p.sku}</div>
                                   </div>
                                 </div>
                               </td>
-                              <td style={{ fontWeight: 700, color: '#0F172A' }}>${parseFloat(p.price || 0).toFixed(2)}</td>
+                              <td style={{ fontWeight: 700, color: '#0F172A' }}>₹{parseFloat(p.price || 0).toFixed(2)}</td>
                               
                               {/* Featured Checkbox */}
                               <td style={{ textAlign: 'center' }}>
@@ -11031,7 +11031,7 @@ export default function AdminDashboard() {
                       </div>
 
                       <div>
-                        <label className="leafora-form-label">Free Shipping Order Threshold ($)</label>
+                        <label className="leafora-form-label">Free Shipping Order Threshold (₹)</label>
                         <input
                           type="number"
                           step="0.01"
@@ -11042,7 +11042,7 @@ export default function AdminDashboard() {
                       </div>
 
                       <div>
-                        <label className="leafora-form-label">Standard Shipping Fee ($)</label>
+                        <label className="leafora-form-label">Standard Shipping Fee (₹)</label>
                         <input
                           type="number"
                           step="0.01"
@@ -11053,7 +11053,7 @@ export default function AdminDashboard() {
                       </div>
 
                       <div>
-                        <label className="leafora-form-label">Express Delivery Fee ($)</label>
+                        <label className="leafora-form-label">Express Delivery Fee (₹)</label>
                         <input
                           type="number"
                           step="0.01"

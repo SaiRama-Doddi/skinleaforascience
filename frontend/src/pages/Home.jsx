@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getCategories, getProducts } from '../services/api';
+import { addToCart } from '../services/cartService';
 import heroImage from '../assets/heroimage.jpeg';
 import './Home.css';
 
@@ -202,7 +203,7 @@ export default function Home() {
                   style={{ cursor: 'pointer' }}
                 >
                   <div className="product-img-wrap-pixel">
-                    <img src={item.image_url || '/assets/face_wash.jpg'} alt={item.name} />
+                    <img src={item.image_url || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNGM0Y0RjYiLz48cGF0aCBkPSJNNTAgMjAgQzMwIDIwIDIwIDQwIDIwIDYwIEMyMCA4MCAzMCA5MCA1MCA5MCBDNzAgOTAgODAgODAgODAgNjAgQzgwIDQwIDcwIDIwIDUwIDIwIFoiIGZpbGw9IiNBNjdDNTIiIG9wYWNpdHk9IjAuNCIvPjwvc3ZnPg=='} alt={item.name} />
                   </div>
                   <div>
                     <span className="product-brand-pixel">{item.brand || 'Leafora'}</span>
@@ -219,6 +220,7 @@ export default function Home() {
                       className="btn-icon-cart-pixel"
                       onClick={(e) => {
                         e.stopPropagation();
+                        addToCart(item, 1);
                         showToast(`Added "${item.name}" to your bag!`);
                       }}
                     >

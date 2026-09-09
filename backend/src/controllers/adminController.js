@@ -213,9 +213,18 @@ let inMemoryCategories = [
   { id: 4, parent_id: null, level: 'category', name: 'Skin Care Actives', slug: 'skin-care-actives', description: 'Pure skin wellness bio-compounds', image_url: '/assets/vitamin_c_serum.jpg', icon_url: '', banner_url: '', meta_title: 'Skin Care Actives', meta_description: 'Pure skin bio-compounds', meta_keywords: 'skincare, actives', is_active: 1, is_featured: 1, is_trending: 1, display_order: 4, deleted_at: null }
 ];
 
+let categoryCacheMap = new Map();
+let categoryCacheTime = 0;
+
 const getCategories = async (req, res) => {
   try {
     const { status, level, search, parent_id } = req.query;
+    const cacheKey = `${status || ''}_${level || ''}_${search || ''}_${parent_id || ''}`;
+    
+    if (categoryCacheMap.has(cacheKey) && (Date.now() - categoryCacheTime < 30000)) {
+      return res.status(200).json({ success: true, data: categoryCacheMap.get(cacheKey) });
+    }
+
     let query = `
       SELECT c.*, p.name as parent_name 
       FROM categories c 
@@ -252,7 +261,12 @@ const getCategories = async (req, res) => {
 
     query += ' ORDER BY c.display_order ASC, c.id DESC';
     const [rows] = await pool.query(query, params);
-    return res.status(200).json({ success: true, data: rows.length > 0 ? rows : inMemoryCategories });
+    const finalData = rows.length > 0 ? rows : inMemoryCategories;
+    
+    categoryCacheMap.set(cacheKey, finalData);
+    categoryCacheTime = Date.now();
+    
+    return res.status(200).json({ success: true, data: finalData });
   } catch (error) {
     console.warn('DB Category Fetch Notice (using seed fallback):', error.message);
     return res.status(200).json({ success: true, data: inMemoryCategories });

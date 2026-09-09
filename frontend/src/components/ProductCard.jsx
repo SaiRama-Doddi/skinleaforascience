@@ -2,14 +2,16 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Package, ArrowRight, Tag, Image as ImageIcon } from 'lucide-react';
 
+const SVG_PLACEHOLDER = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNGM0Y0RjYiLz48cGF0aCBkPSJNNTAgMjAgQzMwIDIwIDIwIDQwIDIwIDYwIEMyMCA4MCAzMCA5MCA1MCA5MCBDNzAgOTAgODAgODAgODAgNjAgQzgwIDQwIDcwIDIwIDUwIDIwIFoiIGZpbGw9IiNBNjdDNTIiIG9wYWNpdHk9IjAuNCIvPjwvc3ZnPg==';
+
 export default function ProductCard({ product }) {
   const navigate = useNavigate();
   const images = Array.isArray(product.images) && product.images.length > 0
     ? product.images
-    : [product.image_url || '/assets/vitamin_c_serum.jpg'];
+    : [product.image_url || SVG_PLACEHOLDER];
 
   const [selectedImgIndex, setSelectedImgIndex] = useState(0);
-  const currentImg = images[selectedImgIndex] || images[0] || '/assets/vitamin_c_serum.jpg';
+  const currentImg = images[selectedImgIndex] || images[0] || SVG_PLACEHOLDER;
 
   return (
     <div 
