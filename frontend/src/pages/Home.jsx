@@ -27,21 +27,31 @@ export default function Home() {
   const [products, setProducts] = useState([]);
   const [loadingCats, setLoadingCats] = useState(true);
   const [loadingProds, setLoadingProds] = useState(true);
+  const [showAllCategories, setShowAllCategories] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
   // Category horizontal scroll ref for arrow navigation
   const categoryScrollRef = useRef(null);
 
   const scrollCategoryLeft = () => {
     if (categoryScrollRef.current) {
-      categoryScrollRef.current.scrollBy({ left: -280, behavior: 'smooth' });
+      categoryScrollRef.current.scrollBy({ left: -260, behavior: 'smooth' });
     }
   };
 
   const scrollCategoryRight = () => {
     if (categoryScrollRef.current) {
-      categoryScrollRef.current.scrollBy({ left: 280, behavior: 'smooth' });
+      categoryScrollRef.current.scrollBy({ left: 260, behavior: 'smooth' });
     }
   };
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     // Fetch categories dynamically from backend API / database
@@ -72,6 +82,9 @@ export default function Home() {
     setTimeout(() => setToastMsg(null), 3000);
   };
 
+  const allCategories = categories.length > 0 ? categories : REFERENCE_CATEGORIES;
+  const visibleCategories = (isMobile && !showAllCategories) ? allCategories.slice(0, 3) : allCategories;
+
   return (
     <div className="home-page-pixel">
 
@@ -96,20 +109,34 @@ export default function Home() {
         </Link>
       </div>
 
-      {/* 2. SHOP BY CATEGORY (HORIZONTALLY SCROLLABLE WITH RIGHT-SIDE ARROWS) */}
+      {/* 2. SHOP BY CATEGORY (HORIZONTALLY SCROLLABLE WITH RIGHT-SIDE ARROWS & VIEW ALL) */}
       <section className="category-section-pixel">
         <div className="category-container-pixel">
           <div className="category-flex-header-pixel">
             <div>
-              <span className="section-tag-gold-pixel">EXPLORE OUR RANGE</span>
+              <span className="section-tag-gold-pixel single-line-title" style={{ whiteSpace: 'nowrap', display: 'block' }}>
+                EXPLORE OUR RANGE
+              </span>
               <h2 className="section-title-serif-pixel single-line-title" style={{ margin: 0 }}>
                 Shop by Category
               </h2>
             </div>
 
-            <Link to="/products" className="link-view-all-pixel">
-              View All Categories <ChevronRight size={16} />
-            </Link>
+            <div className="category-header-right-controls">
+              {/* Left & Right Scroll Arrow Buttons */}
+              <div className="category-arrow-btns">
+                <button className="btn-cat-scroll" onClick={scrollCategoryLeft} aria-label="Scroll Categories Left">
+                  <ChevronLeft size={16} />
+                </button>
+                <button className="btn-cat-scroll" onClick={scrollCategoryRight} aria-label="Scroll Categories Right">
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+
+              <Link to="/products" className="link-view-all-pixel">
+                View All Categories <ChevronRight size={16} />
+              </Link>
+            </div>
           </div>
 
           {loadingCats ? (
@@ -119,7 +146,7 @@ export default function Home() {
             </div>
           ) : (
             <div className="category-scroll-wrapper" ref={categoryScrollRef}>
-              {(categories.length > 0 ? categories : REFERENCE_CATEGORIES).map(cat => (
+              {allCategories.map(cat => (
                 <Link key={cat.id} to={`/products?category=${encodeURIComponent(cat.slug || cat.name)}`} className="category-pill-card-pixel">
                   <div className="category-circle-box-pixel">
                     <img 
@@ -144,8 +171,12 @@ export default function Home() {
         <div className="bestsellers-container-pixel">
           <div className="category-flex-header-pixel">
             <div>
-              <span className="section-tag-gold-pixel">OUR BEST SELLERS</span>
-              <h2 className="section-title-serif-pixel">Loved by Many, Made for You</h2>
+              <span className="section-tag-gold-pixel single-line-title" style={{ whiteSpace: 'nowrap', display: 'block' }}>
+                OUR BEST SELLERS
+              </span>
+              <h2 className="section-title-serif-pixel single-line-title" style={{ margin: 0 }}>
+                Loved by Many, Made for You
+              </h2>
               <p className="section-desc-pixel" style={{ margin: 0 }}>
                 Discover our most popular skincare essentials for healthy, radiant skin.
               </p>
