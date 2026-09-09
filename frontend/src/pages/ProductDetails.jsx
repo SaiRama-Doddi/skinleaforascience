@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { 
   Star, Heart, ShoppingBag, Truck, RotateCcw, ShieldCheck, CheckCircle2, 
   ChevronLeft, ChevronRight, Play, Share2, Copy, Check, MapPin, 
@@ -81,6 +81,7 @@ const RELATED_PRODUCTS = [
 ];
 
 export default function ProductDetails() {
+  const navigate = useNavigate();
   const { id } = useParams();
   const [product, setProduct] = useState(DEFAULT_PRODUCT_DETAILS);
   
@@ -97,6 +98,8 @@ export default function ProductDetails() {
 
   // Fetch product dynamically if route parameter present
   useEffect(() => {
+    window.scrollTo(0, 0);
+    setSelectedImgIndex(0);
     if (id) {
       getProductById(id)
         .then(res => {
@@ -581,9 +584,17 @@ export default function ProductDetails() {
 
         <div className="related-products-grid">
           {RELATED_PRODUCTS.map(item => (
-            <div key={item.id} className="shop-card">
+            <div 
+              key={item.id} 
+              className="shop-card"
+              onClick={() => {
+                navigate(`/products/${item.id}`);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              style={{ cursor: 'pointer' }}
+            >
               <div className="card-img-container">
-                <button className="btn-wishlist-heart"><Heart size={16} /></button>
+                <button className="btn-wishlist-heart" onClick={(e) => { e.stopPropagation(); showToast('Saved to Wishlist ♥'); }}><Heart size={16} /></button>
                 <img src={item.image} alt={item.name} />
               </div>
               <div className="shop-card-info">
@@ -596,12 +607,15 @@ export default function ProductDetails() {
                   <span>({item.reviews})</span>
                 </div>
                 <div className="shop-card-price-row">
-                  <span className="price-main">${Number(item.price).toFixed(2)}</span>
+                  <span className="price-main">₹{Number(item.price).toFixed(2)}</span>
                 </div>
               </div>
               <button 
                 className="btn-card-add-cart"
-                onClick={() => showToast(`Added "${item.name}" to your bag!`)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  showToast(`Added "${item.name}" to your bag!`);
+                }}
               >
                 <ShoppingBag size={14} /> Add to Cart
               </button>

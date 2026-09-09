@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Search, Grid, List, Filter, Heart, ShoppingBag, Star, 
   ChevronRight, X, RotateCcw, CheckCircle2, ShieldCheck, Leaf, Award, Eye
@@ -195,6 +196,7 @@ const SAMPLE_SHOP_PRODUCTS = [
 ];
 
 export default function Shop() {
+  const navigate = useNavigate();
   const [products, setProducts] = useState(SAMPLE_SHOP_PRODUCTS);
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
   
@@ -548,10 +550,15 @@ export default function Shop() {
           {paginatedProducts.length > 0 ? (
             <div className={viewMode === 'grid' ? 'shop-products-grid' : 'shop-products-list'}>
               {paginatedProducts.map(product => (
-                <div key={product.id} className={viewMode === 'grid' ? 'shop-card' : 'shop-list-card'}>
+                <div 
+                  key={product.id} 
+                  className={viewMode === 'grid' ? 'shop-card' : 'shop-list-card'}
+                  onClick={() => navigate(`/products/${product.id}`)}
+                  style={{ cursor: 'pointer' }}
+                >
                   
                   {/* Image Container */}
-                  <div className="card-img-container" onClick={() => setQuickViewProduct(product)} style={{ cursor: 'pointer' }}>
+                  <div className="card-img-container">
                     {product.badge && (
                       <span className={`shop-card-badge badge-${product.badgeType || 'bestseller'}`}>
                         {product.badge}
@@ -560,7 +567,7 @@ export default function Shop() {
 
                     <button 
                       className={`btn-wishlist-heart ${wishlist.includes(product.id) ? 'active' : ''}`}
-                      onClick={(e) => toggleWishlist(product.id, e)}
+                      onClick={(e) => { e.stopPropagation(); toggleWishlist(product.id, e); }}
                       title="Add to Wishlist"
                     >
                       <Heart size={16} fill={wishlist.includes(product.id) ? '#E53E3E' : 'none'} />
@@ -592,17 +599,17 @@ export default function Shop() {
                   </div>
 
                   {/* Add to Cart Action */}
-                  <div className={viewMode === 'list' ? 'list-card-actions' : ''}>
+                  <div className={viewMode === 'list' ? 'list-card-actions' : ''} onClick={(e) => e.stopPropagation()}>
                     <button 
                       className="btn-card-add-cart"
-                      onClick={() => showToast(`Added "${product.name}" to your botanical shopping bag!`)}
+                      onClick={(e) => { e.stopPropagation(); showToast(`Added "${product.name}" to your botanical shopping bag!`); }}
                     >
                       <ShoppingBag size={15} /> Add to Cart
                     </button>
                     {viewMode === 'list' && (
                       <button 
                         className="btn-clear-filters"
-                        onClick={() => setQuickViewProduct(product)}
+                        onClick={(e) => { e.stopPropagation(); setQuickViewProduct(product); }}
                       >
                         <Eye size={14} /> Quick View
                       </button>
@@ -734,9 +741,19 @@ export default function Shop() {
                   {quickViewProduct.description}
                 </p>
 
-                <div style={{ display: 'flex', gap: 12 }}>
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                   <button className="btn-card-add-cart" onClick={() => { showToast(`Added "${quickViewProduct.name}" to your bag!`); setQuickViewProduct(null); }}>
                     <ShoppingBag size={16} /> Add to Cart
+                  </button>
+                  <button 
+                    className="btn-clear-filters" 
+                    onClick={() => {
+                      const pid = quickViewProduct.id;
+                      setQuickViewProduct(null);
+                      navigate(`/products/${pid}`);
+                    }}
+                  >
+                    View Details
                   </button>
                   <button className="btn-clear-filters" onClick={() => setQuickViewProduct(null)}>
                     Close

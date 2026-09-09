@@ -134,7 +134,7 @@ export default function Navbar() {
                 {searchResults.map(item => (
                   <Link 
                     key={item.id} 
-                    to="/products" 
+                    to={`/products/${item.id}`} 
                     className="search-result-item"
                     onClick={() => { setSearchQuery(''); setSearchResults([]); }}
                   >

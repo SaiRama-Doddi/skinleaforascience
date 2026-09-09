@@ -3,12 +3,13 @@ import {
   ArrowRight, Leaf, ShieldCheck, Heart, ShoppingBag, Star, 
   ChevronRight, Sparkles, Globe, Share2, MessageCircle, CheckCircle2, Loader2
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { getCategories, getProducts } from '../services/api';
 import heroImg from '../assets/hero.png';
 import './Home.css';
 
 export default function Home() {
+  const navigate = useNavigate();
   const [toastMsg, setToastMsg] = useState(null);
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
@@ -160,7 +161,12 @@ export default function Home() {
             /* Grid Layout: Database Products + 1 Tall Golden Promo Card */
             <div className="bestseller-layout-grid-pixel">
               {products.slice(0, 4).map(item => (
-                <div key={item.id} className="product-card-pixel">
+                <div 
+                  key={item.id} 
+                  className="product-card-pixel"
+                  onClick={() => navigate(`/products/${item.id}`)}
+                  style={{ cursor: 'pointer' }}
+                >
                   <div className="product-img-wrap-pixel">
                     <img src={item.image_url || '/assets/face_wash.jpg'} alt={item.name} />
                   </div>
@@ -177,7 +183,10 @@ export default function Home() {
                     <span className="product-price-pixel">₹{Number(item.price).toFixed(2)}</span>
                     <button 
                       className="btn-icon-cart-pixel"
-                      onClick={() => showToast(`Added "${item.name}" to your bag!`)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        showToast(`Added "${item.name}" to your bag!`);
+                      }}
                     >
                       <ShoppingBag size={15} />
                     </button>

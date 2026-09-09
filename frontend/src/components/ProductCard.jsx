@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Package, ArrowRight, Tag, Image as ImageIcon } from 'lucide-react';
 
 export default function ProductCard({ product }) {
+  const navigate = useNavigate();
   const images = Array.isArray(product.images) && product.images.length > 0
     ? product.images
     : [product.image_url || '/assets/vitamin_c_serum.jpg'];
@@ -12,13 +14,15 @@ export default function ProductCard({ product }) {
   return (
     <div 
       className="glass-panel" 
+      onClick={() => navigate(`/products/${product.id}`)}
       style={{ 
         padding: 20, 
         transition: 'all 0.3s ease', 
         display: 'flex', 
         flexDirection: 'column', 
         justifyContent: 'space-between',
-        height: '100%'
+        height: '100%',
+        cursor: 'pointer'
       }}
     >
       <div>
@@ -53,7 +57,10 @@ export default function ProductCard({ product }) {
                 key={idx}
                 src={img}
                 alt={`Thumb ${idx + 1}`}
-                onClick={() => setSelectedImgIndex(idx)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedImgIndex(idx);
+                }}
                 style={{
                   width: 34,
                   height: 34,
@@ -83,7 +90,14 @@ export default function ProductCard({ product }) {
           </span>
         </div>
 
-        <button className="btn-secondary" style={{ padding: '8px 14px', fontSize: '0.85rem' }}>
+        <button 
+          className="btn-secondary" 
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate(`/products/${product.id}`);
+          }}
+          style={{ padding: '8px 14px', fontSize: '0.85rem' }}
+        >
           Details <ArrowRight size={14} />
         </button>
       </div>
