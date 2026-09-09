@@ -5,8 +5,23 @@ import {
   MapPin, Plus, Check, CreditCard, X, ChevronRight, AlertCircle, Phone, User
 } from 'lucide-react';
 import { getCart, getCartSubtotal, updateCartQuantity, removeFromCart, clearCart } from '../services/cartService';
-import { userGetAddresses, userAddAddress, placeOrder } from '../services/api';
+import { userGetAddresses, userAddAddress, placeOrder, createRazorpayOrder, verifyRazorpayPayment } from '../services/api';
 import './Cart.css';
+
+const loadRazorpayScript = () => {
+  return new Promise((resolve) => {
+    if (window.Razorpay) {
+      resolve(true);
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+};
 
 export default function Cart() {
   const navigate = useNavigate();
@@ -18,7 +33,7 @@ export default function Cart() {
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [userAddresses, setUserAddresses] = useState([]);
   const [selectedAddressId, setSelectedAddressId] = useState(null);
-  const [paymentMethod, setPaymentMethod] = useState('COD');
+  const [paymentMethod, setPaymentMethod] = useState('Razorpay');
   
   // Add New Address Inline State
   const [showInlineAddrForm, setShowInlineAddrForm] = useState(false);
@@ -63,6 +78,9 @@ export default function Cart() {
         setUser(u);
       } catch (e) {}
     }
+
+    // Preload Razorpay SDK script
+    loadRazorpayScript().catch(() => {});
 
     return () => {
       window.removeEventListener('leafora_cart_updated', refreshCart);
@@ -156,13 +174,15 @@ export default function Cart() {
     }
   };
 
-  // Confirm Order Submit
+  // Confirm Order Submit (Launches Razorpay Gateway Directly)
   const handleConfirmOrder = async () => {
     let chosenAddress = null;
     if (selectedAddressId) {
-      chosenAddress = userAddresses.find(a => a.id === selectedAddressId);
+      chosenAddress = userAddresses.find(a => String(a.id) === String(selectedAddressId));
     }
-
+    if (!chosenAddress && userAddresses.length > 0) {
+      chosenAddress = userAddresses[0];
+    }
     if (!chosenAddress && (newAddress.address_line1 && newAddress.city && newAddress.pincode)) {
       chosenAddress = newAddress;
     }
@@ -175,124 +195,99 @@ export default function Cart() {
 
     setPlacingOrder(true);
     try {
-      if (paymentMethod === 'UPI' || paymentMethod === 'Razorpay') {
-        const scriptLoaded = await loadRazorpayScript();
-        if (!scriptLoaded) {
-          showToast('Failed to load Razorpay payment gateway. Check internet connection.');
-          setPlacingOrder(false);
-          return;
-        }
+      const scriptLoaded = await loadRazorpayScript();
+      if (!scriptLoaded) {
+        showToast('Failed to load Razorpay payment gateway. Check internet connection.');
+        setPlacingOrder(false);
+        return;
+      }
 
-        const rzpRes = await createRazorpayOrder(totalAmount);
-        const rzpData = rzpRes?.data || rzpRes;
-        if (!rzpData?.order_id) {
-          showToast(rzpData?.message || 'Error initializing Razorpay order.');
-          setPlacingOrder(false);
-          return;
-        }
+      const rzpRes = await createRazorpayOrder(totalAmount);
+      const rzpData = rzpRes?.order_id ? rzpRes : (rzpRes?.data || {});
 
-        const options = {
-          key: rzpData.key_id || 'rzp_test_SwedUUn1KgRMs0',
-          amount: rzpData.amount,
-          currency: rzpData.currency || 'INR',
-          name: 'Leafora Life Sciences',
-          description: `Order Payment - ₹${totalAmount.toFixed(2)}`,
-          image: 'https://api.dicebear.com/7.x/bottts/svg?seed=Leafora',
-          order_id: rzpData.order_id,
-          prefill: {
-            name: user?.name || chosenAddress?.name || 'Customer',
-            email: user?.email || '',
-            contact: user?.phone || chosenAddress?.phone || ''
-          },
-          theme: {
-            color: '#A67C52'
-          },
-          handler: async function (response) {
-            try {
-              const verifyRes = await verifyRazorpayPayment({
+      if (!rzpData?.order_id) {
+        showToast(rzpData?.message || 'Error initializing Razorpay order.');
+        setPlacingOrder(false);
+        return;
+      }
+
+      const options = {
+        key: rzpData.key_id || 'rzp_test_SwedUUn1KgRMs0',
+        amount: rzpData.amount,
+        currency: rzpData.currency || 'INR',
+        name: 'Leafora Life Sciences',
+        description: `Order Payment - ₹${totalAmount.toFixed(2)}`,
+        image: 'https://api.dicebear.com/7.x/bottts/svg?seed=Leafora',
+        order_id: rzpData.order_id,
+        prefill: {
+          name: user?.name || chosenAddress?.name || (user?.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : 'Valued Customer'),
+          email: user?.email || '',
+          contact: user?.phone || chosenAddress?.phone || ''
+        },
+        theme: {
+          color: '#A67C52'
+        },
+        handler: async function (response) {
+          try {
+            const verifyRes = await verifyRazorpayPayment({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature
+            });
+            const verifyData = verifyRes?.verified ? verifyRes : (verifyRes?.data || {});
+
+            if (verifyData?.success || verifyData?.verified) {
+              const payload = {
+                customer_name: user?.name || (user?.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : 'Valued Customer'),
+                customer_email: user?.email,
+                customer_phone: user?.phone || chosenAddress.phone || '',
+                shipping_address: chosenAddress,
+                items: cartItems,
+                subtotal,
+                shipping_fee: shippingCost,
+                total_amount: totalAmount,
+                payment_method: 'Razorpay',
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_signature: response.razorpay_signature
-              });
-              const verifyData = verifyRes?.data || verifyRes;
+              };
 
-              if (verifyData?.success || verifyData?.verified) {
-                const payload = {
-                  customer_name: user?.name || (user?.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : 'Valued Customer'),
-                  customer_email: user?.email,
-                  customer_phone: user?.phone || chosenAddress.phone || '',
-                  shipping_address: chosenAddress,
-                  items: cartItems,
-                  subtotal,
-                  shipping_fee: shippingCost,
-                  total_amount: totalAmount,
-                  payment_method: 'Razorpay',
-                  razorpay_order_id: response.razorpay_order_id,
-                  razorpay_payment_id: response.razorpay_payment_id,
-                  razorpay_signature: response.razorpay_signature
-                };
-
-                const res = await placeOrder(payload);
-                if (res?.data?.success || res?.success) {
-                  const ord = res?.data?.order || res?.order;
-                  setOrderPlacedData(ord);
-                  setShowCheckoutModal(false);
-                  clearCart();
-                  refreshCart();
-                } else {
-                  showToast(res?.message || 'Error saving order after payment.');
-                }
+              const res = await placeOrder(payload);
+              const orderData = res?.order || res?.data?.order;
+              if (res?.success || res?.data?.success) {
+                setOrderPlacedData(orderData || { order_number: 'ORD-' + Date.now().toString().slice(-6) });
+                setShowCheckoutModal(false);
+                clearCart();
+                refreshCart();
               } else {
-                showToast('Payment signature verification failed.');
+                showToast(res?.message || 'Error saving order after payment.');
               }
-            } catch (e) {
-              showToast('Error verifying Razorpay payment.');
-            } finally {
-              setPlacingOrder(false);
+            } else {
+              showToast('Payment signature verification failed.');
             }
-          },
-          modal: {
-            ondismiss: function () {
-              setPlacingOrder(false);
-              showToast('Razorpay payment cancelled.');
-            }
+          } catch (e) {
+            showToast('Error verifying Razorpay payment.');
+          } finally {
+            setPlacingOrder(false);
           }
-        };
-
-        const rzp = new window.Razorpay(options);
-        rzp.on('payment.failed', function (response) {
-          setPlacingOrder(false);
-          showToast(response.error?.description || 'Razorpay Payment Failed.');
-        });
-        rzp.open();
-
-      } else {
-        const payload = {
-          customer_name: user?.name || (user?.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : 'Valued Customer'),
-          customer_email: user?.email,
-          customer_phone: user?.phone || chosenAddress.phone || '',
-          shipping_address: chosenAddress,
-          items: cartItems,
-          subtotal,
-          shipping_fee: shippingCost,
-          total_amount: totalAmount,
-          payment_method: 'COD'
-        };
-
-        const res = await placeOrder(payload);
-        if (res?.data?.success || res?.success) {
-          const ord = res?.data?.order || res?.order;
-          setOrderPlacedData(ord);
-          setShowCheckoutModal(false);
-          clearCart();
-          refreshCart();
-        } else {
-          showToast(res?.message || 'Error placing order. Please try again.');
+        },
+        modal: {
+          ondismiss: function () {
+            setPlacingOrder(false);
+            showToast('Razorpay payment window closed.');
+          }
         }
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', function (response) {
         setPlacingOrder(false);
-      }
+        showToast(response.error?.description || 'Razorpay Payment Failed.');
+      });
+      rzp.open();
+
     } catch (err) {
-      showToast(err.message || 'Failed to place order.');
+      showToast(err.message || 'Failed to launch Razorpay checkout.');
       setPlacingOrder(false);
     }
   };
@@ -616,63 +611,43 @@ export default function Cart() {
                     </div>
                   </form>
                 )}
-              </div>
-
-              {/* PAYMENT METHOD SECTION */}
+                {/* PAYMENT METHOD SECTION - RAZORPAY EXCLUSIVE */}
               <div style={{ marginBottom: 24 }}>
                 <h4 style={{ margin: '0 0 12px 0', fontFamily: 'Playfair Display, serif', fontSize: '1.2rem', color: '#1A2E22' }}>
-                  2. Payment Option
+                  2. Payment Gateway
                 </h4>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                  <label 
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 10,
-                      padding: 14,
-                      border: `1.5px solid ${paymentMethod === 'COD' ? '#A67C52' : '#EFE8DE'}`,
-                      borderRadius: 10,
-                      background: paymentMethod === 'COD' ? '#FAF7F2' : '#FFFFFF',
-                      cursor: 'pointer',
-                      fontWeight: 600,
-                      fontSize: '0.9rem'
-                    }}
-                  >
-                    <input 
-                      type="radio" 
-                      name="payment_method" 
-                      checked={paymentMethod === 'COD'}
-                      onChange={() => setPaymentMethod('COD')}
-                    />
-                    💵 Cash on Delivery (COD)
-                  </label>
-
-                  <label 
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 10,
-                      padding: 14,
-                      border: `1.5px solid ${paymentMethod === 'UPI' ? '#A67C52' : '#EFE8DE'}`,
-                      borderRadius: 10,
-                      background: paymentMethod === 'UPI' ? '#FAF7F2' : '#FFFFFF',
-                      cursor: 'pointer',
-                      fontWeight: 600,
-                      fontSize: '0.9rem'
-                    }}
-                  >
-                    <input 
-                      type="radio" 
-                      name="payment_method" 
-                      checked={paymentMethod === 'UPI'}
-                      onChange={() => setPaymentMethod('UPI')}
-                    />
-                    💳 Pay Online (UPI / Card)
-                  </label>
+                
+                <div 
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justify: 'space-between',
+                    padding: '16px 20px',
+                    border: '2px solid #A67C52',
+                    borderRadius: 12,
+                    background: '#FAF7F2',
+                    boxShadow: '0 4px 12px rgba(166, 124, 82, 0.08)'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                    <div style={{ width: 44, height: 44, borderRadius: 10, background: '#1A2E22', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FFF' }}>
+                      <CreditCard size={22} />
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: '0.98rem', color: '#1A2E22', display: 'flex', alignItems: 'center', gap: 8 }}>
+                        Razorpay Secure Gateway
+                        <span style={{ fontSize: '0.7rem', background: '#15803D', color: '#FFF', padding: '2px 8px', borderRadius: 10, fontWeight: 600 }}>SSL Encrypted</span>
+                      </div>
+                      <div style={{ fontSize: '0.83rem', color: '#64748B', marginTop: 2 }}>
+                        Pay via UPI, GPay, PhonePe, Credit/Debit Cards, NetBanking & Wallets
+                      </div>
+                    </div>
+                  </div>
+                  <CheckCircle2 size={22} color="#A67C52" />
                 </div>
               </div>
 
-              {/* ORDER RECAP & FINAL CONFIRM BUTTON */}
+              {/* ORDER RECAP & FINAL RAZORPAY PAYMENT BUTTON */}
               <div style={{ background: '#FAF7F2', padding: 18, borderRadius: 12, border: '1px solid #EFE8DE', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <div style={{ fontSize: '0.85rem', color: '#64748B' }}>Total Payable Amount</div>
@@ -691,12 +666,14 @@ export default function Cart() {
                     fontWeight: 700,
                     fontSize: '1rem',
                     cursor: 'pointer',
-                    boxShadow: '0 4px 14px rgba(166, 124, 82, 0.35)'
+                    boxShadow: '0 4px 14px rgba(166, 124, 82, 0.35)',
+                    transition: 'transform 0.2s ease'
                   }}
                 >
-                  {placingOrder ? 'Processing Order...' : 'Confirm & Place Order →'}
+                  {placingOrder ? 'Opening Razorpay Gateway...' : `Proceed to Pay with Razorpay →`}
                 </button>
               </div>
+            </div>
 
             </div>
           </div>
