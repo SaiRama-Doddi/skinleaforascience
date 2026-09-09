@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
@@ -11,6 +11,15 @@ import AuthPage from './pages/AuthPage';
 import UserDashboard from './pages/UserDashboard';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
+
+// Guard for Admin Dashboard
+function AdminProtectedRoute({ children }) {
+  const token = localStorage.getItem('leafora_admin_token');
+  if (!token) {
+    return <Navigate to="/admin/login" replace />;
+  }
+  return children;
+}
 
 function Layout() {
   const location = useLocation();
@@ -45,7 +54,14 @@ function Layout() {
           <Route path="/dashboard" element={<UserDashboard />} />
           <Route path="/account" element={<UserDashboard />} />
           <Route path="/admin/login" element={<AdminLogin />} />
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route 
+            path="/admin/dashboard" 
+            element={
+              <AdminProtectedRoute>
+                <AdminDashboard />
+              </AdminProtectedRoute>
+            } 
+          />
         </Routes>
       </main>
       {!isAdminRoute && !isAuthPage && <Footer />}

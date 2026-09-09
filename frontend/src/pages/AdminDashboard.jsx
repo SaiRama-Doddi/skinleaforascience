@@ -40,6 +40,15 @@ import {
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+
+  // Guard against direct unauthorized access
+  useEffect(() => {
+    const adminToken = localStorage.getItem('leafora_admin_token');
+    if (!adminToken) {
+      navigate('/admin/login', { replace: true });
+    }
+  }, [navigate]);
+
   const [analytics, setAnalytics] = useState(null);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   

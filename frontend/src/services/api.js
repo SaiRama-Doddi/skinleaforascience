@@ -28,6 +28,11 @@ api.interceptors.response.use(
   (response) => response.data,
   (error) => {
     console.error('API Request Error:', error?.response?.data || error.message);
+    if (error?.response?.status === 401 && window.location.pathname.startsWith('/admin')) {
+      localStorage.removeItem('leafora_admin_token');
+      localStorage.removeItem('leafora_admin_user');
+      window.location.href = '/admin/login';
+    }
     return Promise.reject(error?.response?.data || { message: error.message });
   }
 );
