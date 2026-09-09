@@ -1,12 +1,24 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { 
   ArrowRight, Leaf, ShieldCheck, Heart, ShoppingBag, Star, 
-  ChevronRight, Sparkles, Globe, Share2, MessageCircle, CheckCircle2, Loader2
+  ChevronRight, ChevronLeft, Sparkles, Globe, Share2, MessageCircle, CheckCircle2, Loader2
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getCategories, getProducts } from '../services/api';
-import heroImg from '../assets/hero.png';
+import heroImage from '../assets/heroimage.jpeg';
 import './Home.css';
+
+// Reference categories fallback if database has fewer items
+const REFERENCE_CATEGORIES = [
+  { id: 'c1', name: 'Cleansers', slug: 'cleansers', image_url: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=300&q=80' },
+  { id: 'c2', name: 'Moisturizers', slug: 'moisturizers', image_url: 'https://images.unsplash.com/photo-1608248597263-0057e57b4522?auto=format&fit=crop&w=300&q=80' },
+  { id: 'c3', name: 'Serums', slug: 'serums', image_url: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=300&q=80' },
+  { id: 'c4', name: 'Face Masks', slug: 'face-masks', image_url: 'https://images.unsplash.com/photo-1571781926291-c477ebfd024b?auto=format&fit=crop&w=300&q=80' },
+  { id: 'c5', name: 'Sunscreens', slug: 'sunscreens', image_url: 'https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?auto=format&fit=crop&w=300&q=80' },
+  { id: 'c6', name: 'Eye Care', slug: 'eye-care', image_url: 'https://images.unsplash.com/photo-1601049541289-9b1b7bbbfe19?auto=format&fit=crop&w=300&q=80' },
+  { id: 'c7', name: 'Body Care', slug: 'body-care', image_url: 'https://images.unsplash.com/photo-1617897903246-719242758050?auto=format&fit=crop&w=300&q=80' },
+  { id: 'c8', name: 'Face Oils', slug: 'face-oils', image_url: 'https://images.unsplash.com/photo-1608248597263-0057e57b4522?auto=format&fit=crop&w=300&q=80' }
+];
 
 export default function Home() {
   const navigate = useNavigate();
@@ -16,15 +28,32 @@ export default function Home() {
   const [loadingCats, setLoadingCats] = useState(true);
   const [loadingProds, setLoadingProds] = useState(true);
 
+  // Category horizontal scroll ref for arrow navigation
+  const categoryScrollRef = useRef(null);
+
+  const scrollCategoryLeft = () => {
+    if (categoryScrollRef.current) {
+      categoryScrollRef.current.scrollBy({ left: -280, behavior: 'smooth' });
+    }
+  };
+
+  const scrollCategoryRight = () => {
+    if (categoryScrollRef.current) {
+      categoryScrollRef.current.scrollBy({ left: 280, behavior: 'smooth' });
+    }
+  };
+
   useEffect(() => {
     // Fetch categories dynamically from backend API / database
     getCategories()
       .then((res) => {
-        if (res && res.data) {
+        if (res && res.data && res.data.length > 0) {
           setCategories(res.data);
+        } else {
+          setCategories(REFERENCE_CATEGORIES);
         }
       })
-      .catch((err) => console.error('Error fetching categories from database:', err))
+      .catch(() => setCategories(REFERENCE_CATEGORIES))
       .finally(() => setLoadingCats(false));
 
     // Fetch products dynamically from backend API / database
@@ -34,7 +63,7 @@ export default function Home() {
           setProducts(res.data);
         }
       })
-      .catch((err) => console.error('Error fetching products from database:', err))
+      .catch(() => {})
       .finally(() => setLoadingProds(false));
   }, []);
 
@@ -54,55 +83,41 @@ export default function Home() {
         </div>
       )}
 
-      {/* 1. HERO SECTION WITH HERO.PNG AS BACKGROUND BANNER */}
+      {/* 1. HERO BANNER SECTION (FEATURING HEROIMAGE.JPEG) */}
       <div className="hero-banner-container-pixel">
-        <section className="hero-section-pixel" style={{ backgroundImage: `url(${heroImg})` }}>
-          <div className="hero-left-col-pixel">
-            <span className="section-tag-gold-pixel">NATURAL CARE • REAL RESULTS</span>
-            <h1 className="hero-heading-pixel">
-              Glow Naturally <br />
-              Live Beautifully
-            </h1>
-            <p className="hero-subtext-pixel">
-              Pure ingredients. Proven science. Skincare that brings out your natural glow.
-            </p>
-
-            <Link to="/products" className="btn-bronze-pill-pixel">
-              Shop Now <ArrowRight size={16} />
-            </Link>
-
-            {/* 3 Bottom Benefit Pills Row */}
-            <div className="hero-pills-row-pixel">
-              <div className="pill-item-pixel">
-                <div className="pill-icon-circle-pixel">🍃</div>
-                <span>Natural Ingredients</span>
-              </div>
-
-              <div className="pill-item-pixel">
-                <div className="pill-icon-circle-pixel">🧪</div>
-                <span>Dermatologist Tested</span>
-              </div>
-
-              <div className="pill-item-pixel">
-                <div className="pill-icon-circle-pixel">🤎</div>
-                <span>Safe & Gentle for All Skin Types</span>
-              </div>
-            </div>
+        <Link to="/products" className="hero-banner-link-pixel" aria-label="Shop LeafOra Skincare Range">
+          <div className="hero-banner-image-box">
+            <img 
+              src={heroImage} 
+              alt="LeafOra Life Sciences - Glow Naturally Live Beautifully" 
+              className="hero-banner-img" 
+            />
           </div>
-        </section>
+        </Link>
       </div>
 
-      {/* 2. SHOP BY CATEGORY (DYNAMICALLY LOADED FROM DATABASE) */}
+      {/* 2. SHOP BY CATEGORY (HORIZONTALLY SCROLLABLE WITH RIGHT-SIDE ARROWS) */}
       <section className="category-section-pixel">
         <div className="category-container-pixel">
           <div className="category-flex-header-pixel">
             <div>
               <span className="section-tag-gold-pixel">EXPLORE OUR RANGE</span>
-              <h2 className="section-title-serif-pixel" style={{ margin: 0 }}>Shop by Category</h2>
+              <h2 className="section-title-serif-pixel single-line-title" style={{ margin: 0 }}>
+                Shop by Category
+              </h2>
             </div>
-            <Link to="/products" className="link-view-all-pixel">
-              View All Categories <ChevronRight size={16} />
-            </Link>
+
+            <div className="category-header-right-controls">
+              {/* Right-Side Navigation Arrow Buttons for Left-to-Right & Right-to-Left Scrolling */}
+              <div className="category-arrow-btns">
+                <button className="btn-cat-scroll" onClick={scrollCategoryLeft} aria-label="Scroll Left">
+                  <ChevronLeft size={18} />
+                </button>
+                <button className="btn-cat-scroll" onClick={scrollCategoryRight} aria-label="Scroll Right">
+                  <ChevronRight size={18} />
+                </button>
+              </div>
+            </div>
           </div>
 
           {loadingCats ? (
@@ -110,27 +125,23 @@ export default function Home() {
               <Loader2 className="animate-spin" size={24} />
               <span>Loading categories from database...</span>
             </div>
-          ) : categories.length > 0 ? (
-            <div className="category-pills-grid-pixel" style={{ gridTemplateColumns: `repeat(${Math.min(categories.length, 8)}, 1fr)` }}>
-              {categories.map(cat => (
+          ) : (
+            <div className="category-scroll-wrapper" ref={categoryScrollRef}>
+              {(categories.length > 0 ? categories : REFERENCE_CATEGORIES).map(cat => (
                 <Link key={cat.id} to={`/products?category=${encodeURIComponent(cat.slug || cat.name)}`} className="category-pill-card-pixel">
                   <div className="category-circle-box-pixel">
                     <img 
                       src={cat.image_url || cat.icon_url || '/assets/face_wash.jpg'} 
                       alt={cat.name} 
                       onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = '/assets/face_wash.jpg';
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = '/assets/face_wash.jpg';
                       }}
                     />
                   </div>
                   <span className="category-pill-name-pixel">{cat.name}</span>
                 </Link>
               ))}
-            </div>
-          ) : (
-            <div style={{ padding: '30px 0', textAlign: 'center', color: '#78716C', fontSize: '0.95rem' }}>
-              No categories currently available in database.
             </div>
           )}
         </div>

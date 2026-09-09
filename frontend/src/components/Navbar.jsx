@@ -72,55 +72,94 @@ export default function Navbar() {
         </div>
       </div>
 
+      {/* MOBILE BACKDROP OVERLAY */}
+      {isMobileMenuOpen && (
+        <div 
+          className="mobile-nav-backdrop"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
       {/* 2. MAIN STICKY NAVBAR */}
       <header className="leafora-main-navbar">
         <div className="navbar-inner">
           
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            {/* Mobile Hamburger Toggle Button */}
-            <button 
-              className="mobile-menu-toggle-btn"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              aria-label="Toggle Navigation Menu"
-            >
-              {isMobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
-            </button>
+          {/* Mobile Left: Hamburger Button */}
+          <button 
+            className="mobile-menu-toggle-btn"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            aria-label="Toggle Navigation Menu"
+          >
+            {isMobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+          </button>
 
-            {/* BRAND LOGO */}
-            <Link to="/" className="brand-logo">
-              <div className="logo-emblem">
-                <Leaf size={20} fill="#FFFFFF" />
-              </div>
-              <div>
-                <span className="brand-title">LeafOra</span>
-                <span className="brand-subtitle">LIFE SCIENCES</span>
-              </div>
-            </Link>
-          </div>
+          {/* Center: Brand Logo */}
+          <Link to="/" className="brand-logo">
+            <div className="logo-emblem">
+              <Leaf size={18} fill="#FFFFFF" />
+            </div>
+            <div className="brand-text-col">
+              <span className="brand-title">LeafOra</span>
+              <span className="brand-subtitle">LIFE SCIENCES</span>
+            </div>
+          </Link>
 
-          {/* MAIN NAV LINKS WITH MEGA MENU HOVER */}
+          {/* MAIN NAV LINKS WITH MEGA MENU HOVER & MOBILE DRAWER */}
           <nav className={`nav-links ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
+            {/* Mobile Drawer Header */}
+            <div className="mobile-drawer-top">
+              <span className="mobile-drawer-brand">LeafOra Life Sciences</span>
+              <button className="btn-mobile-close" onClick={() => setIsMobileMenuOpen(false)}>
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Mobile Dedicated Search Field */}
+            <div className="mobile-drawer-search">
+              <Search size={16} className="search-icon-nav" />
+              <input
+                type="text"
+                className="search-input"
+                placeholder="Search products..."
+                value={searchQuery}
+                onChange={handleSearchChange}
+              />
+            </div>
+
             <Link to="/" className={`nav-item ${location.pathname === '/' ? 'active' : ''}`} onClick={() => setIsMobileMenuOpen(false)}>
               Home
             </Link>
             <Link to="/products" className={`nav-item ${location.pathname === '/products' ? 'active' : ''}`} onClick={() => setIsMobileMenuOpen(false)}>
-              Shop
+              Shop Catalog
             </Link>
             <div 
               className="nav-item" 
               style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
               onMouseEnter={() => setShowMegaMenu(true)}
               onMouseLeave={() => setShowMegaMenu(false)}
+              onClick={() => { setShowMegaMenu(!showMegaMenu); }}
             >
               <span>Skincare</span> <ChevronDown size={14} />
             </div>
             <Link to="/products" className="nav-item" onClick={() => setIsMobileMenuOpen(false)}>Best Sellers</Link>
             <a href="#about" className="nav-item" onClick={() => setIsMobileMenuOpen(false)}>About Us</a>
-            <a href="#contact" className="nav-item" onClick={() => setIsMobileMenuOpen(false)}>Contact</a>
+            <a href="#contact" className="nav-item" onClick={() => setIsMobileMenuOpen(false)}>Contact Us</a>
+
+            <div className="mobile-drawer-footer">
+              {!user ? (
+                <Link to="/login" className="btn-mobile-login" onClick={() => setIsMobileMenuOpen(false)}>
+                  Sign In / Create Account
+                </Link>
+              ) : (
+                <button onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }} className="btn-mobile-logout">
+                  Sign Out ({user.name})
+                </button>
+              )}
+            </div>
           </nav>
 
-          {/* SEARCH BAR */}
-          <div className="nav-search-box">
+          {/* DESKTOP SEARCH BAR */}
+          <div className="nav-search-box desktop-only">
             <Search size={16} className="search-icon-nav" />
             <input
               type="text"
@@ -136,7 +175,7 @@ export default function Navbar() {
                     key={item.id} 
                     to={`/products/${item.id}`} 
                     className="search-result-item"
-                    onClick={() => { setSearchQuery(''); setSearchResults([]); }}
+                    onClick={() => { setSearchQuery(''); setSearchResults([]); setIsMobileMenuOpen(false); }}
                   >
                     <img src={item.image_url || '/assets/vitamin_c_serum.jpg'} alt={item.name} style={{ width: 32, height: 32, borderRadius: 6, objectFit: 'contain' }} />
                     <div>
@@ -150,48 +189,44 @@ export default function Navbar() {
           </div>
 
           {/* USER ACCOUNT BADGE & CART BUTTON IN NAVBAR */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            {user ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#F4EFEA', padding: '4px 12px 4px 6px', borderRadius: 30, border: '1px solid #E7E0D6' }}>
+          <div className="nav-actions-right">
+            <button 
+              className="mobile-search-trigger"
+              onClick={() => setIsMobileMenuOpen(true)}
+              aria-label="Search"
+            >
+              <Search size={20} />
+            </button>
+
+            {!user ? (
+              <Link to="/login" className="nav-signin-btn desktop-only">
+                Sign In
+              </Link>
+            ) : (
+              <div className="user-badge-nav desktop-only">
                 <img 
                   src={user.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.name)}`} 
                   alt={user.name} 
-                  style={{ width: 28, height: 28, borderRadius: '50%', background: '#A67C52' }} 
+                  className="user-avatar-img"
                 />
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#292524' }}>₹{parseFloat(user.wallet_balance || 0).toFixed(2)}</span>
+                <span className="user-wallet-val">₹{parseFloat(user.wallet_balance || 0).toFixed(2)}</span>
                 <button 
                   onClick={handleLogout} 
                   title="Sign Out" 
-                  style={{ background: 'none', border: 'none', color: '#DC2626', cursor: 'pointer', padding: 2, display: 'flex', alignItems: 'center' }}
+                  className="btn-logout-icon"
                 >
                   <LogOut size={15} />
                 </button>
               </div>
-            ) : (
-              <Link to="/login" style={{ fontSize: 13, fontWeight: 600, color: '#A67C52', textDecoration: 'none' }}>
-                Sign In
-              </Link>
             )}
 
             <Link 
               to="/products" 
-              style={{ 
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                fontSize: 13,
-                fontWeight: 700,
-                color: '#FFFFFF',
-                background: '#A67C52',
-                padding: '7px 16px',
-                borderRadius: 20,
-                textDecoration: 'none',
-                transition: 'background-color 0.2s ease'
-              }}
               className="navbar-cart-btn"
             >
-              <ShoppingBag size={15} />
-              <span>Cart ({cartCount})</span>
+              <ShoppingBag size={20} />
+              <span className="cart-btn-label">Cart </span>
+              <span className="cart-badge-count">{cartCount || 0}</span>
             </Link>
           </div>
 

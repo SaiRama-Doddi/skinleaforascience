@@ -72,83 +72,54 @@
 }
 
 /* 1. HERO BANNER SECTION WITH HERO.PNG BACKGROUND */
+/* 1. HERO BANNER SECTION (FEATURING HEROIMAGE.JPEG) */
 .hero-banner-container-pixel {
   width: 100%;
   max-width: 100%;
   margin: 0;
   padding: 0;
-}
-
-.hero-section-pixel {
-  position: relative;
-  width: 100%;
-  min-height: 540px;
-  border-radius: 0;
-  background-position: center right;
-  background-size: cover;
-  background-repeat: no-repeat;
-  padding: 80px max(24px, calc((100vw - 1320px) / 2 + 40px));
-  display: flex;
-  align-items: center;
   overflow: hidden;
-  box-shadow: none;
+  background-color: var(--leafora-cream-bg);
 }
 
-.hero-left-col-pixel {
-  max-width: 580px;
-  z-index: 2;
+.hero-banner-link-pixel {
+  display: block;
+  width: 100%;
+  height: 100%;
+  text-decoration: none;
 }
 
-.hero-heading-pixel {
-  font-family: 'Playfair Display', Georgia, serif;
-  font-size: 3.5rem;
-  font-weight: 700;
-  color: #1F2937;
-  line-height: 1.12;
-  margin-bottom: 16px;
-  letter-spacing: -0.5px;
+.hero-banner-image-box {
+  width: 100%;
+  height: calc(100vh - 120px);
+  min-height: 520px;
+  max-height: 780px;
+  position: relative;
+  overflow: hidden;
 }
 
-.hero-subtext-pixel {
-  font-size: 1.1rem;
-  color: #4B5563;
-  line-height: 1.65;
-  margin-bottom: 28px;
-  max-width: 480px;
+.hero-banner-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+  display: block;
 }
 
-/* 3 Bottom Benefit Pills */
-.hero-pills-row-pixel {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 36px;
-}
+/* Mobile: Fit full banner image cleanly without cutting off left text or right products */
+@media (max-width: 768px) {
+  .hero-banner-image-box {
+    height: auto;
+    min-height: unset;
+    max-height: unset;
+  }
 
-.pill-item-pixel {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(255, 255, 255, 0.88);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(239, 232, 222, 0.9);
-  padding: 9px 18px;
-  border-radius: 30px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #1F2937;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
-}
-
-.pill-icon-circle-pixel {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: var(--leafora-card-cream);
-  color: var(--leafora-bronze);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  .hero-banner-img {
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+    object-position: center center;
+  }
 }
 
 /* 2. SHOP BY CATEGORY (8 CIRCULAR PILLS) */
@@ -167,8 +138,46 @@
 .category-flex-header-pixel {
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
+  align-items: center;
   margin-bottom: 32px;
+}
+
+.single-line-title {
+  white-space: nowrap !important;
+  font-family: 'Playfair Display', Georgia, serif;
+}
+
+.category-header-right-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.category-arrow-btns {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-cat-scroll {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--leafora-card-cream);
+  border: 1px solid var(--leafora-border);
+  color: var(--leafora-bronze);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.btn-cat-scroll:hover {
+  background: var(--leafora-bronze);
+  color: #FFFFFF;
+  border-color: var(--leafora-bronze);
 }
 
 .link-view-all-pixel {
@@ -179,6 +188,46 @@
   display: flex;
   align-items: center;
   gap: 4px;
+}
+
+/* Shop by Category Slider Container for Desktop & Mobile */
+.category-arrow-btns {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.category-scroll-wrapper {
+  display: flex;
+  gap: 24px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  padding: 8px 4px 16px 4px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.category-scroll-wrapper::-webkit-scrollbar {
+  display: none;
+}
+
+.category-scroll-wrapper .category-pill-card-pixel {
+  flex: 0 0 auto;
+  width: 130px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+@media (max-width: 600px) {
+  .category-scroll-wrapper {
+    gap: 16px;
+  }
+
+  .category-scroll-wrapper .category-pill-card-pixel {
+    width: 105px;
+  }
 }
 
 .category-pills-grid-pixel {
@@ -599,6 +648,56 @@
 }
 
 @media (max-width: 600px) {
+  .category-section-pixel {
+    padding: 36px 16px;
+  }
+
+  .category-flex-header-pixel {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .single-line-title {
+    font-size: 1.3rem !important;
+    white-space: nowrap !important;
+    letter-spacing: -0.2px;
+  }
+
+  .category-header-right-controls {
+    gap: 8px;
+  }
+
+  .btn-cat-scroll {
+    width: 32px;
+    height: 32px;
+  }
+
+  .link-view-all-pixel {
+    font-size: 0.78rem;
+    white-space: nowrap;
+  }
+
+  .hero-section-pixel {
+    padding: 60px 20px 40px 20px;
+    min-height: 460px;
+  }
+
+  .hero-arrow-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  .hero-arrow-left {
+    left: 8px;
+  }
+
+  .hero-arrow-right {
+    right: 8px;
+  }
+
   .category-pills-grid-pixel {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -612,10 +711,16 @@
   }
 
   .hero-heading-pixel {
-    font-size: 2.3rem;
+    font-size: 2.1rem;
   }
 
   .value-props-row-pixel {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 380px) {
+  .single-line-title {
+    font-size: 1.12rem !important;
   }
 }
