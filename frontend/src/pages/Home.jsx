@@ -9,18 +9,6 @@ import { addToCart } from '../services/cartService';
 import heroImage from '../assets/heroimage.jpeg';
 import './Home.css';
 
-// Reference categories fallback if database has fewer items
-const REFERENCE_CATEGORIES = [
-  { id: 'c1', name: 'Cleansers', slug: 'cleansers', image_url: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=300&q=80' },
-  { id: 'c2', name: 'Moisturizers', slug: 'moisturizers', image_url: 'https://images.unsplash.com/photo-1608248597263-0057e57b4522?auto=format&fit=crop&w=300&q=80' },
-  { id: 'c3', name: 'Serums', slug: 'serums', image_url: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=300&q=80' },
-  { id: 'c4', name: 'Face Masks', slug: 'face-masks', image_url: 'https://images.unsplash.com/photo-1571781926291-c477ebfd024b?auto=format&fit=crop&w=300&q=80' },
-  { id: 'c5', name: 'Sunscreens', slug: 'sunscreens', image_url: 'https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?auto=format&fit=crop&w=300&q=80' },
-  { id: 'c6', name: 'Eye Care', slug: 'eye-care', image_url: 'https://images.unsplash.com/photo-1601049541289-9b1b7bbbfe19?auto=format&fit=crop&w=300&q=80' },
-  { id: 'c7', name: 'Body Care', slug: 'body-care', image_url: 'https://images.unsplash.com/photo-1617897903246-719242758050?auto=format&fit=crop&w=300&q=80' },
-  { id: 'c8', name: 'Face Oils', slug: 'face-oils', image_url: 'https://images.unsplash.com/photo-1608248597263-0057e57b4522?auto=format&fit=crop&w=300&q=80' }
-];
-
 export default function Home() {
   const navigate = useNavigate();
   const [toastMsg, setToastMsg] = useState(null);
@@ -61,10 +49,10 @@ export default function Home() {
         if (res && res.data && res.data.length > 0) {
           setCategories(res.data);
         } else {
-          setCategories(REFERENCE_CATEGORIES);
+          setCategories([]);
         }
       })
-      .catch(() => setCategories(REFERENCE_CATEGORIES))
+      .catch(() => setCategories([]))
       .finally(() => setLoadingCats(false));
 
     // Fetch products dynamically from backend API / database
@@ -83,7 +71,7 @@ export default function Home() {
     setTimeout(() => setToastMsg(null), 3000);
   };
 
-  const allCategories = categories.length > 0 ? categories : REFERENCE_CATEGORIES;
+  const allCategories = categories;
   const visibleCategories = (isMobile && !showAllCategories) ? allCategories.slice(0, 3) : allCategories;
 
   return (

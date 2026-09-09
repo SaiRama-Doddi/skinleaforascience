@@ -2477,7 +2477,35 @@ export default function AdminDashboard() {
   
   const displayRevenue = computedRevenue > 0 
     ? `₹${computedRevenue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-    : (analytics?.revenue?.total ? `₹${Number(analytics.revenue.total).toLocaleString('en-IN')}` : '₹12,480');
+    : (analytics?.revenue?.total ? `₹${Number(analytics.revenue.total).toLocaleString('en-IN')}` : '₹0.00');
+
+  // Dynamic 7-Day Sales Chart Data from real database orders
+  const salesChartDays = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i));
+    return {
+      dateObj: d,
+      dateStr: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      total: 0
+    };
+  });
+
+  dbOrders.forEach(o => {
+    if (o.created_at) {
+      const oDate = new Date(o.created_at);
+      const match = salesChartDays.find(sd => 
+        sd.dateObj.getDate() === oDate.getDate() && 
+        sd.dateObj.getMonth() === oDate.getMonth() && 
+        sd.dateObj.getFullYear() === oDate.getFullYear()
+      );
+      if (match) {
+        const amt = parseFloat(o.total_amount || o.amount || 0);
+        if (!isNaN(amt)) match.total += amt;
+      }
+    }
+  });
+
+  const maxChartVal = Math.max(...salesChartDays.map(s => s.total), 100);
 
   // Compute Order Status counts from real database orders
   const statusCounts = {
@@ -2492,11 +2520,11 @@ export default function AdminDashboard() {
 
   // Compute Donut SVG Dasharray lengths based on real counts
   const circ = 238;
-  const delLen = Math.round((statusCounts.delivered / totalDonutOrders) * circ);
-  const procLen = Math.round((statusCounts.processing / totalDonutOrders) * circ);
-  const shipLen = Math.round((statusCounts.shipped / totalDonutOrders) * circ);
-  const cancLen = Math.round((statusCounts.cancelled / totalDonutOrders) * circ);
-  const refLen = Math.round((statusCounts.refunded / totalDonutOrders) * circ);
+  const delLen = dbOrders.length > 0 ? Math.round((statusCounts.delivered / totalDonutOrders) * circ) : 0;
+  const procLen = dbOrders.length > 0 ? Math.round((statusCounts.processing / totalDonutOrders) * circ) : 0;
+  const shipLen = dbOrders.length > 0 ? Math.round((statusCounts.shipped / totalDonutOrders) * circ) : 0;
+  const cancLen = dbOrders.length > 0 ? Math.round((statusCounts.cancelled / totalDonutOrders) * circ) : 0;
+  const refLen = dbOrders.length > 0 ? Math.round((statusCounts.refunded / totalDonutOrders) * circ) : 0;
 
   // Search filtering over real database records
   const filteredOrders = dbOrders.filter(o => 
@@ -2906,243 +2934,248 @@ export default function AdminDashboard() {
           </div>
 
           {/* ─── TAB 1: MAIN DASHBOARD OVERVIEW ─── */}
-          {activeTab === 'dashboard' && (
-            <>
-              {/* 4 Key Metrics Grid */}
-              <div className="leafora-metrics-grid">
-                <div className="leafora-metric-card" onClick={() => setActiveTab('orders')} style={{ cursor: 'pointer' }}>
-                  <div className="leafora-metric-icon-wrap orders"><ShoppingCart size={22} /></div>
-                  <div className="leafora-metric-body">
-                    <span className="leafora-metric-label">Total Orders</span>
-                    <span className="leafora-metric-value">{totalOrders}</span>
-                    <span className="leafora-metric-trend">↑ +12% <span className="leafora-metric-trend-sub">vs last week</span></span>
+          {activeTab === 'dashboard' && (() => {
+            // Dynamic SVG chart points from real sales
+            const chartPoints = salesChartDays.map((sd, i) => {
+              const x = 50 + i * 95;
+              const y = 175 - (sd.total / maxChartVal) * 135;
+              return { x, y, total: sd.total, label: sd.dateStr };
+            });
+
+            const pathD = chartPoints.reduce((acc, pt, i) => {
+              return i === 0 ? `M ${pt.x} ${pt.y}` : `${acc} L ${pt.x} ${pt.y}`;
+            }, '');
+
+            const areaD = `${pathD} L ${chartPoints[chartPoints.length - 1].x} 180 L ${chartPoints[0].x} 180 Z`;
+
+            return (
+              <>
+                {/* 4 Key Metrics Grid */}
+                <div className="leafora-metrics-grid">
+                  <div className="leafora-metric-card" onClick={() => setActiveTab('orders')} style={{ cursor: 'pointer' }}>
+                    <div className="leafora-metric-icon-wrap orders"><ShoppingCart size={22} /></div>
+                    <div className="leafora-metric-body">
+                      <span className="leafora-metric-label">Total Orders</span>
+                      <span className="leafora-metric-value">{totalOrders}</span>
+                      <span className="leafora-metric-trend">Realtime DB Orders</span>
+                    </div>
+                  </div>
+
+                  <div className="leafora-metric-card" onClick={() => setActiveTab('payments')} style={{ cursor: 'pointer' }}>
+                    <div className="leafora-metric-icon-wrap revenue"><span style={{ fontSize: 22, fontWeight: 700 }}>₹</span></div>
+                    <div className="leafora-metric-body">
+                      <span className="leafora-metric-label">Total Revenue</span>
+                      <span className="leafora-metric-value">{displayRevenue}</span>
+                      <span className="leafora-metric-trend">Gross Store Sales</span>
+                    </div>
+                  </div>
+
+                  <div className="leafora-metric-card" onClick={() => setActiveTab('users')} style={{ cursor: 'pointer' }}>
+                    <div className="leafora-metric-icon-wrap users"><Users size={22} /></div>
+                    <div className="leafora-metric-body">
+                      <span className="leafora-metric-label">Total Users</span>
+                      <span className="leafora-metric-value">{totalUsers}</span>
+                      <span className="leafora-metric-trend">Registered Accounts</span>
+                    </div>
+                  </div>
+
+                  <div className="leafora-metric-card" onClick={() => setActiveTab('products')} style={{ cursor: 'pointer' }}>
+                    <div className="leafora-metric-icon-wrap products"><Package size={22} /></div>
+                    <div className="leafora-metric-body">
+                      <span className="leafora-metric-label">Total Products</span>
+                      <span className="leafora-metric-value">{totalProducts}</span>
+                      <span className="leafora-metric-trend">Catalog Items</span>
+                    </div>
                   </div>
                 </div>
 
-                <div className="leafora-metric-card" onClick={() => setActiveTab('payments')} style={{ cursor: 'pointer' }}>
-                  <div className="leafora-metric-icon-wrap revenue"><span style={{ fontSize: 22, fontWeight: 700 }}>₹</span></div>
-                  <div className="leafora-metric-body">
-                    <span className="leafora-metric-label">Total Revenue</span>
-                    <span className="leafora-metric-value">₹{analytics ? Number(analytics.revenue?.total || 12480).toLocaleString('en-IN') : '12,480'}</span>
-                    <span className="leafora-metric-trend">↑ +18% <span className="leafora-metric-trend-sub">vs last week</span></span>
-                  </div>
-                </div>
+                {/* Charts Row */}
+                <div className="leafora-charts-row">
+                  <div className="leafora-card">
+                    <div className="leafora-card-header">
+                      <h3 className="leafora-card-title">Sales Overview (Past 7 Days)</h3>
+                      <span className="leafora-metric-trend" style={{ fontSize: '0.82rem' }}>Live DB Sales</span>
+                    </div>
+                    <div className="leafora-chart-area-wrap">
+                      <svg className="leafora-svg-chart" viewBox="0 0 650 200" preserveAspectRatio="none">
+                        <defs>
+                          <linearGradient id="salesGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#4A7C59" stopOpacity="0.3" />
+                            <stop offset="100%" stopColor="#4A7C59" stopOpacity="0.0" />
+                          </linearGradient>
+                        </defs>
+                        <line x1="40" y1="20" x2="630" y2="20" stroke="#F3F0EB" strokeDasharray="4 4" />
+                        <line x1="40" y1="60" x2="630" y2="60" stroke="#F3F0EB" strokeDasharray="4 4" />
+                        <line x1="40" y1="100" x2="630" y2="100" stroke="#F3F0EB" strokeDasharray="4 4" />
+                        <line x1="40" y1="140" x2="630" y2="140" stroke="#F3F0EB" strokeDasharray="4 4" />
+                        <line x1="40" y1="180" x2="630" y2="180" stroke="#EFECE6" />
 
-                <div className="leafora-metric-card" onClick={() => setActiveTab('users')} style={{ cursor: 'pointer' }}>
-                  <div className="leafora-metric-icon-wrap users"><Users size={22} /></div>
-                  <div className="leafora-metric-body">
-                    <span className="leafora-metric-label">Total Users</span>
-                    <span className="leafora-metric-value">{totalUsers}</span>
-                    <span className="leafora-metric-trend">↑ +8% <span className="leafora-metric-trend-sub">vs last week</span></span>
-                  </div>
-                </div>
+                        <text x="10" y="24" fill="#9CA3AF" fontSize="10" fontWeight="500">₹{Math.round(maxChartVal)}</text>
+                        <text x="10" y="104" fill="#9CA3AF" fontSize="10" fontWeight="500">₹{Math.round(maxChartVal / 2)}</text>
+                        <text x="28" y="184" fill="#9CA3AF" fontSize="10" fontWeight="500">₹0</text>
 
-                <div className="leafora-metric-card" onClick={() => setActiveTab('products')} style={{ cursor: 'pointer' }}>
-                  <div className="leafora-metric-icon-wrap products"><Package size={22} /></div>
-                  <div className="leafora-metric-body">
-                    <span className="leafora-metric-label">Total Products</span>
-                    <span className="leafora-metric-value">{totalProducts}</span>
-                    <span className="leafora-metric-trend">↑ +5% <span className="leafora-metric-trend-sub">vs last week</span></span>
-                  </div>
-                </div>
-              </div>
+                        <path d={areaD} fill="url(#salesGrad)" />
+                        <path d={pathD} fill="none" stroke="#4A7C59" strokeWidth="3" strokeLinecap="round" />
 
-              {/* Charts Row */}
-              <div className="leafora-charts-row">
-                <div className="leafora-card">
-                  <div className="leafora-card-header">
-                    <h3 className="leafora-card-title">Sales Overview</h3>
-                    <select className="leafora-select-btn">
-                      <option>Last 7 Days</option>
-                      <option>Last 30 Days</option>
-                      <option>This Month</option>
-                    </select>
-                  </div>
-                  <div className="leafora-chart-area-wrap">
-                    <svg className="leafora-svg-chart" viewBox="0 0 650 200" preserveAspectRatio="none">
-                      <defs>
-                        <linearGradient id="salesGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#4A7C59" stopOpacity="0.3" />
-                          <stop offset="100%" stopColor="#4A7C59" stopOpacity="0.0" />
-                        </linearGradient>
-                      </defs>
-                      <line x1="40" y1="20" x2="630" y2="20" stroke="#F3F0EB" strokeDasharray="4 4" />
-                      <line x1="40" y1="60" x2="630" y2="60" stroke="#F3F0EB" strokeDasharray="4 4" />
-                      <line x1="40" y1="100" x2="630" y2="100" stroke="#F3F0EB" strokeDasharray="4 4" />
-                      <line x1="40" y1="140" x2="630" y2="140" stroke="#F3F0EB" strokeDasharray="4 4" />
-                      <line x1="40" y1="180" x2="630" y2="180" stroke="#EFECE6" />
+                        {chartPoints.map((pt, i) => (
+                          <circle key={i} cx={pt.x} cy={pt.y} r="4.5" fill="#4A7C59" stroke="#FFFFFF" strokeWidth="2" />
+                        ))}
 
-                      <text x="10" y="24" fill="#9CA3AF" fontSize="10" fontWeight="500">2,000</text>
-                      <text x="10" y="64" fill="#9CA3AF" fontSize="10" fontWeight="500">1,500</text>
-                      <text x="10" y="104" fill="#9CA3AF" fontSize="10" fontWeight="500">1,000</text>
-                      <text x="18" y="144" fill="#9CA3AF" fontSize="10" fontWeight="500">500</text>
-                      <text x="28" y="184" fill="#9CA3AF" fontSize="10" fontWeight="500">0</text>
-
-                      <path d="M 50 145 C 100 135, 140 100, 180 85 C 230 70, 270 95, 320 40 C 370 70, 420 90, 470 75 C 520 60, 580 50, 620 45 L 620 180 L 50 180 Z" fill="url(#salesGrad)" />
-                      <path d="M 50 145 C 100 135, 140 100, 180 85 C 230 70, 270 95, 320 40 C 370 70, 420 90, 470 75 C 520 60, 580 50, 620 45" fill="none" stroke="#4A7C59" strokeWidth="3.2" strokeLinecap="round" />
-
-                      <circle cx="50" cy="145" r="4.5" fill="#4A7C59" stroke="#FFFFFF" strokeWidth="2" />
-                      <circle cx="180" cy="85" r="4.5" fill="#4A7C59" stroke="#FFFFFF" strokeWidth="2" />
-                      <circle cx="320" cy="40" r="5" fill="#4A7C59" stroke="#FFFFFF" strokeWidth="2" />
-                      <circle cx="470" cy="75" r="4.5" fill="#4A7C59" stroke="#FFFFFF" strokeWidth="2" />
-                      <circle cx="620" cy="45" r="4.5" fill="#4A7C59" stroke="#FFFFFF" strokeWidth="2" />
-
-                      <text x="45" y="196" fill="#9CA3AF" fontSize="10.5" fontWeight="500">Sep 1</text>
-                      <text x="140" y="196" fill="#9CA3AF" fontSize="10.5" fontWeight="500">Sep 2</text>
-                      <text x="235" y="196" fill="#9CA3AF" fontSize="10.5" fontWeight="500">Sep 3</text>
-                      <text x="330" y="196" fill="#9CA3AF" fontSize="10.5" fontWeight="500">Sep 4</text>
-                      <text x="425" y="196" fill="#9CA3AF" fontSize="10.5" fontWeight="500">Sep 5</text>
-                      <text x="520" y="196" fill="#9CA3AF" fontSize="10.5" fontWeight="500">Sep 6</text>
-                      <text x="605" y="196" fill="#9CA3AF" fontSize="10.5" fontWeight="500">Sep 7</text>
-                    </svg>
-                  </div>
-                </div>
-
-                <div className="leafora-card">
-                  <div className="leafora-card-header">
-                    <h3 className="leafora-card-title">Order Status</h3>
-                  </div>
-                  <div className="leafora-donut-container">
-                    <div className="leafora-donut-svg-wrap">
-                      <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
-                        <circle cx="50" cy="50" r="38" stroke="#7FA074" strokeWidth="13" fill="none" strokeDasharray={`${delLen} 238`} strokeDashoffset="0" />
-                        <circle cx="50" cy="50" r="38" stroke="#E5BA68" strokeWidth="13" fill="none" strokeDasharray={`${procLen} 238`} strokeDashoffset={`-${delLen}`} />
-                        <circle cx="50" cy="50" r="38" stroke="#5C8EB9" strokeWidth="13" fill="none" strokeDasharray={`${shipLen} 238`} strokeDashoffset={`-${delLen + procLen}`} />
-                        <circle cx="50" cy="50" r="38" stroke="#E57373" strokeWidth="13" fill="none" strokeDasharray={`${cancLen} 238`} strokeDashoffset={`-${delLen + procLen + shipLen}`} />
-                        <circle cx="50" cy="50" r="38" stroke="#B0BEC5" strokeWidth="13" fill="none" strokeDasharray={`${refLen} 238`} strokeDashoffset={`-${delLen + procLen + shipLen + cancLen}`} />
+                        {chartPoints.map((pt, i) => (
+                          <text key={i} x={pt.x - 12} y="196" fill="#9CA3AF" fontSize="10.5" fontWeight="500">
+                            {pt.label}
+                          </text>
+                        ))}
                       </svg>
-                      <div className="leafora-donut-center-text">
-                        <span className="leafora-donut-number">{dbOrders.length}</span>
-                        <span className="leafora-donut-label">Orders</span>
-                      </div>
-                    </div>
-                    <div className="leafora-donut-legend">
-                      <div className="leafora-legend-item">
-                        <div className="leafora-legend-left"><span className="leafora-legend-dot" style={{ backgroundColor: '#7FA074' }}></span><span>Delivered</span></div>
-                        <span className="leafora-legend-count">{statusCounts.delivered}</span>
-                      </div>
-                      <div className="leafora-legend-item">
-                        <div className="leafora-legend-left"><span className="leafora-legend-dot" style={{ backgroundColor: '#E5BA68' }}></span><span>Processing</span></div>
-                        <span className="leafora-legend-count">{statusCounts.processing}</span>
-                      </div>
-                      <div className="leafora-legend-item">
-                        <div className="leafora-legend-left"><span className="leafora-legend-dot" style={{ backgroundColor: '#5C8EB9' }}></span><span>Shipped</span></div>
-                        <span className="leafora-legend-count">{statusCounts.shipped}</span>
-                      </div>
-                      <div className="leafora-legend-item">
-                        <div className="leafora-legend-left"><span className="leafora-legend-dot" style={{ backgroundColor: '#E57373' }}></span><span>Cancelled</span></div>
-                        <span className="leafora-legend-count">{statusCounts.cancelled}</span>
-                      </div>
-                      <div className="leafora-legend-item">
-                        <div className="leafora-legend-left"><span className="leafora-legend-dot" style={{ backgroundColor: '#B0BEC5' }}></span><span>Refunded</span></div>
-                        <span className="leafora-legend-count">{statusCounts.refunded}</span>
-                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
 
-              {/* Data Tables Row */}
-              <div className="leafora-tables-row">
-                <div className="leafora-card">
-                  <div className="leafora-card-header">
-                    <h3 className="leafora-card-title">Recent Orders</h3>
-                    <span className="leafora-link-action" onClick={openOrdersModal}>View All ({dbOrders.length}) <ArrowRight size={14} /></span>
+                  <div className="leafora-card">
+                    <div className="leafora-card-header">
+                      <h3 className="leafora-card-title">Order Status</h3>
+                    </div>
+                    <div className="leafora-donut-container">
+                      <div className="leafora-donut-svg-wrap">
+                        <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
+                          <circle cx="50" cy="50" r="38" stroke="#7FA074" strokeWidth="13" fill="none" strokeDasharray={`${delLen} 238`} strokeDashoffset="0" />
+                          <circle cx="50" cy="50" r="38" stroke="#E5BA68" strokeWidth="13" fill="none" strokeDasharray={`${procLen} 238`} strokeDashoffset={`-${delLen}`} />
+                          <circle cx="50" cy="50" r="38" stroke="#5C8EB9" strokeWidth="13" fill="none" strokeDasharray={`${shipLen} 238`} strokeDashoffset={`-${delLen + procLen}`} />
+                          <circle cx="50" cy="50" r="38" stroke="#E57373" strokeWidth="13" fill="none" strokeDasharray={`${cancLen} 238`} strokeDashoffset={`-${delLen + procLen + shipLen}`} />
+                          <circle cx="50" cy="50" r="38" stroke="#B0BEC5" strokeWidth="13" fill="none" strokeDasharray={`${refLen} 238`} strokeDashoffset={`-${delLen + procLen + shipLen + cancLen}`} />
+                        </svg>
+                        <div className="leafora-donut-center-text">
+                          <span className="leafora-donut-number">{dbOrders.length}</span>
+                          <span className="leafora-donut-label">Orders</span>
+                        </div>
+                      </div>
+                      <div className="leafora-donut-legend">
+                        <div className="leafora-legend-item">
+                          <div className="leafora-legend-left"><span className="leafora-legend-dot" style={{ backgroundColor: '#7FA074' }}></span><span>Delivered</span></div>
+                          <span className="leafora-legend-count">{statusCounts.delivered}</span>
+                        </div>
+                        <div className="leafora-legend-item">
+                          <div className="leafora-legend-left"><span className="leafora-legend-dot" style={{ backgroundColor: '#E5BA68' }}></span><span>Processing</span></div>
+                          <span className="leafora-legend-count">{statusCounts.processing}</span>
+                        </div>
+                        <div className="leafora-legend-item">
+                          <div className="leafora-legend-left"><span className="leafora-legend-dot" style={{ backgroundColor: '#5C8EB9' }}></span><span>Shipped</span></div>
+                          <span className="leafora-legend-count">{statusCounts.shipped}</span>
+                        </div>
+                        <div className="leafora-legend-item">
+                          <div className="leafora-legend-left"><span className="leafora-legend-dot" style={{ backgroundColor: '#E57373' }}></span><span>Cancelled</span></div>
+                          <span className="leafora-legend-count">{statusCounts.cancelled}</span>
+                        </div>
+                        <div className="leafora-legend-item">
+                          <div className="leafora-legend-left"><span className="leafora-legend-dot" style={{ backgroundColor: '#B0BEC5' }}></span><span>Refunded</span></div>
+                          <span className="leafora-legend-count">{statusCounts.refunded}</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <table className="leafora-table">
-                    <thead>
-                      <tr><th>#</th><th>Customer</th><th>Amount</th><th>Status</th><th>Date</th></tr>
-                    </thead>
-                    <tbody>
-                      {filteredOrders.length === 0 ? (
-                        <tr><td colSpan="5" style={{ textAlign: 'center', padding: '24px', color: '#9CA3AF' }}>No orders available in database</td></tr>
-                      ) : (
-                        filteredOrders.slice(0, 5).map((order, idx) => {
-                          const orderId = order.id ? `#${order.id}` : `#100${idx}`;
-                          const customerName = order.customer_name || order.customer || order.email || `Customer ${idx + 1}`;
-                          const amt = order.total_amount || order.amount || 0;
-                          const formattedAmt = typeof amt === 'number' ? `₹${amt.toFixed(2)}` : (String(amt).startsWith('₹') ? amt : `₹${amt.replace(/^\$/, '')}`);
-                          const status = order.status || 'Delivered';
-                          const dateStr = order.created_at ? new Date(order.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Sep 7, 2025';
-                          return (
-                            <tr key={order.id || idx}>
-                              <td style={{ fontWeight: 600, color: '#6B7280' }}>{orderId}</td>
-                              <td><div className="leafora-customer-cell"><img src={getCustomerAvatar(idx)} alt={customerName} className="leafora-customer-img" /><span>{customerName}</span></div></td>
-                              <td style={{ fontWeight: 600 }}>{formattedAmt}</td>
-                              <td><span className={`leafora-status-pill ${status.toLowerCase()}`}><span className="leafora-status-dot"></span>{status}</span></td>
-                              <td style={{ color: '#6B7280' }}>{dateStr}</td>
-                            </tr>
-                          );
-                        })
-                      )}
-                    </tbody>
-                  </table>
                 </div>
 
-                <div className="leafora-card">
-                  <div className="leafora-card-header">
-                    <h3 className="leafora-card-title">Top Selling Products</h3>
-                    <span className="leafora-link-action" onClick={openProductsModal}>View All ({dbProducts.length}) <ArrowRight size={14} /></span>
+                {/* Data Tables Row */}
+                <div className="leafora-tables-row">
+                  <div className="leafora-card">
+                    <div className="leafora-card-header">
+                      <h3 className="leafora-card-title">Recent Orders</h3>
+                      <span className="leafora-link-action" onClick={openOrdersModal}>View All ({dbOrders.length}) <ArrowRight size={14} /></span>
+                    </div>
+                    <table className="leafora-table">
+                      <thead>
+                        <tr><th>#</th><th>Customer</th><th>Amount</th><th>Status</th><th>Date</th></tr>
+                      </thead>
+                      <tbody>
+                        {filteredOrders.length === 0 ? (
+                          <tr><td colSpan="5" style={{ textAlign: 'center', padding: '24px', color: '#9CA3AF' }}>No orders recorded in database</td></tr>
+                        ) : (
+                          filteredOrders.slice(0, 5).map((order, idx) => {
+                            const orderId = order.id ? `#${order.id}` : `#${idx + 1}`;
+                            const customerName = order.customer_name || order.user_name || order.email || `Customer ${order.id || idx + 1}`;
+                            const amt = order.total_amount || order.amount || 0;
+                            const formattedAmt = `₹${parseFloat(amt || 0).toFixed(2)}`;
+                            const status = order.status || 'Pending';
+                            const dateStr = order.created_at ? new Date(order.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Today';
+                            return (
+                              <tr key={order.id || idx}>
+                                <td style={{ fontWeight: 600, color: '#6B7280' }}>{orderId}</td>
+                                <td><div className="leafora-customer-cell"><img src={getCustomerAvatar(idx)} alt={customerName} className="leafora-customer-img" /><span>{customerName}</span></div></td>
+                                <td style={{ fontWeight: 600 }}>{formattedAmt}</td>
+                                <td><span className={`leafora-status-pill ${status.toLowerCase()}`}><span className="leafora-status-dot"></span>{status}</span></td>
+                                <td style={{ color: '#6B7280' }}>{dateStr}</td>
+                              </tr>
+                            );
+                          })
+                        )}
+                      </tbody>
+                    </table>
                   </div>
-                  <table className="leafora-table">
-                    <thead>
-                      <tr><th>#</th><th>Product</th><th>Stock</th><th>Price</th></tr>
-                    </thead>
-                    <tbody>
-                      {filteredProducts.length === 0 ? (
-                        <tr><td colSpan="4" style={{ textAlign: 'center', padding: '24px', color: '#9CA3AF' }}>No products available in database</td></tr>
-                      ) : (
-                        filteredProducts.slice(0, 5).map((prod, idx) => {
-                          const prodId = prod.id || idx + 1;
-                          const prodName = prod.name || `Product ${prodId}`;
-                          const priceVal = parseFloat(prod.price || 0);
-                          const formattedPrice = `₹${priceVal.toFixed(2)}`;
-                          const stockVal = prod.stock ?? 10;
-                          const prodImg = prod.image_url || getProductImage(prodName, idx);
-                          return (
-                            <tr key={prod.id || idx}>
-                              <td style={{ fontWeight: 600, color: '#6B7280' }}>{prodId}</td>
-                              <td><div className="leafora-product-cell"><img src={prodImg} alt={prodName} className="leafora-product-img" /><span>{prodName}</span></div></td>
-                              <td style={{ fontWeight: 600 }}>{stockVal} in stock</td>
-                              <td style={{ fontWeight: 600 }}>{formattedPrice}</td>
-                            </tr>
-                          );
-                        })
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
 
-              {/* Bottom Quick Actions Row */}
-              <div className="leafora-quick-actions-row">
-                <div className="leafora-action-card" onClick={openProductsModal}>
-                  <div className="leafora-action-icon"><Package size={17} /></div>
-                  <span className="leafora-action-text">Add Product</span>
+                  <div className="leafora-card">
+                    <div className="leafora-card-header">
+                      <h3 className="leafora-card-title">Top Selling Products</h3>
+                      <span className="leafora-link-action" onClick={openProductsModal}>View All ({dbProducts.length}) <ArrowRight size={14} /></span>
+                    </div>
+                    <table className="leafora-table">
+                      <thead>
+                        <tr><th>#</th><th>Product</th><th>Stock</th><th>Price</th></tr>
+                      </thead>
+                      <tbody>
+                        {filteredProducts.length === 0 ? (
+                          <tr><td colSpan="4" style={{ textAlign: 'center', padding: '24px', color: '#9CA3AF' }}>No products available in database</td></tr>
+                        ) : (
+                          filteredProducts.slice(0, 5).map((prod, idx) => {
+                            const prodId = prod.id || idx + 1;
+                            const prodName = prod.name || `Product ${prodId}`;
+                            const priceVal = parseFloat(prod.price || 0);
+                            const formattedPrice = `₹${priceVal.toFixed(2)}`;
+                            const stockVal = prod.stock ?? 0;
+                            const prodImg = prod.image_url || getProductImage(prodName, idx);
+                            return (
+                              <tr key={prod.id || idx}>
+                                <td style={{ fontWeight: 600, color: '#6B7280' }}>#{prodId}</td>
+                                <td><div className="leafora-product-cell"><img src={prodImg} alt={prodName} className="leafora-product-img" /><span>{prodName}</span></div></td>
+                                <td style={{ fontWeight: 600 }}>{stockVal} in stock</td>
+                                <td style={{ fontWeight: 600 }}>{formattedPrice}</td>
+                              </tr>
+                            );
+                          })
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-                <div className="leafora-action-card" onClick={openCategoriesModal}>
-                  <div className="leafora-action-icon"><Layers size={17} /></div>
-                  <span className="leafora-action-text">Add Category</span>
+
+                {/* Bottom Quick Actions Row */}
+                <div className="leafora-quick-actions-row">
+                  <div className="leafora-action-card" onClick={openProductsModal}>
+                    <div className="leafora-action-icon"><Package size={17} /></div>
+                    <span className="leafora-action-text">Add Product</span>
+                  </div>
+                  <div className="leafora-action-card" onClick={openCategoriesModal}>
+                    <div className="leafora-action-icon"><Layers size={17} /></div>
+                    <span className="leafora-action-text">Add Category</span>
+                  </div>
+                  <div className="leafora-action-card" onClick={openCouponsModal}>
+                    <div className="leafora-action-icon"><Tag size={17} /></div>
+                    <span className="leafora-action-text">Create Coupon</span>
+                  </div>
+                  <div className="leafora-action-card" onClick={openOrdersModal}>
+                    <div className="leafora-action-icon"><ShoppingBag size={17} /></div>
+                    <span className="leafora-action-text">View Orders</span>
+                  </div>
+                  <div className="leafora-action-card" onClick={openCustomersModal}>
+                    <div className="leafora-action-icon"><Users size={17} /></div>
+                    <span className="leafora-action-text">Manage Users</span>
+                  </div>
+                  <div className="leafora-action-card" onClick={openPaymentsModal}>
+                    <div className="leafora-action-icon"><CreditCard size={17} /></div>
+                    <span className="leafora-action-text">View Payments</span>
+                  </div>
                 </div>
-                <div className="leafora-action-card" onClick={openCouponsModal}>
-                  <div className="leafora-action-icon"><Tag size={17} /></div>
-                  <span className="leafora-action-text">Create Coupon</span>
-                </div>
-                <div className="leafora-action-card" onClick={openOrdersModal}>
-                  <div className="leafora-action-icon"><ShoppingBag size={17} /></div>
-                  <span className="leafora-action-text">View Orders</span>
-                </div>
-                <div className="leafora-action-card" onClick={openCustomersModal}>
-                  <div className="leafora-action-icon"><Users size={17} /></div>
-                  <span className="leafora-action-text">Manage Users</span>
-                </div>
-                <div className="leafora-action-card" onClick={openPaymentsModal}>
-                  <div className="leafora-action-icon"><CreditCard size={17} /></div>
-                  <span className="leafora-action-text">View Payments</span>
-                </div>
-              </div>
-            </>
-          )}
+              </>
+            );
+          })()}
 
           {/* ─── TAB 2: CATEGORIES MANAGEMENT SUITE ─── */}
           {activeTab === 'categories' && (

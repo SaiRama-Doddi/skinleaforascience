@@ -9,83 +9,14 @@ import { getProductById, getProducts } from '../services/api';
 import { addToCart } from '../services/cartService';
 import './ProductDetails.css';
 
-// Default Product Data matching reference image exactly
-const DEFAULT_PRODUCT_DETAILS = {
-  id: 1,
-  name: 'Gentle Foaming Face Wash',
-  subtitle: 'With Aloe Vera, Green Tea & Niacinamide',
-  brand: 'Leafora Life Sciences',
-  category: 'Cleansers',
-  price: 18.00,
-  originalPrice: 22.00,
-  discount: '18% OFF',
-  rating: 4.8,
-  reviewsCount: 124,
-  badge: 'Best Seller',
-  description: 'A mild, sulfate-free foaming cleanser that gently removes dirt, oil and impurities while keeping your skin soft, hydrated and balanced. Perfect for daily use, suitable for all skin types.',
-  size: '100 ml',
-  productType: 'Face Wash',
-  skinType: 'All Skin Types',
-  targetConcerns: 'Dirt, Oil, Dullness, Uneven Skin Tone',
-  formulation: 'Sulfate Free, Paraben Free, Cruelty Free',
-  shelfLife: '24 Months',
-  gallery: [
-    'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=800&q=80',
-    'https://images.unsplash.com/photo-1608248597263-0057e57b4522?auto=format&fit=crop&w=800&q=80',
-    'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=800&q=80',
-    'https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?auto=format&fit=crop&w=800&q=80'
-  ]
-};
 
-// Related products sample list
-const RELATED_PRODUCTS = [
-  {
-    id: 101,
-    name: 'Hydra Glow Moisturizer',
-    price: 24.00,
-    rating: 5.0,
-    reviews: 156,
-    image: 'https://images.unsplash.com/photo-1608248597263-0057e57b4522?auto=format&fit=crop&w=600&q=80'
-  },
-  {
-    id: 102,
-    name: 'Vitamin C Brightening Serum',
-    price: 28.00,
-    rating: 4.8,
-    reviews: 98,
-    image: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=600&q=80'
-  },
-  {
-    id: 103,
-    name: 'Nourishing Night Cream',
-    price: 26.00,
-    rating: 4.8,
-    reviews: 90,
-    image: 'https://images.unsplash.com/photo-1617897903246-719242758050?auto=format&fit=crop&w=600&q=80'
-  },
-  {
-    id: 104,
-    name: 'Daily Sunscreen SPF 50+',
-    price: 22.00,
-    rating: 4.9,
-    reviews: 112,
-    image: 'https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?auto=format&fit=crop&w=600&q=80'
-  },
-  {
-    id: 105,
-    name: 'Soothing Herbal Toner',
-    price: 18.00,
-    rating: 4.7,
-    reviews: 64,
-    image: 'https://images.unsplash.com/photo-1601049541289-9b1b7bbbfe19?auto=format&fit=crop&w=600&q=80'
-  }
-];
 
 export default function ProductDetails() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const [product, setProduct] = useState(DEFAULT_PRODUCT_DETAILS);
-  const [relatedProducts, setRelatedProducts] = useState(RELATED_PRODUCTS);
+  const [product, setProduct] = useState(null);
+  const [loadingProduct, setLoadingProduct] = useState(true);
+  const [relatedProducts, setRelatedProducts] = useState([]);
   
   // Interactive UI States
   const [selectedImgIndex, setSelectedImgIndex] = useState(0);
@@ -98,23 +29,59 @@ export default function ProductDetails() {
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const [expandedFaqIndex, setExpandedFaqIndex] = useState(0);
 
-  // Fetch product dynamically if route parameter present & fetch DB related products
+  // Fetch product dynamically from Database (Zero default image flash)
   useEffect(() => {
     window.scrollTo(0, 0);
     setSelectedImgIndex(0);
+    setLoadingProduct(true);
+
     if (id) {
       getProductById(id)
         .then(res => {
           if (res?.data) {
-            setProduct(prev => ({
-              ...prev,
-              ...res.data,
-              price: Number(res.data.price) || prev.price,
-              gallery: res.data.images && res.data.images.length > 0 ? res.data.images : [res.data.image_url || prev.gallery[0]]
-            }));
+            const data = res.data;
+            let gallery = [];
+            if (Array.isArray(data.images) && data.images.length > 0) {
+              gallery = data.images.filter(img => img && typeof img === 'string' && img.trim() !== '');
+            }
+            if (gallery.length === 0 && data.image_url) {
+              gallery = [data.image_url];
+            }
+            if (gallery.length === 0) {
+              gallery = ['data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZHg9IjEwMCIgZmlsbD0iI0YzRjRGNiIvPjwvc3ZnPg=='];
+            }
+
+            setProduct({
+              id: data.id,
+              name: data.name || 'Botanical Skincare Formulation',
+              subtitle: data.subtitle || 'Formulated with Pure Herbal Science',
+              brand: data.brand || 'Leafora Life Sciences',
+              category: data.category || 'Skincare',
+              price: Number(data.price) || 0,
+              originalPrice: data.original_price ? Number(data.original_price) : (data.originalPrice ? Number(data.originalPrice) : null),
+              discount: data.discount || null,
+              rating: data.rating || 4.8,
+              reviewsCount: data.reviews_count || data.reviewsCount || 18,
+              badge: data.badge || (data.is_featured ? 'Best Seller' : 'Pure Botanical'),
+              description: data.description || 'A mild, sulfate-free natural formulation that purifies skin while keeping it soft, hydrated and balanced.',
+              size: data.size || '100 ml',
+              productType: data.productType || data.category || 'Skincare',
+              skinType: data.skinType || 'All Skin Types',
+              targetConcerns: data.targetConcerns || 'Dirt, Oil, Dullness & Balance',
+              formulation: data.formulation || 'Sulfate Free, Paraben Free, Cruelty Free',
+              shelfLife: data.shelfLife || '24 Months',
+              gallery
+            });
           }
         })
-        .catch(() => console.warn('Using default sample details for PDP'));
+        .catch((err) => {
+          console.error('Error fetching database product details:', err);
+        })
+        .finally(() => {
+          setLoadingProduct(false);
+        });
+    } else {
+      setLoadingProduct(false);
     }
 
     // Fetch database products for You May Also Like section
@@ -134,10 +101,12 @@ export default function ProductDetails() {
   };
 
   const handlePrevImage = () => {
+    if (!product?.gallery || product.gallery.length <= 1) return;
     setSelectedImgIndex(prev => (prev === 0 ? product.gallery.length - 1 : prev - 1));
   };
 
   const handleNextImage = () => {
+    if (!product?.gallery || product.gallery.length <= 1) return;
     setSelectedImgIndex(prev => (prev === product.gallery.length - 1 ? 0 : prev + 1));
   };
 
@@ -157,6 +126,27 @@ export default function ProductDetails() {
     navigator.clipboard.writeText(window.location.href);
     showToast('Product link copied to your clipboard!');
   };
+
+  if (loadingProduct) {
+    return (
+      <div className="details-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: '16px' }}>
+        <div style={{ width: '48px', height: '48px', border: '4px solid #EFE8DE', borderTop: '4px solid #A67C52', borderRadius: '50%', animation: 'pdpSpin 1s linear infinite' }} />
+        <p style={{ color: '#64748B', fontSize: '1rem', fontWeight: 500 }}>Loading product details...</p>
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="details-container" style={{ textAlign: 'center', padding: '80px 20px' }}>
+        <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: '2rem', color: '#1A2E22', marginBottom: '12px' }}>Product Not Found</h2>
+        <p style={{ color: '#64748B', marginBottom: '24px' }}>The product you are looking for does not exist or has been removed.</p>
+        <Link to="/shop" style={{ display: 'inline-block', padding: '12px 24px', background: '#A67C52', color: '#FFF', borderRadius: '8px', textDecoration: 'none', fontWeight: 600 }}>
+          Back to Shop
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="details-container">
@@ -179,23 +169,20 @@ export default function ProductDetails() {
 
         {/* LEFT GALLERY COLUMN */}
         <div className="gallery-wrapper">
-          {/* Thumbnails list */}
-          <div className="gallery-thumbnails-col">
-            {product.gallery.map((imgUrl, idx) => (
-              <div 
-                key={idx} 
-                className={`thumb-item ${selectedImgIndex === idx ? 'active' : ''}`}
-                onClick={() => setSelectedImgIndex(idx)}
-              >
-                <img src={imgUrl} alt={`${product.name} Thumb ${idx + 1}`} />
-                {idx === 3 && (
-                  <div className="thumb-video-badge" onClick={(e) => { e.stopPropagation(); setIsVideoModalOpen(true); }}>
-                    <Play size={16} fill="#FFFFFF" />
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+          {/* Thumbnails list (Rendered only if multiple gallery images exist) */}
+          {product.gallery && product.gallery.length > 1 && (
+            <div className="gallery-thumbnails-col">
+              {product.gallery.map((imgUrl, idx) => (
+                <div 
+                  key={idx} 
+                  className={`thumb-item ${selectedImgIndex === idx ? 'active' : ''}`}
+                  onClick={() => setSelectedImgIndex(idx)}
+                >
+                  <img src={imgUrl} alt={`${product.name} Thumb ${idx + 1}`} />
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Large Main Image Display */}
           <div className="main-img-container">
@@ -212,17 +199,21 @@ export default function ProductDetails() {
               <Heart size={18} fill={isWishlisted ? '#E53E3E' : 'none'} />
             </button>
 
-            {/* Navigation Arrows */}
-            <button className="nav-arrow-btn nav-arrow-left" onClick={handlePrevImage}>
-              <ChevronLeft size={20} />
-            </button>
-            <button className="nav-arrow-btn nav-arrow-right" onClick={handleNextImage}>
-              <ChevronRight size={20} />
-            </button>
+            {/* Navigation Arrows (Rendered only if multiple images exist) */}
+            {product.gallery && product.gallery.length > 1 && (
+              <>
+                <button className="nav-arrow-btn nav-arrow-left" onClick={handlePrevImage}>
+                  <ChevronLeft size={20} />
+                </button>
+                <button className="nav-arrow-btn nav-arrow-right" onClick={handleNextImage}>
+                  <ChevronRight size={20} />
+                </button>
+              </>
+            )}
 
             {/* Main Image */}
             <img 
-              src={product.gallery[selectedImgIndex]} 
+              src={product.gallery[selectedImgIndex] || product.gallery[0]} 
               alt={product.name} 
               className="main-img-display"
             />
@@ -507,7 +498,9 @@ export default function ProductDetails() {
               <div className="review-card">
                 <div className="review-card-header">
                   <div className="reviewer-info">
-                    <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80" alt="Reviewer" className="reviewer-avatar" />
+                    <div className="reviewer-avatar-initials" style={{ width: 40, height: 40, borderRadius: '50%', background: '#A67C52', color: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.88rem' }}>
+                      SK
+                    </div>
                     <div>
                       <div className="reviewer-name">Samantha K.</div>
                       <div className="verified-badge"><CheckCircle2 size={12} /> Verified Buyer</div>

@@ -8,197 +8,10 @@ import { getProducts, getCategories } from '../services/api';
 import { addToCart } from '../services/cartService';
 import './Shop.css';
 
-// Initial shop catalog data matching the user's reference image exactly
-const SAMPLE_SHOP_PRODUCTS = [
-  {
-    id: 1,
-    name: 'Gentle Foaming Face Wash',
-    brand: 'Leafora',
-    category: 'Cleansers',
-    price: 18.00,
-    rating: 4.9,
-    reviews: 124,
-    badge: 'Best Seller',
-    badgeType: 'bestseller',
-    skinType: ['Normal', 'Oily', 'Sensitive'],
-    concerns: ['Acne', 'Brightening'],
-    inStock: true,
-    image: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=600&q=80',
-    description: 'Enriched with botanical green tea & chamomile extracts to gently purify skin without stripping essential moisture.'
-  },
-  {
-    id: 2,
-    name: 'Vitamin C Brightening Serum',
-    brand: 'Leafora',
-    category: 'Serums',
-    price: 28.00,
-    rating: 4.8,
-    reviews: 98,
-    badge: null,
-    skinType: ['Normal', 'Dry', 'Combination'],
-    concerns: ['Brightening', 'Dark Spots', 'Anti-Aging'],
-    inStock: true,
-    image: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=600&q=80',
-    description: '15% stabilized Vitamin C concentrate infused with Kakadu plum extract to target stubborn hyperpigmentation.'
-  },
-  {
-    id: 3,
-    name: 'Hydra Glow Moisturizer',
-    brand: 'Leafora',
-    category: 'Moisturizers',
-    price: 24.00,
-    rating: 5.0,
-    reviews: 156,
-    badge: null,
-    skinType: ['Dry', 'Normal', 'Sensitive'],
-    concerns: ['Hydration', 'Anti-Aging'],
-    inStock: true,
-    image: 'https://images.unsplash.com/photo-1608248597263-0057e57b4522?auto=format&fit=crop&w=600&q=80',
-    description: 'Triple peptide complex blended with cold-pressed jojoba nectar for all-day 72h continuous hydration.'
-  },
-  {
-    id: 4,
-    name: 'Daily Sunscreen SPF 50+',
-    brand: 'Leafora',
-    category: 'Sunscreens',
-    price: 22.00,
-    rating: 4.9,
-    reviews: 112,
-    badge: 'New',
-    badgeType: 'new',
-    skinType: ['Normal', 'Dry', 'Oily', 'Combination', 'Sensitive'],
-    concerns: ['Anti-Aging', 'Dark Spots'],
-    inStock: true,
-    image: 'https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?auto=format&fit=crop&w=600&q=80',
-    description: 'Non-comedogenic mineral SPF defense infused with zinc oxide and organic botanical antioxidants.'
-  },
-  {
-    id: 5,
-    name: 'Nourishing Night Cream',
-    brand: 'Leafora',
-    category: 'Moisturizers',
-    price: 26.00,
-    rating: 4.8,
-    reviews: 90,
-    badge: null,
-    skinType: ['Dry', 'Sensitive', 'Normal'],
-    concerns: ['Anti-Aging', 'Hydration'],
-    inStock: true,
-    image: 'https://images.unsplash.com/photo-1617897903246-719242758050?auto=format&fit=crop&w=600&q=80',
-    description: 'Overnight cell recovery cream powered by wild rosehip oil and bio-identical phytoceramides.'
-  },
-  {
-    id: 6,
-    name: 'Purifying Clay Face Mask',
-    brand: 'Leafora',
-    category: 'Face Masks',
-    price: 20.00,
-    rating: 4.7,
-    reviews: 76,
-    badge: null,
-    skinType: ['Oily', 'Combination'],
-    concerns: ['Acne', 'Brightening'],
-    inStock: true,
-    image: 'https://images.unsplash.com/photo-1571781926291-c477ebfd024b?auto=format&fit=crop&w=600&q=80',
-    description: 'French green kaolin clay with detoxifying bentonite to absorb excess sebum and refine pore texture.'
-  },
-  {
-    id: 7,
-    name: 'Revitalizing Eye Serum',
-    brand: 'Leafora',
-    category: 'Eye Care',
-    price: 25.00,
-    rating: 4.9,
-    reviews: 64,
-    badge: null,
-    skinType: ['Normal', 'Dry', 'Sensitive'],
-    concerns: ['Anti-Aging', 'Dark Spots', 'Hydration'],
-    inStock: true,
-    image: 'https://images.unsplash.com/photo-1601049541289-9b1b7bbbfe19?auto=format&fit=crop&w=600&q=80',
-    description: 'Caffeine peptide serum formulated to diminish periorbital puffiness and dark under-eye shadows.'
-  },
-  {
-    id: 8,
-    name: 'Hydrating Body Lotion',
-    brand: 'Leafora',
-    category: 'Body Care',
-    price: 24.00,
-    rating: 4.8,
-    reviews: 48,
-    badge: null,
-    skinType: ['Dry', 'Normal'],
-    concerns: ['Hydration'],
-    inStock: true,
-    image: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=600&q=80',
-    description: 'Silky botanical body moisturizer infused with shea butter and organic aloe vera juice.'
-  },
-  {
-    id: 9,
-    name: 'Radiant Glow Face Oil',
-    brand: 'Leafora',
-    category: 'Face Oils',
-    price: 28.00,
-    rating: 5.0,
-    reviews: 71,
-    badge: null,
-    skinType: ['Dry', 'Sensitive'],
-    concerns: ['Anti-Aging', 'Hydration', 'Brightening'],
-    inStock: true,
-    image: 'https://images.unsplash.com/photo-1608248597263-0057e57b4522?auto=format&fit=crop&w=600&q=80',
-    description: '100% cold-pressed marula and squalane nectar for velvety glass-skin luminosity.'
-  },
-  {
-    id: 10,
-    name: 'Soothing Herbal Toner',
-    brand: 'Leafora',
-    category: 'Toners',
-    price: 18.00,
-    rating: 4.7,
-    reviews: 52,
-    badge: null,
-    skinType: ['Sensitive', 'Normal', 'Oily'],
-    concerns: ['Acne', 'Hydration'],
-    inStock: true,
-    image: 'https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?auto=format&fit=crop&w=600&q=80',
-    description: 'Alcohol-free witch hazel and calendula mist to balance dermal pH and soothe irritation.'
-  },
-  {
-    id: 11,
-    name: 'Nourishing Lip Balm',
-    brand: 'Leafora',
-    category: 'Lip Care',
-    price: 12.00,
-    originalPrice: 15.00,
-    rating: 4.9,
-    reviews: 39,
-    badge: 'Sale',
-    badgeType: 'sale',
-    skinType: ['Normal', 'Dry'],
-    concerns: ['Hydration'],
-    inStock: true,
-    image: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=600&q=80',
-    description: 'Ultra-creamy coconut beeswax balm with sweet orange essential oil to repair chapped lips.'
-  },
-  {
-    id: 12,
-    name: 'Gentle Exfoliating Scrub',
-    brand: 'Leafora',
-    category: 'Cleansers',
-    price: 22.00,
-    rating: 4.8,
-    reviews: 61,
-    badge: null,
-    skinType: ['Normal', 'Oily', 'Combination'],
-    concerns: ['Brightening', 'Dark Spots'],
-    inStock: true,
-    image: 'https://images.unsplash.com/photo-1617897903246-719242758050?auto=format&fit=crop&w=600&q=80',
-    description: 'Biodegradable jojoba micro-beads paired with lactic acid to gently buff away dead skin cells.'
-  }
-];
-
 export default function Shop() {
   const navigate = useNavigate();
-  const [products, setProducts] = useState(SAMPLE_SHOP_PRODUCTS);
+  const [products, setProducts] = useState([]);
+  const [loadingProducts, setLoadingProducts] = useState(true);
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
   
   // Filter States matching reference image
@@ -226,15 +39,16 @@ export default function Shop() {
 
   // Load API products & categories from Database
   useEffect(() => {
+    setLoadingProducts(true);
     getProducts()
       .then(res => {
         if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
           const apiMerged = res.data.map((p, i) => ({
             id: p.id,
             name: p.name,
-            brand: 'Leafora',
-            category: p.category || 'Serums',
-            price: Number(p.price) || 24.00,
+            brand: p.brand || 'Leafora',
+            category: p.category || 'Skincare',
+            price: Number(p.price) || 0,
             rating: (4.7 + (i % 4) * 0.1).toFixed(1),
             reviews: 40 + i * 14,
             badge: i % 4 === 0 ? 'Best Seller' : i % 3 === 0 ? 'New' : null,
@@ -242,13 +56,16 @@ export default function Shop() {
             skinType: ['Normal', 'Dry'],
             concerns: ['Hydration'],
             inStock: true,
-            image: p.image_url || SAMPLE_SHOP_PRODUCTS[i % SAMPLE_SHOP_PRODUCTS.length].image,
-            description: p.description || SAMPLE_SHOP_PRODUCTS[i % SAMPLE_SHOP_PRODUCTS.length].description
+            image: p.image_url || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400"><rect width="400" height="400" fill="%23F7F4EE"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%23A67C52" font-family="sans-serif" font-size="16">No Image Available</text></svg>',
+            description: p.description || 'Natural botanical formulation crafted with organic ingredients.'
           }));
           setProducts(apiMerged);
+        } else {
+          setProducts([]);
         }
       })
-      .catch(() => console.warn('Using standard sample products for Shop page'));
+      .catch(() => setProducts([]))
+      .finally(() => setLoadingProducts(false));
 
     getCategories()
       .then(res => {
