@@ -127,13 +127,27 @@ const initDb = async () => {
       CREATE TABLE IF NOT EXISTS product_images (
         id INT AUTO_INCREMENT PRIMARY KEY,
         product_id INT NOT NULL,
-        image_url TEXT NOT NULL,
+        image_url LONGTEXT NOT NULL,
         is_primary TINYINT(1) DEFAULT 0,
         display_order INT DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         INDEX idx_product_id (product_id)
       );
     `);
+
+    // Ensure image columns use LONGTEXT to store base64 image data directly in database
+    const longtextQueries = [
+      "ALTER TABLE categories MODIFY COLUMN image_url LONGTEXT",
+      "ALTER TABLE categories MODIFY COLUMN icon_url LONGTEXT",
+      "ALTER TABLE categories MODIFY COLUMN banner_url LONGTEXT",
+      "ALTER TABLE products MODIFY COLUMN image_url LONGTEXT",
+      "ALTER TABLE products MODIFY COLUMN images LONGTEXT",
+      "ALTER TABLE product_images MODIFY COLUMN image_url LONGTEXT"
+    ];
+
+    for (const query of longtextQueries) {
+      try { await pool.query(query); } catch (e) {}
+    }
 
     // 4c. Product Variants Relational Table
     await pool.query(`

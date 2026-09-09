@@ -861,7 +861,7 @@ export default function AdminDashboard() {
     support_email: '',
     support_phone: '',
     store_address: '',
-    store_currency: 'USD ($)',
+    store_currency: 'INR (₹)',
     header_logo_url: '',
     footer_logo_url: '',
     favicon_url: ''
@@ -926,7 +926,7 @@ export default function AdminDashboard() {
           support_email: m.support_email || '',
           support_phone: m.support_phone || '',
           store_address: m.store_address || '',
-          store_currency: m.store_currency || 'USD ($)',
+          store_currency: m.store_currency || 'INR (₹)',
           header_logo_url: m.header_logo_url || '',
           footer_logo_url: m.footer_logo_url || '',
           favicon_url: m.favicon_url || ''
@@ -3926,7 +3926,7 @@ export default function AdminDashboard() {
                       </div>
 
                       <div className="leafora-form-group">
-                        <label className="leafora-form-label">Base Retail Price ($) *</label>
+                        <label className="leafora-form-label">Base Retail Price (₹) *</label>
                         <input
                           type="number"
                           step="0.01"
@@ -3981,7 +3981,7 @@ export default function AdminDashboard() {
                           <tr>
                             <th>Variant Name / Option</th>
                             <th>Variant SKU</th>
-                            <th>Price ($)</th>
+                            <th>Price (₹)</th>
                             <th>Variant Stock</th>
                             <th>Status</th>
                             <th style={{ textAlign: 'right' }}>Remove</th>
@@ -5554,7 +5554,7 @@ export default function AdminDashboard() {
                     {actionPromptModal.type === 'refund' && (
                       <form onSubmit={handleRefundOrderSubmit}>
                         <div className="leafora-form-group">
-                          <label className="leafora-form-label">Refund Amount ($)</label>
+                          <label className="leafora-form-label">Refund Amount (₹)</label>
                           <input
                             type="number"
                             step="0.01"
@@ -6319,7 +6319,7 @@ export default function AdminDashboard() {
                   </div>
 
                   <div className="leafora-form-group">
-                    <label className="leafora-form-label">Refund Amount ($)</label>
+                    <label className="leafora-form-label">Refund Amount (₹)</label>
                     <input
                       type="number"
                       step="0.01"
@@ -6995,7 +6995,7 @@ export default function AdminDashboard() {
                           />
                         </div>
                         <div className="leafora-form-group">
-                          <label className="leafora-form-label">Referral Earnings ($)</label>
+                          <label className="leafora-form-label">Referral Earnings (₹)</label>
                           <input
                             type="number"
                             step="0.01"
@@ -7269,7 +7269,7 @@ export default function AdminDashboard() {
                               <span style={{ fontWeight: 600 }}>{shp.weight || 0.5} kg</span>
                               <div style={{ fontSize: 10.5, color: '#6B7280' }}>{shp.length || 10}x{shp.width || 10}x{shp.height || 10} cm</div>
                             </td>
-                            <td style={{ fontWeight: 700, color: '#111827' }}>${parseFloat(shp.freight_charges || 12.5).toFixed(2)}</td>
+                            <td style={{ fontWeight: 700, color: '#111827' }}>₹{parseFloat(shp.freight_charges || 12.5).toFixed(2)}</td>
                             <td>
                               <span className={`leafora-status-pill ${
                                 shp.status === 'Delivered' ? 'delivered' :
@@ -7435,7 +7435,7 @@ export default function AdminDashboard() {
                             </div>
 
                             <div style={{ textAlign: 'right' }}>
-                              <div style={{ fontSize: 20, fontWeight: 800, color: '#111827' }}>${c.rate.toFixed(2)}</div>
+                              <div style={{ fontSize: 20, fontWeight: 800, color: '#111827' }}>₹{c.rate.toFixed(2)}</div>
                               <button
                                 type="button"
                                 className="leafora-cat-btn-primary"
@@ -7735,11 +7735,11 @@ export default function AdminDashboard() {
                       value={awbForm.courier_name}
                       onChange={(e) => setAwbForm({ ...awbForm, courier_name: e.target.value })}
                     >
-                      <option value="BlueDart Express Air">BlueDart Express Air ($14.50)</option>
-                      <option value="Delhivery Surface">Delhivery Surface ($8.20)</option>
-                      <option value="FedEx Express Priority">FedEx Express Priority ($22.00)</option>
-                      <option value="Xpressbees Air">Xpressbees Air ($9.90)</option>
-                      <option value="DTDC Express Gold">DTDC Express Gold ($7.50)</option>
+                      <option value="BlueDart Express Air">BlueDart Express Air (₹14.50)</option>
+                      <option value="Delhivery Surface">Delhivery Surface (₹8.20)</option>
+                      <option value="FedEx Express Priority">FedEx Express Priority (₹22.00)</option>
+                      <option value="Xpressbees Air">Xpressbees Air (₹9.90)</option>
+                      <option value="DTDC Express Gold">DTDC Express Gold (₹7.50)</option>
                     </select>
                   </div>
 
@@ -8270,7 +8270,7 @@ export default function AdminDashboard() {
                         >
                           <option value="all">All Discount Types</option>
                           <option value="percentage">Percentage (%)</option>
-                          <option value="fixed_amount">Fixed Amount ($)</option>
+                          <option value="fixed_amount">Fixed Amount (₹)</option>
                           <option value="free_shipping">Free Shipping</option>
                         </select>
                       </div>
@@ -8382,17 +8382,17 @@ export default function AdminDashboard() {
                                     color: cp.discount_type === 'percentage' ? '#7E22CE' : cp.discount_type === 'fixed_amount' ? '#15803D' : '#B45309',
                                     fontWeight: 700
                                   }}>
-                                    {cp.discount_type === 'percentage' ? `${cp.discount_value}% OFF` : cp.discount_type === 'fixed_amount' ? `$${parseFloat(cp.discount_value).toFixed(2)} OFF` : 'Free Shipping'}
+                                    {cp.discount_type === 'percentage' ? `${cp.discount_value}% OFF` : cp.discount_type === 'fixed_amount' ? `₹${parseFloat(cp.discount_value).toFixed(2)} OFF` : 'Free Shipping'}
                                   </span>
                                 </td>
 
                                 <td>
                                   <div style={{ fontSize: 11.5, color: '#374151', fontWeight: 600 }}>
-                                    Min Order: ${parseFloat(cp.min_purchase_amount || cp.min_order || 0).toFixed(2)}
+                                    Min Order: ₹{parseFloat(cp.min_purchase_amount || cp.min_order || 0).toFixed(2)}
                                   </div>
                                   {parseFloat(cp.max_discount_amount || 0) > 0 && (
                                     <div style={{ fontSize: 10.5, color: '#6B7280' }}>
-                                      Max Cap: ${parseFloat(cp.max_discount_amount).toFixed(2)}
+                                      Max Cap: ₹{parseFloat(cp.max_discount_amount).toFixed(2)}
                                     </div>
                                   )}
                                 </td>
@@ -8584,13 +8584,13 @@ export default function AdminDashboard() {
                           onChange={(e) => setSingleCouponForm({ ...singleCouponForm, discount_type: e.target.value })}
                         >
                           <option value="percentage">Percentage (%)</option>
-                          <option value="fixed_amount">Fixed Amount ($)</option>
+                          <option value="fixed_amount">Fixed Amount (₹)</option>
                           <option value="free_shipping">Free Shipping</option>
                         </select>
                       </div>
 
                       <div className="leafora-form-group">
-                        <label className="leafora-form-label">Discount Value ({singleCouponForm.discount_type === 'percentage' ? '%' : '$'})</label>
+                        <label className="leafora-form-label">Discount Value ({singleCouponForm.discount_type === 'percentage' ? '%' : '₹'})</label>
                         <input
                           type="number"
                           step="0.01"
@@ -8601,7 +8601,7 @@ export default function AdminDashboard() {
                       </div>
 
                       <div className="leafora-form-group">
-                        <label className="leafora-form-label">Minimum Purchase ($)</label>
+                        <label className="leafora-form-label">Minimum Purchase (₹)</label>
                         <input
                           type="number"
                           step="0.01"
@@ -8612,7 +8612,7 @@ export default function AdminDashboard() {
                       </div>
 
                       <div className="leafora-form-group">
-                        <label className="leafora-form-label">Maximum Discount Cap ($)</label>
+                        <label className="leafora-form-label">Maximum Discount Cap (₹)</label>
                         <input
                           type="number"
                           step="0.01"
@@ -8747,7 +8747,7 @@ export default function AdminDashboard() {
                                   else setSingleCouponForm(prev => ({ ...prev, target_ids: prev.target_ids.filter(id => id !== p.id) }));
                                 }}
                               />
-                              {p.name} (${parseFloat(p.price || 0).toFixed(2)})
+                              {p.name} (₹{parseFloat(p.price || 0).toFixed(2)})
                             </label>
                           ))}
                         </div>
@@ -8838,7 +8838,7 @@ export default function AdminDashboard() {
                           onChange={(e) => setBulkGenForm({ ...bulkGenForm, discount_type: e.target.value })}
                         >
                           <option value="percentage">Percentage (%)</option>
-                          <option value="fixed_amount">Fixed Amount ($)</option>
+                          <option value="fixed_amount">Fixed Amount (₹)</option>
                           <option value="free_shipping">Free Shipping</option>
                         </select>
                       </div>
@@ -8857,7 +8857,7 @@ export default function AdminDashboard() {
 
                     <div className="leafora-prod-form-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 16 }}>
                       <div className="leafora-form-group">
-                        <label className="leafora-form-label">Min Purchase ($)</label>
+                        <label className="leafora-form-label">Min Purchase (₹)</label>
                         <input
                           type="number"
                           step="0.01"
@@ -8931,7 +8931,7 @@ export default function AdminDashboard() {
                         <div className="leafora-metric-icon"><DollarSign size={16} color="#16A34A" /></div>
                       </div>
                       <div className="leafora-metric-value" style={{ color: '#16A34A' }}>
-                        ${parseFloat(couponAnalytics?.totalDiscountSaved || 0).toFixed(2)}
+                        ₹{parseFloat(couponAnalytics?.totalDiscountSaved || 0).toFixed(2)}
                       </div>
                       <div className="leafora-metric-sub">Total discount granted</div>
                     </div>
@@ -8942,7 +8942,7 @@ export default function AdminDashboard() {
                         <div className="leafora-metric-icon"><TrendingUp size={16} color="#2563EB" /></div>
                       </div>
                       <div className="leafora-metric-value" style={{ color: '#2563EB' }}>
-                        ${parseFloat(couponAnalytics?.totalCouponSales || 0).toFixed(2)}
+                        ₹{parseFloat(couponAnalytics?.totalCouponSales || 0).toFixed(2)}
                       </div>
                       <div className="leafora-metric-sub">Gross sales from promo orders</div>
                     </div>
@@ -8976,8 +8976,8 @@ export default function AdminDashboard() {
                             <td style={{ fontWeight: 700, color: '#A37F3F' }}>#{idx + 1}</td>
                             <td style={{ fontWeight: 700, fontFamily: 'monospace', color: '#111827' }}>{tc.coupon_code}</td>
                             <td style={{ fontWeight: 700 }}>{tc.usage_count} times</td>
-                            <td style={{ color: '#16A34A', fontWeight: 700 }}>${parseFloat(tc.total_discount || 0).toFixed(2)}</td>
-                            <td style={{ fontWeight: 700, color: '#2563EB' }}>${parseFloat(tc.gross_sales || 0).toFixed(2)}</td>
+                            <td style={{ color: '#16A34A', fontWeight: 700 }}>₹{parseFloat(tc.total_discount || 0).toFixed(2)}</td>
+                            <td style={{ fontWeight: 700, color: '#2563EB' }}>₹{parseFloat(tc.gross_sales || 0).toFixed(2)}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -9031,8 +9031,8 @@ export default function AdminDashboard() {
                                 {h.coupon_code}
                               </span>
                             </td>
-                            <td style={{ color: '#16A34A', fontWeight: 700 }}>-${parseFloat(h.discount_applied || 0).toFixed(2)}</td>
-                            <td style={{ fontWeight: 700 }}>${parseFloat(h.order_total || 0).toFixed(2)}</td>
+                            <td style={{ color: '#16A34A', fontWeight: 700 }}>-₹{parseFloat(h.discount_applied || 0).toFixed(2)}</td>
+                            <td style={{ fontWeight: 700 }}>₹{parseFloat(h.order_total || 0).toFixed(2)}</td>
                             <td style={{ fontSize: 11, color: '#6B7280' }}>{h.used_at ? new Date(h.used_at).toLocaleString() : 'Recent'}</td>
                           </tr>
                         ))
@@ -9143,7 +9143,7 @@ export default function AdminDashboard() {
                         <div className="leafora-metric-icon"><CheckCircle2 size={16} color="#16A34A" /></div>
                       </div>
                       <div className="leafora-metric-value" style={{ color: '#16A34A' }}>
-                        ${parseFloat(referralMetrics.approvedAmount || 0).toFixed(2)}
+                        ₹{parseFloat(referralMetrics.approvedAmount || 0).toFixed(2)}
                       </div>
                       <div className="leafora-metric-sub">{referralMetrics.approvedCount || 0} approved payouts</div>
                     </div>
@@ -9227,11 +9227,11 @@ export default function AdminDashboard() {
                               </td>
 
                               <td style={{ fontWeight: 700, color: '#16A34A' }}>
-                                +${parseFloat(r.reward_amount || 15.00).toFixed(2)}
+                                +₹{parseFloat(r.reward_amount || 15.00).toFixed(2)}
                               </td>
 
                               <td style={{ fontWeight: 600, color: '#2563EB' }}>
-                                ${parseFloat(r.referee_discount || 10.00).toFixed(2)} OFF
+                                ₹{parseFloat(r.referee_discount || 10.00).toFixed(2)} OFF
                               </td>
 
                               <td>
@@ -9336,7 +9336,7 @@ export default function AdminDashboard() {
                     <h5 style={{ margin: '0 0 12px 0', fontSize: 14, fontWeight: 700, color: '#374151' }}>Referral Incentives Config</h5>
                     <div className="leafora-prod-form-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 20 }}>
                       <div className="leafora-form-group">
-                        <label className="leafora-form-label">Referrer Wallet Reward ($)</label>
+                        <label className="leafora-form-label">Referrer Wallet Reward (₹)</label>
                         <input
                           type="number"
                           step="0.01"
@@ -9348,7 +9348,7 @@ export default function AdminDashboard() {
                       </div>
 
                       <div className="leafora-form-group">
-                        <label className="leafora-form-label">Referee Friend Discount ($)</label>
+                        <label className="leafora-form-label">Referee Friend Discount (₹)</label>
                         <input
                           type="number"
                           step="0.01"
@@ -9360,7 +9360,7 @@ export default function AdminDashboard() {
                       </div>
 
                       <div className="leafora-form-group">
-                        <label className="leafora-form-label">Min Order Requirement ($)</label>
+                        <label className="leafora-form-label">Min Order Requirement (₹)</label>
                         <input
                           type="number"
                           step="0.01"
@@ -9375,7 +9375,7 @@ export default function AdminDashboard() {
                     <h5 style={{ margin: '18px 0 12px 0', fontSize: 14, fontWeight: 700, color: '#374151' }}>Wallet Rules & Limits</h5>
                     <div className="leafora-prod-form-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 20 }}>
                       <div className="leafora-form-group">
-                        <label className="leafora-form-label">New Account Signup Bonus ($)</label>
+                        <label className="leafora-form-label">New Account Signup Bonus (₹)</label>
                         <input
                           type="number"
                           step="0.01"
@@ -9387,7 +9387,7 @@ export default function AdminDashboard() {
                       </div>
 
                       <div className="leafora-form-group">
-                        <label className="leafora-form-label">Min Cashout / Redeem Threshold ($)</label>
+                        <label className="leafora-form-label">Min Cashout / Redeem Threshold (₹)</label>
                         <input
                           type="number"
                           step="0.01"
@@ -9566,7 +9566,7 @@ export default function AdminDashboard() {
                       </div>
 
                       <div className="leafora-form-group">
-                        <label className="leafora-form-label">Adjustment Amount ($) *</label>
+                        <label className="leafora-form-label">Adjustment Amount (₹) *</label>
                         <input
                           type="number"
                           step="0.01"
@@ -10850,7 +10850,7 @@ export default function AdminDashboard() {
                           value={storeSettingsForm.store_currency}
                           onChange={(e) => setStoreSettingsForm({ ...storeSettingsForm, store_currency: e.target.value })}
                         >
-                          <option value="USD ($)">USD ($)</option>
+                          <option value="INR (₹)">INR (₹)</option>
                           <option value="INR (₹)">INR (₹)</option>
                           <option value="EUR (€)">EUR (€)</option>
                           <option value="GBP (£)">GBP (£)</option>

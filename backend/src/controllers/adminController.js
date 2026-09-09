@@ -584,7 +584,7 @@ const importCategoriesCsv = async (req, res) => {
   }
 };
 
-// ─── IMAGE UPLOAD HANDLING ───
+// ─── IMAGE UPLOAD HANDLING (DIRECT DATABASE STORAGE) ───
 const uploadImage = async (req, res) => {
   try {
     const { image_data } = req.body;
@@ -592,26 +592,17 @@ const uploadImage = async (req, res) => {
       return res.status(400).json({ success: false, message: 'No image data provided' });
     }
 
-    let base64Data = image_data;
-    let extension = 'png';
-
-    const matches = image_data.match(/^data:image\/([a-zA-Z0-9]+);base64,(.+)$/);
-    if (matches) {
-      extension = matches[1] === 'jpeg' ? 'jpg' : matches[1];
-      base64Data = matches[2];
+    let dataUrl = image_data;
+    if (!image_data.startsWith('data:image/')) {
+      dataUrl = `data:image/jpeg;base64,${image_data}`;
     }
 
-    const fileName = `img_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${extension}`;
-    const uploadsDir = path.join(__dirname, '../../public/uploads');
-    if (!fs.existsSync(uploadsDir)) {
-      fs.mkdirSync(uploadsDir, { recursive: true });
-    }
-
-    const filePath = path.join(uploadsDir, fileName);
-    fs.writeFileSync(filePath, Buffer.from(base64Data, 'base64'));
-
-    const fileUrl = `/uploads/${fileName}`;
-    return res.status(200).json({ success: true, url: fileUrl, message: 'Image uploaded successfully' });
+    // Return Base64 Data URL directly for direct MySQL database storage
+    return res.status(200).json({ 
+      success: true, 
+      url: dataUrl, 
+      message: 'Image prepared for database storage successfully' 
+    });
   } catch (error) {
     console.error('Upload Error:', error);
     return res.status(500).json({ success: false, message: error.message });

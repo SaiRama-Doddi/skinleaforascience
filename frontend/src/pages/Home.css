@@ -106,19 +106,25 @@
   display: block;
 }
 
-/* Mobile: Increased Hero Section Height */
+/* Mobile: Display full hero banner image cleanly without any text or product cropping */
 @media (max-width: 768px) {
+  .hero-banner-container-pixel {
+    background-color: #FAF7F2;
+  }
+
   .hero-banner-image-box {
-    height: 38vh;
-    min-height: 250px;
-    max-height: 360px;
+    width: 100%;
+    height: auto;
+    min-height: auto;
+    max-height: auto;
   }
 
   .hero-banner-img {
     width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: 8% center;
+    height: auto;
+    object-fit: contain;
+    object-position: center center;
+    display: block;
   }
 }
 
