@@ -99,7 +99,7 @@ export default function Cart() {
       if (u.email) {
         userGetAddresses(u.email)
           .then(res => {
-            const addrs = res?.data?.addresses || [];
+            const addrs = res?.addresses || res?.data?.addresses || [];
             setUserAddresses(addrs);
             if (addrs.length > 0) {
               const def = addrs.find(a => a.is_default) || addrs[0];
@@ -135,15 +135,16 @@ export default function Cart() {
         customer_id: user.id
       };
       const res = await userAddAddress(payload);
-      if (res?.data?.success || res?.success) {
+      if (res?.success || res?.data?.success) {
         showToast('New delivery address saved!');
         setShowInlineAddrForm(false);
         // Refresh address list
         const refreshed = await userGetAddresses(user.email);
-        const addrs = refreshed?.data?.addresses || [];
+        const addrs = refreshed?.addresses || refreshed?.data?.addresses || [];
         setUserAddresses(addrs);
-        if (res?.data?.address_id) {
-          setSelectedAddressId(res.data.address_id);
+        const addrId = res?.address_id || res?.data?.address_id;
+        if (addrId) {
+          setSelectedAddressId(addrId);
         } else if (addrs.length > 0) {
           setSelectedAddressId(addrs[0].id);
         }

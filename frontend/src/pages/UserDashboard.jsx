@@ -73,8 +73,8 @@ export default function UserDashboard() {
       if (parsed.email) {
         userGetProfile(parsed.email)
           .then(res => {
-            if (res?.data?.user) {
-              const u = res.data.user;
+            const u = res?.user || res?.data?.user;
+            if (u) {
               setUser(u);
               setProfileForm({
                 first_name: u.first_name || '',
@@ -101,19 +101,22 @@ export default function UserDashboard() {
     if (activeTab === 'addresses') {
       userGetAddresses(user.email)
         .then(res => {
-          if (res?.data?.addresses) setAddresses(res.data.addresses);
+          const list = res?.addresses || res?.data?.addresses;
+          if (list) setAddresses(list);
         })
         .catch(() => {});
     } else if (activeTab === 'orders') {
       userGetOrders(user.email)
         .then(res => {
-          if (res?.data?.orders) setOrders(res.data.orders);
+          const list = res?.orders || res?.data?.orders;
+          if (list) setOrders(list);
         })
         .catch(() => {});
     } else if (activeTab === 'wishlist') {
       userGetWishlist(user.email)
         .then(res => {
-          if (res?.data?.wishlist) setWishlist(res.data.wishlist);
+          const list = res?.wishlist || res?.data?.wishlist;
+          if (list) setWishlist(list);
         })
         .catch(() => {});
     }
@@ -126,7 +129,7 @@ export default function UserDashboard() {
 
     try {
       const res = await userUpdateProfile(profileForm);
-      if (res?.data?.success || res?.success) {
+      if (res?.success || res?.data?.success) {
         const updatedUser = {
           ...user,
           first_name: profileForm.first_name,
@@ -157,7 +160,7 @@ export default function UserDashboard() {
         customer_id: user.id
       };
       const res = await userAddAddress(payload);
-      if (res?.data?.success || res?.success) {
+      if (res?.success || res?.data?.success) {
         showToast('New delivery address added successfully!');
         setShowAddressModal(false);
         setNewAddr({
@@ -165,7 +168,7 @@ export default function UserDashboard() {
           city: '', state: '', pincode: '', is_default: false
         });
         // Refresh addresses
-        userGetAddresses(user.email).then(r => setAddresses(r?.data?.addresses || []));
+        userGetAddresses(user.email).then(r => setAddresses(r?.addresses || r?.data?.addresses || []));
       }
     } catch (err) {
       showToast(err.message || 'Error adding address.');
