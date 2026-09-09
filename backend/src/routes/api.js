@@ -5,6 +5,7 @@ const adminController = require('../controllers/adminController');
 const authController = require('../controllers/authController');
 
 const userController = require('../controllers/userController');
+const paymentController = require('../controllers/paymentController');
 
 const router = express.Router();
 
@@ -32,6 +33,10 @@ router.delete('/user/addresses/:id', userController.deleteUserAddress);
 router.get('/user/orders', userController.getUserOrders);
 router.get('/user/wishlist', userController.getUserWishlist);
 router.post('/orders/place', userController.placeUserOrder);
+
+// ─── RAZORPAY PAYMENT ENDPOINTS ───
+router.post('/payments/create-razorpay-order', paymentController.createRazorpayOrder);
+router.post('/payments/verify-razorpay-payment', paymentController.verifyRazorpayPayment);
 
 // ─── ADMIN AUTHENTICATION ───
 router.post('/admin/send-otp', adminController.sendOtp);

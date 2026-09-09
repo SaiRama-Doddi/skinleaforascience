@@ -207,9 +207,45 @@ const initDb = async () => {
       "ALTER TABLE orders ADD COLUMN admin_notes TEXT AFTER customer_notes",
       "ALTER TABLE orders ADD COLUMN return_reason TEXT AFTER admin_notes",
       "ALTER TABLE orders ADD COLUMN exchange_notes TEXT AFTER return_reason",
-      "ALTER TABLE orders ADD COLUMN deleted_at DATETIME DEFAULT NULL AFTER exchange_notes"
+      "ALTER TABLE orders ADD COLUMN deleted_at DATETIME DEFAULT NULL AFTER exchange_notes",
+      "ALTER TABLE orders ADD COLUMN payment_method VARCHAR(50) DEFAULT 'COD' AFTER payment_status",
+      "ALTER TABLE orders ADD COLUMN razorpay_order_id VARCHAR(100) DEFAULT NULL AFTER payment_method",
+      "ALTER TABLE orders ADD COLUMN razorpay_payment_id VARCHAR(100) DEFAULT NULL AFTER razorpay_order_id",
+      "ALTER TABLE orders ADD COLUMN razorpay_signature VARCHAR(255) DEFAULT NULL AFTER razorpay_payment_id"
     ];
     for (const query of ordCols) {
+      try { await pool.query(query); } catch (e) {}
+    }
+
+    // 5d. Payments Table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS payments (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        order_id INT DEFAULT NULL,
+        order_number VARCHAR(100) DEFAULT NULL,
+        customer_name VARCHAR(255) DEFAULT NULL,
+        customer_email VARCHAR(255) NOT NULL,
+        transaction_id VARCHAR(100) DEFAULT NULL,
+        amount DECIMAL(10, 2) NOT NULL,
+        payment_method VARCHAR(50) DEFAULT 'Razorpay',
+        gateway VARCHAR(50) DEFAULT 'Razorpay',
+        razorpay_order_id VARCHAR(100) DEFAULT NULL,
+        razorpay_payment_id VARCHAR(100) DEFAULT NULL,
+        razorpay_signature VARCHAR(255) DEFAULT NULL,
+        status VARCHAR(50) DEFAULT 'Captured',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    const pmtCols = [
+      "ALTER TABLE payments ADD COLUMN customer_name VARCHAR(255) DEFAULT NULL AFTER order_number",
+      "ALTER TABLE payments ADD COLUMN transaction_id VARCHAR(100) DEFAULT NULL AFTER customer_email",
+      "ALTER TABLE payments ADD COLUMN gateway VARCHAR(50) DEFAULT 'Razorpay' AFTER payment_method",
+      "ALTER TABLE payments ADD COLUMN razorpay_order_id VARCHAR(100) DEFAULT NULL AFTER gateway",
+      "ALTER TABLE payments ADD COLUMN razorpay_payment_id VARCHAR(100) DEFAULT NULL AFTER razorpay_order_id",
+      "ALTER TABLE payments ADD COLUMN razorpay_signature VARCHAR(255) DEFAULT NULL AFTER razorpay_payment_id"
+    ];
+    for (const query of pmtCols) {
       try { await pool.query(query); } catch (e) {}
     }
 

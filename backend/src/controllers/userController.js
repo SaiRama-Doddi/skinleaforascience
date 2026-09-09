@@ -223,7 +223,10 @@ const placeUserOrder = async (req, res) => {
       shipping_fee, 
       discount_amount, 
       total_amount, 
-      payment_method 
+      payment_method,
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature
     } = req.body;
 
     if (!customer_email || !items || items.length === 0) {
@@ -235,9 +238,12 @@ const placeUserOrder = async (req, res) => {
       ? `${shipping_address.name ? shipping_address.name + ', ' : ''}${shipping_address.address_line1}${shipping_address.address_line2 ? ', ' + shipping_address.address_line2 : ''}, ${shipping_address.city}, ${shipping_address.state} - ${shipping_address.pincode} (Phone: ${shipping_address.phone || customer_phone})`
       : shipping_address;
 
+    const pm = payment_method || (razorpay_payment_id ? 'Razorpay' : 'COD');
+    const ps = pm === 'COD' ? 'Pending' : 'Paid';
+
     const [orderResult] = await pool.query(
-      `INSERT INTO orders (order_number, customer_name, customer_email, customer_phone, subtotal, shipping_fee, discount_amount, total_amount, status, payment_status, shipping_address)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Pending', ?, ?)`,
+      `INSERT INTO orders (order_number, customer_name, customer_email, customer_phone, subtotal, shipping_fee, discount_amount, total_amount, status, payment_status, payment_method, razorpay_order_id, razorpay_payment_id, razorpay_signature, shipping_address)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Pending', ?, ?, ?, ?, ?, ?)`,
       [
         orderNumber,
         customer_name || customer_email.split('@')[0],
@@ -247,15 +253,20 @@ const placeUserOrder = async (req, res) => {
         shipping_fee || 0.00,
         discount_amount || 0.00,
         total_amount,
-        payment_method === 'COD' ? 'Pending' : 'Paid',
+        ps,
+        pm,
+        razorpay_order_id || null,
+        razorpay_payment_id || null,
+        razorpay_signature || null,
         formattedAddress
       ]
     );
 
     const orderId = orderResult.insertId;
 
-    // Insert order items
+    // Insert order items and automatically reduce product stock
     for (const item of items) {
+      const qty = item.quantity || 1;
       await pool.query(
         `INSERT INTO order_items (order_id, product_id, product_name, product_image, price, quantity, total_price)
          VALUES (?, ?, ?, ?, ?, ?, ?)`,
@@ -265,17 +276,49 @@ const placeUserOrder = async (req, res) => {
           item.name,
           item.image_url || item.image || '',
           item.price,
-          item.quantity || 1,
-          (item.price * (item.quantity || 1))
+          qty,
+          (item.price * qty)
         ]
       );
+
+      // Deduct quantity from products stock table automatically
+      if (item.id) {
+        await pool.query(
+          `UPDATE products SET stock = GREATEST(0, stock - ?) WHERE id = ?`,
+          [qty, item.id]
+        );
+      }
+    }
+
+    // Insert Payment Log Entry in Database
+    try {
+      await pool.query(
+        `INSERT INTO payments (order_id, order_number, customer_name, customer_email, transaction_id, amount, payment_method, gateway, razorpay_order_id, razorpay_payment_id, razorpay_signature, status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          orderId,
+          orderNumber,
+          customer_name || customer_email.split('@')[0],
+          customer_email.trim().toLowerCase(),
+          razorpay_payment_id || `TXN_${Date.now()}`,
+          total_amount,
+          pm,
+          pm === 'Razorpay' ? 'Razorpay' : 'COD',
+          razorpay_order_id || null,
+          razorpay_payment_id || null,
+          razorpay_signature || null,
+          ps === 'Paid' ? 'Success' : 'Pending'
+        ]
+      );
+    } catch (e) {
+      console.warn('Could not insert payment record:', e.message);
     }
 
     // Insert Timeline Event
     await pool.query(
       `INSERT INTO order_timeline (order_id, title, description, status)
        VALUES (?, 'Order Placed', ?, 'Pending')`,
-      [orderId, `Order #${orderNumber} placed successfully via ${payment_method || 'Online Payment'}.`]
+      [orderId, `Order #${orderNumber} placed successfully via ${pm}.`]
     );
 
     // Trigger confirmation email
@@ -296,7 +339,9 @@ const placeUserOrder = async (req, res) => {
         id: orderId,
         order_number: orderNumber,
         total_amount,
-        status: 'Pending'
+        status: 'Pending',
+        payment_method: pm,
+        payment_status: ps
       }
     });
 

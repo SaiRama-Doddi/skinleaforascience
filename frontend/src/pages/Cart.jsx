@@ -175,30 +175,124 @@ export default function Cart() {
 
     setPlacingOrder(true);
     try {
-      const payload = {
-        customer_name: user?.name || (user?.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : 'Valued Customer'),
-        customer_email: user?.email,
-        customer_phone: user?.phone || chosenAddress.phone || '',
-        shipping_address: chosenAddress,
-        items: cartItems,
-        subtotal,
-        shipping_fee: shippingCost,
-        total_amount: totalAmount,
-        payment_method: paymentMethod
-      };
+      if (paymentMethod === 'UPI' || paymentMethod === 'Razorpay') {
+        const scriptLoaded = await loadRazorpayScript();
+        if (!scriptLoaded) {
+          showToast('Failed to load Razorpay payment gateway. Check internet connection.');
+          setPlacingOrder(false);
+          return;
+        }
 
-      const res = await placeOrder(payload);
-      if (res?.data?.success || res?.success) {
-        const ord = res?.data?.order || res?.order;
-        setOrderPlacedData(ord);
-        clearCart();
-        refreshCart();
+        const rzpRes = await createRazorpayOrder(totalAmount);
+        const rzpData = rzpRes?.data || rzpRes;
+        if (!rzpData?.order_id) {
+          showToast(rzpData?.message || 'Error initializing Razorpay order.');
+          setPlacingOrder(false);
+          return;
+        }
+
+        const options = {
+          key: rzpData.key_id || 'rzp_test_SwedUUn1KgRMs0',
+          amount: rzpData.amount,
+          currency: rzpData.currency || 'INR',
+          name: 'Leafora Life Sciences',
+          description: `Order Payment - ₹${totalAmount.toFixed(2)}`,
+          image: 'https://api.dicebear.com/7.x/bottts/svg?seed=Leafora',
+          order_id: rzpData.order_id,
+          prefill: {
+            name: user?.name || chosenAddress?.name || 'Customer',
+            email: user?.email || '',
+            contact: user?.phone || chosenAddress?.phone || ''
+          },
+          theme: {
+            color: '#A67C52'
+          },
+          handler: async function (response) {
+            try {
+              const verifyRes = await verifyRazorpayPayment({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature
+              });
+              const verifyData = verifyRes?.data || verifyRes;
+
+              if (verifyData?.success || verifyData?.verified) {
+                const payload = {
+                  customer_name: user?.name || (user?.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : 'Valued Customer'),
+                  customer_email: user?.email,
+                  customer_phone: user?.phone || chosenAddress.phone || '',
+                  shipping_address: chosenAddress,
+                  items: cartItems,
+                  subtotal,
+                  shipping_fee: shippingCost,
+                  total_amount: totalAmount,
+                  payment_method: 'Razorpay',
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature
+                };
+
+                const res = await placeOrder(payload);
+                if (res?.data?.success || res?.success) {
+                  const ord = res?.data?.order || res?.order;
+                  setOrderPlacedData(ord);
+                  setShowCheckoutModal(false);
+                  clearCart();
+                  refreshCart();
+                } else {
+                  showToast(res?.message || 'Error saving order after payment.');
+                }
+              } else {
+                showToast('Payment signature verification failed.');
+              }
+            } catch (e) {
+              showToast('Error verifying Razorpay payment.');
+            } finally {
+              setPlacingOrder(false);
+            }
+          },
+          modal: {
+            ondismiss: function () {
+              setPlacingOrder(false);
+              showToast('Razorpay payment cancelled.');
+            }
+          }
+        };
+
+        const rzp = new window.Razorpay(options);
+        rzp.on('payment.failed', function (response) {
+          setPlacingOrder(false);
+          showToast(response.error?.description || 'Razorpay Payment Failed.');
+        });
+        rzp.open();
+
       } else {
-        showToast(res?.message || 'Error placing order. Please try again.');
+        const payload = {
+          customer_name: user?.name || (user?.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : 'Valued Customer'),
+          customer_email: user?.email,
+          customer_phone: user?.phone || chosenAddress.phone || '',
+          shipping_address: chosenAddress,
+          items: cartItems,
+          subtotal,
+          shipping_fee: shippingCost,
+          total_amount: totalAmount,
+          payment_method: 'COD'
+        };
+
+        const res = await placeOrder(payload);
+        if (res?.data?.success || res?.success) {
+          const ord = res?.data?.order || res?.order;
+          setOrderPlacedData(ord);
+          setShowCheckoutModal(false);
+          clearCart();
+          refreshCart();
+        } else {
+          showToast(res?.message || 'Error placing order. Please try again.');
+        }
+        setPlacingOrder(false);
       }
     } catch (err) {
       showToast(err.message || 'Failed to place order.');
-    } finally {
       setPlacingOrder(false);
     }
   };
