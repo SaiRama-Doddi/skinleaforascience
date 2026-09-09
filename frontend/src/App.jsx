@@ -11,6 +11,8 @@ import AuthPage from './pages/AuthPage';
 import UserDashboard from './pages/UserDashboard';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
+import AboutUs from './pages/AboutUs';
+import ContactUs from './pages/ContactUs';
 
 // Guard for Admin Dashboard
 function AdminProtectedRoute({ children }) {
@@ -45,6 +47,10 @@ function Layout() {
           <Route path="/" element={<Home />} />
           <Route path="/shop" element={<Shop />} />
           <Route path="/products" element={<Shop />} />
+          <Route path="/about" element={<AboutUs />} />
+          <Route path="/about-us" element={<AboutUs />} />
+          <Route path="/contact" element={<ContactUs />} />
+          <Route path="/contact-us" element={<ContactUs />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/product/:id" element={<ProductDetails />} />
           <Route path="/products/:id" element={<ProductDetails />} />

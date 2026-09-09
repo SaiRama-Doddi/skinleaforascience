@@ -7,6 +7,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { getCategories, getProducts } from '../services/api';
 import { addToCart } from '../services/cartService';
 import heroImage from '../assets/heroimage.jpeg';
+import skincareStoryImg from '../assets/skincare_story_showcase.jpg';
 import './Home.css';
 
 export default function Home() {
@@ -221,7 +222,7 @@ export default function Home() {
               {/* TALL GOLDEN PROMO CARD */}
               <div className="tall-golden-promo-card-pixel">
                 <img 
-                  src="/assets/leafora_golden_promo.jpg" 
+                  src={skincareStoryImg} 
                   alt="Nature Meets Science Promo Background"
                   style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.25, zIndex: 1 }} 
                 />
@@ -291,15 +292,15 @@ export default function Home() {
             <p className="section-desc-pixel">
               Good for your skin. Good for the planet.
             </p>
-            <Link to="/shop" className="btn-bronze-pill-pixel">
+            <Link to="/products" className="btn-bronze-pill-pixel">
               Learn Our Story <ArrowRight size={16} />
             </Link>
           </div>
 
           {/* Center Product Pedestal Image */}
-          <div>
+          <div className="story-center-box">
             <img 
-              src="/assets/leafora_golden_promo.jpg" 
+              src={skincareStoryImg} 
               alt="Skincare That Cares Product Lineup" 
               className="story-center-img-pixel"
             />

@@ -160,8 +160,8 @@ export default function Navbar() {
               <span>Skincare</span> <ChevronDown size={14} />
             </div>
             <Link to="/products" className="nav-item" onClick={() => setIsMobileMenuOpen(false)}>Best Sellers</Link>
-            <a href="#about" className="nav-item" onClick={() => setIsMobileMenuOpen(false)}>About Us</a>
-            <a href="#contact" className="nav-item" onClick={() => setIsMobileMenuOpen(false)}>Contact Us</a>
+            <Link to="/about" className={`nav-item ${location.pathname === '/about' ? 'active' : ''}`} onClick={() => setIsMobileMenuOpen(false)}>About Us</Link>
+            <Link to="/contact" className={`nav-item ${location.pathname === '/contact' ? 'active' : ''}`} onClick={() => setIsMobileMenuOpen(false)}>Contact Us</Link>
 
             <div className="mobile-drawer-footer">
               {!user ? (
