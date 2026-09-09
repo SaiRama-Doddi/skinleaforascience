@@ -106,19 +106,19 @@
   display: block;
 }
 
-/* Mobile: Fit full banner image cleanly without cutting off left text or right products */
+/* Mobile: Increased Hero Section Height */
 @media (max-width: 768px) {
   .hero-banner-image-box {
-    height: auto;
-    min-height: unset;
-    max-height: unset;
+    height: 38vh;
+    min-height: 250px;
+    max-height: 360px;
   }
 
   .hero-banner-img {
     width: 100%;
-    height: auto;
-    object-fit: contain;
-    object-position: center center;
+    height: 100%;
+    object-fit: cover;
+    object-position: 8% center;
   }
 }
 
@@ -197,36 +197,77 @@
   gap: 8px;
 }
 
+/* 2. SHOP BY CATEGORY - DESKTOP 1 ROW EQUAL SPACING */
 .category-scroll-wrapper {
   display: flex;
-  gap: 24px;
-  overflow-x: auto;
-  scroll-behavior: smooth;
-  -webkit-overflow-scrolling: touch;
-  padding: 8px 4px 16px 4px;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.category-scroll-wrapper::-webkit-scrollbar {
-  display: none;
+  justify-content: space-between;
+  align-items: flex-start;
+  width: 100%;
+  padding: 8px 0;
+  gap: 16px;
 }
 
 .category-scroll-wrapper .category-pill-card-pixel {
-  flex: 0 0 auto;
-  width: 130px;
+  flex: 1;
+  max-width: 130px;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
-@media (max-width: 600px) {
+/* Mobile & Tablet Layout: 2 Rows Grid */
+@media (max-width: 768px) {
+  .category-section-pixel {
+    padding: 32px 16px;
+  }
+
   .category-scroll-wrapper {
-    gap: 16px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px 10px;
+    width: 100%;
+    overflow: visible;
+    padding: 8px 0;
   }
 
   .category-scroll-wrapper .category-pill-card-pixel {
-    width: 105px;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .category-circle-box-pixel {
+    width: 68px;
+    height: 68px;
+  }
+
+  .category-circle-box-pixel img {
+    width: 46px;
+    height: 46px;
+  }
+
+  .category-pill-name-pixel {
+    font-size: 0.76rem;
+  }
+}
+
+@media (max-width: 400px) {
+  .category-scroll-wrapper {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px 6px;
+  }
+
+  .category-circle-box-pixel {
+    width: 60px;
+    height: 60px;
+  }
+
+  .category-circle-box-pixel img {
+    width: 40px;
+    height: 40px;
+  }
+
+  .category-pill-name-pixel {
+    font-size: 0.72rem;
   }
 }
 

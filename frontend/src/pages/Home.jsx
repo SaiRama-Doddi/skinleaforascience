@@ -107,17 +107,9 @@ export default function Home() {
               </h2>
             </div>
 
-            <div className="category-header-right-controls">
-              {/* Right-Side Navigation Arrow Buttons for Left-to-Right & Right-to-Left Scrolling */}
-              <div className="category-arrow-btns">
-                <button className="btn-cat-scroll" onClick={scrollCategoryLeft} aria-label="Scroll Left">
-                  <ChevronLeft size={18} />
-                </button>
-                <button className="btn-cat-scroll" onClick={scrollCategoryRight} aria-label="Scroll Right">
-                  <ChevronRight size={18} />
-                </button>
-              </div>
-            </div>
+            <Link to="/products" className="link-view-all-pixel">
+              View All Categories <ChevronRight size={16} />
+            </Link>
           </div>
 
           {loadingCats ? (
