@@ -100,6 +100,14 @@ export default function AdminDashboard() {
   const [editingCategory, setEditingCategory] = useState(null);
   const [categoryForm, setCategoryForm] = useState(initialCatForm);
 
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    const mainWrapper = document.querySelector('.leafora-main-wrapper');
+    if (mainWrapper) mainWrapper.scrollTo({ top: 0, behavior: 'smooth' });
+    const contentArea = document.querySelector('.leafora-content');
+    if (contentArea) contentArea.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   // ─── COUPON SUITE STATE ───
   const [couponSubTab, setCouponSubTab] = useState('all'); // 'all' | 'create' | 'bulk' | 'analytics' | 'history'
   const [couponSearchQuery, setCouponSearchQuery] = useState('');
@@ -246,6 +254,7 @@ export default function AdminDashboard() {
       is_active: !!cp.is_active
     });
     setCouponSubTab('create');
+    scrollToTop();
   };
 
   const handleToggleCouponStatus = async (id, currentActive) => {
@@ -1252,6 +1261,7 @@ export default function AdminDashboard() {
       display_order: cat.display_order || 0
     });
     setIsCatFormOpen(true);
+    scrollToTop();
   };
 
   const handleSoftDeleteCategory = async (catId, catName) => {
@@ -1456,6 +1466,7 @@ export default function AdminDashboard() {
     });
     setProductFormTab('general');
     setIsProductFormOpen(true);
+    scrollToTop();
   };
 
   const handleOpenEditProduct = (prod) => {
@@ -1492,6 +1503,7 @@ export default function AdminDashboard() {
     });
     setProductFormTab('general');
     setIsProductFormOpen(true);
+    scrollToTop();
   };
 
   const handleProductImageUpload = async (slotIdx, file) => {
@@ -3453,6 +3465,7 @@ export default function AdminDashboard() {
                         setEditingCategory(null);
                         setCategoryForm(initialCatForm);
                         setIsCatFormOpen(true);
+                        scrollToTop();
                       }
                     }}
                   >
@@ -8400,44 +8413,7 @@ export default function AdminDashboard() {
               {/* SUB-TAB 1: ALL COUPONS MASTER TABLE */}
               {couponSubTab === 'all' && (
                 <div>
-                  {/* Summary Metric Cards */}
-                  <div className="leafora-metrics-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: 20 }}>
-                    <div className="leafora-metric-card">
-                      <div className="leafora-metric-header">
-                        <span className="leafora-metric-title">Total Active Coupons</span>
-                        <div className="leafora-metric-icon"><Tag size={16} color="#A37F3F" /></div>
-                      </div>
-                      <div className="leafora-metric-value">{couponMetrics.activeCoupons || 0}</div>
-                      <div className="leafora-metric-sub">Active campaigns</div>
-                    </div>
 
-                    <div className="leafora-metric-card">
-                      <div className="leafora-metric-header">
-                        <span className="leafora-metric-title">Expired Coupons</span>
-                        <div className="leafora-metric-icon"><Clock size={16} color="#DC2626" /></div>
-                      </div>
-                      <div className="leafora-metric-value" style={{ color: '#DC2626' }}>{couponMetrics.expiredCoupons || 0}</div>
-                      <div className="leafora-metric-sub">Passed validity window</div>
-                    </div>
-
-                    <div className="leafora-metric-card">
-                      <div className="leafora-metric-header">
-                        <span className="leafora-metric-title">Total Redemptions</span>
-                        <div className="leafora-metric-icon"><CheckCircle2 size={16} color="#16A34A" /></div>
-                      </div>
-                      <div className="leafora-metric-value" style={{ color: '#16A34A' }}>{couponMetrics.totalRedemptions || 0}</div>
-                      <div className="leafora-metric-sub">Times used by customers</div>
-                    </div>
-
-                    <div className="leafora-metric-card">
-                      <div className="leafora-metric-header">
-                        <span className="leafora-metric-title">Total Coupons Catalog</span>
-                        <div className="leafora-metric-icon"><Layers size={16} color="#2563EB" /></div>
-                      </div>
-                      <div className="leafora-metric-value">{couponMetrics.totalCoupons || dbCoupons.length}</div>
-                      <div className="leafora-metric-sub">Configured in DB</div>
-                    </div>
-                  </div>
 
                   {/* Toolbar & Filters */}
                   <div className="leafora-card" style={{ padding: 20 }}>
@@ -10756,210 +10732,6 @@ export default function AdminDashboard() {
                   </div>
                 </div>
               )}
-
-              {/* BANNER CREATE / EDIT MODAL */}
-              {bannerModalData && (
-                <div className="leafora-modal-overlay" onClick={() => setBannerModalData(null)}>
-                  <div className="leafora-modal" style={{ maxWidth: 650 }} onClick={(e) => e.stopPropagation()}>
-                    <div className="leafora-modal-header">
-                      <h3>{bannerForm.id ? 'Edit Banner' : 'Create New Banner'} ({cmsBannerTypeTab.toUpperCase()})</h3>
-                      <button className="close-btn" onClick={() => setBannerModalData(null)}><X size={18} /></button>
-                    </div>
-                    <form onSubmit={handleSaveBannerSubmit}>
-                      <div className="leafora-modal-body" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                        <div style={{ gridColumn: 'span 2' }}>
-                          <label className="leafora-form-label">Banner Placement Type *</label>
-                          <select
-                            className="leafora-input"
-                            value={bannerForm.banner_type}
-                            onChange={(e) => setBannerForm({ ...bannerForm, banner_type: e.target.value })}
-                          >
-                            <option value="hero">Hero Slider</option>
-                            <option value="offer">Special Offer</option>
-                            <option value="category">Category Banner</option>
-                            <option value="flash_sale">Flash Sale</option>
-                          </select>
-                        </div>
-
-                        <div style={{ gridColumn: 'span 2' }}>
-                          <label className="leafora-form-label">Banner Title *</label>
-                          <input
-                            type="text"
-                            className="leafora-input"
-                            placeholder="e.g. Pharma-Grade Botanical Actives"
-                            value={bannerForm.title}
-                            onChange={(e) => setBannerForm({ ...bannerForm, title: e.target.value })}
-                            required
-                          />
-                        </div>
-
-                        <div style={{ gridColumn: 'span 2' }}>
-                          <label className="leafora-form-label">Subtitle / Sub-headline</label>
-                          <input
-                            type="text"
-                            className="leafora-input"
-                            placeholder="e.g. 100% Pure Organic Extracts Certified by Global Herbal Labs"
-                            value={bannerForm.subtitle}
-                            onChange={(e) => setBannerForm({ ...bannerForm, subtitle: e.target.value })}
-                          />
-                        </div>
-
-                        {/* Desktop Image Upload Slot */}
-                        <div style={{ gridColumn: 'span 2' }}>
-                          <label className="leafora-form-label">Desktop Banner Image URL *</label>
-                          <div style={{ display: 'flex', gap: 8 }}>
-                            <input
-                              type="text"
-                              className="leafora-input"
-                              placeholder="/assets/hero_banner_1.jpg or https://..."
-                              value={bannerForm.desktop_image_url}
-                              onChange={(e) => setBannerForm({ ...bannerForm, desktop_image_url: e.target.value })}
-                              required
-                            />
-                          </div>
-                        </div>
-
-                        {/* Mobile Image Upload Slot */}
-                        <div style={{ gridColumn: 'span 2' }}>
-                          <label className="leafora-form-label">Mobile Banner Image URL (Mobile Device Optimization)</label>
-                          <input
-                            type="text"
-                            className="leafora-input"
-                            placeholder="/assets/hero_banner_1_mobile.jpg (Optional, defaults to Desktop Image)"
-                            value={bannerForm.mobile_image_url}
-                            onChange={(e) => setBannerForm({ ...bannerForm, mobile_image_url: e.target.value })}
-                          />
-                        </div>
-
-                        <div>
-                          <label className="leafora-form-label">Target Link URL</label>
-                          <input
-                            type="text"
-                            className="leafora-input"
-                            placeholder="/shop or /category/skincare"
-                            value={bannerForm.link_url}
-                            onChange={(e) => setBannerForm({ ...bannerForm, link_url: e.target.value })}
-                          />
-                        </div>
-
-                        <div>
-                          <label className="leafora-form-label">Button CTA Text</label>
-                          <input
-                            type="text"
-                            className="leafora-input"
-                            placeholder="Shop Now, Explore, Claim Discount"
-                            value={bannerForm.button_text}
-                            onChange={(e) => setBannerForm({ ...bannerForm, button_text: e.target.value })}
-                          />
-                        </div>
-
-                        {cmsBannerTypeTab === 'flash_sale' && (
-                          <div style={{ gridColumn: 'span 2' }}>
-                            <label className="leafora-form-label">Flash Sale End Date & Time (Countdown Timer)</label>
-                            <input
-                              type="datetime-local"
-                              className="leafora-input"
-                              value={bannerForm.flash_sale_end_time}
-                              onChange={(e) => setBannerForm({ ...bannerForm, flash_sale_end_time: e.target.value })}
-                            />
-                          </div>
-                        )}
-
-                        <div>
-                          <label className="leafora-form-label">Display Order</label>
-                          <input
-                            type="number"
-                            className="leafora-input"
-                            value={bannerForm.display_order}
-                            onChange={(e) => setBannerForm({ ...bannerForm, display_order: e.target.value })}
-                          />
-                        </div>
-
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 24 }}>
-                          <input
-                            type="checkbox"
-                            id="bannerActive"
-                            checked={bannerForm.is_active}
-                            onChange={(e) => setBannerForm({ ...bannerForm, is_active: e.target.checked })}
-                            style={{ width: 18, height: 18 }}
-                          />
-                          <label htmlFor="bannerActive" style={{ fontSize: 14, fontWeight: 600, color: '#0F172A', cursor: 'pointer' }}>Active on Homepage</label>
-                        </div>
-                      </div>
-
-                      <div className="leafora-modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-                        <button type="button" className="leafora-btn leafora-btn-secondary" onClick={() => setBannerModalData(null)}>Cancel</button>
-                        <button type="submit" className="leafora-btn leafora-btn-primary">Save Banner</button>
-                      </div>
-                    </form>
-                  </div>
-                </div>
-              )}
-
-              {/* EDIT SECTION MODAL */}
-              {editSectionModalData && (
-                <div className="leafora-modal-overlay" onClick={() => setEditSectionModalData(null)}>
-                  <div className="leafora-modal" style={{ maxWidth: 500 }} onClick={(e) => e.stopPropagation()}>
-                    <div className="leafora-modal-header">
-                      <h3>Configure Section: {editSectionModalData.section_name}</h3>
-                      <button className="close-btn" onClick={() => setEditSectionModalData(null)}><X size={18} /></button>
-                    </div>
-                    <form onSubmit={handleSaveSectionSettings}>
-                      <div className="leafora-modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                        <div>
-                          <label className="leafora-form-label">Custom Display Title</label>
-                          <input
-                            type="text"
-                            className="leafora-input"
-                            placeholder={editSectionModalData.section_name}
-                            value={sectionForm.custom_title}
-                            onChange={(e) => setSectionForm({ ...sectionForm, custom_title: e.target.value })}
-                          />
-                        </div>
-
-                        <div>
-                          <label className="leafora-form-label">Custom Subtitle / Tagline</label>
-                          <input
-                            type="text"
-                            className="leafora-input"
-                            placeholder="Discover our top choices..."
-                            value={sectionForm.custom_subtitle}
-                            onChange={(e) => setSectionForm({ ...sectionForm, custom_subtitle: e.target.value })}
-                          />
-                        </div>
-
-                        <div>
-                          <label className="leafora-form-label">Max Items Limit (Number of items to show)</label>
-                          <input
-                            type="number"
-                            className="leafora-input"
-                            min="1"
-                            max="24"
-                            value={sectionForm.item_limit}
-                            onChange={(e) => setSectionForm({ ...sectionForm, item_limit: e.target.value })}
-                          />
-                        </div>
-
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <input
-                            type="checkbox"
-                            id="secActive"
-                            checked={sectionForm.is_active}
-                            onChange={(e) => setSectionForm({ ...sectionForm, is_active: e.target.checked })}
-                            style={{ width: 18, height: 18 }}
-                          />
-                          <label htmlFor="secActive" style={{ fontSize: 14, fontWeight: 600, color: '#0F172A', cursor: 'pointer' }}>Visible on Homepage</label>
-                        </div>
-                      </div>
-
-                      <div className="leafora-modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-                        <button type="button" className="leafora-btn leafora-btn-secondary" onClick={() => setEditSectionModalData(null)}>Cancel</button>
-                        <button type="submit" className="leafora-btn leafora-btn-primary">Save Section Settings</button>
-                      </div>
-                    </form>
-                  </div>
-                </div>
-              )}
             </div>
           )}
           {activeTab === 'settings' && (
@@ -11983,6 +11755,210 @@ export default function AdminDashboard() {
             <div className="leafora-card" style={{ padding: 32, textAlign: 'center' }}>
               <h3 style={{ fontSize: 18, color: '#111827', textTransform: 'capitalize', marginBottom: 8 }}>{activeTab} Management Panel</h3>
               <p style={{ color: '#6B7280', fontSize: 13 }}>All records for {activeTab} are synchronized live with the database engine.</p>
+            </div>
+          )}
+
+          {/* BANNER CREATE / EDIT MODAL (GLOBAL LEVEL) */}
+          {bannerModalData && (
+            <div className="leafora-modal-overlay" onClick={() => setBannerModalData(null)}>
+              <div className="leafora-modal" style={{ maxWidth: 650 }} onClick={(e) => e.stopPropagation()}>
+                <div className="leafora-modal-header">
+                  <h3>{bannerForm.id ? 'Edit Banner' : 'Create New Banner'}</h3>
+                  <button className="close-btn" onClick={() => setBannerModalData(null)}><X size={18} /></button>
+                </div>
+                <form onSubmit={handleSaveBannerSubmit}>
+                  <div className="leafora-modal-body" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                    <div style={{ gridColumn: 'span 2' }}>
+                      <label className="leafora-form-label">Banner Placement Type *</label>
+                      <select
+                        className="leafora-input"
+                        value={bannerForm.banner_type}
+                        onChange={(e) => setBannerForm({ ...bannerForm, banner_type: e.target.value })}
+                      >
+                        <option value="hero">Hero Slider</option>
+                        <option value="offer">Special Offer</option>
+                        <option value="category">Category Banner</option>
+                        <option value="flash_sale">Flash Sale</option>
+                      </select>
+                    </div>
+
+                    <div style={{ gridColumn: 'span 2' }}>
+                      <label className="leafora-form-label">Banner Title *</label>
+                      <input
+                        type="text"
+                        className="leafora-input"
+                        placeholder="e.g. Pharma-Grade Botanical Actives"
+                        value={bannerForm.title}
+                        onChange={(e) => setBannerForm({ ...bannerForm, title: e.target.value })}
+                        required
+                      />
+                    </div>
+
+                    <div style={{ gridColumn: 'span 2' }}>
+                      <label className="leafora-form-label">Subtitle / Sub-headline</label>
+                      <input
+                        type="text"
+                        className="leafora-input"
+                        placeholder="e.g. 100% Pure Organic Extracts Certified by Global Herbal Labs"
+                        value={bannerForm.subtitle}
+                        onChange={(e) => setBannerForm({ ...bannerForm, subtitle: e.target.value })}
+                      />
+                    </div>
+
+                    {/* Desktop Image Upload Slot */}
+                    <div style={{ gridColumn: 'span 2' }}>
+                      <label className="leafora-form-label">Desktop Banner Image URL *</label>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <input
+                          type="text"
+                          className="leafora-input"
+                          placeholder="/assets/hero_banner_1.jpg or https://..."
+                          value={bannerForm.desktop_image_url}
+                          onChange={(e) => setBannerForm({ ...bannerForm, desktop_image_url: e.target.value })}
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    {/* Mobile Image Upload Slot */}
+                    <div style={{ gridColumn: 'span 2' }}>
+                      <label className="leafora-form-label">Mobile Banner Image URL (Mobile Device Optimization)</label>
+                      <input
+                        type="text"
+                        className="leafora-input"
+                        placeholder="/assets/hero_banner_1_mobile.jpg (Optional, defaults to Desktop Image)"
+                        value={bannerForm.mobile_image_url}
+                        onChange={(e) => setBannerForm({ ...bannerForm, mobile_image_url: e.target.value })}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="leafora-form-label">Target Link URL</label>
+                      <input
+                        type="text"
+                        className="leafora-input"
+                        placeholder="/shop or /category/skincare"
+                        value={bannerForm.link_url}
+                        onChange={(e) => setBannerForm({ ...bannerForm, link_url: e.target.value })}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="leafora-form-label">Button CTA Text</label>
+                      <input
+                        type="text"
+                        className="leafora-input"
+                        placeholder="Shop Now, Explore, Claim Discount"
+                        value={bannerForm.button_text}
+                        onChange={(e) => setBannerForm({ ...bannerForm, button_text: e.target.value })}
+                      />
+                    </div>
+
+                    {bannerForm.banner_type === 'flash_sale' && (
+                      <div style={{ gridColumn: 'span 2' }}>
+                        <label className="leafora-form-label">Flash Sale End Date & Time (Countdown Timer)</label>
+                        <input
+                          type="datetime-local"
+                          className="leafora-input"
+                          value={bannerForm.flash_sale_end_time}
+                          onChange={(e) => setBannerForm({ ...bannerForm, flash_sale_end_time: e.target.value })}
+                        />
+                      </div>
+                    )}
+
+                    <div>
+                      <label className="leafora-form-label">Display Order</label>
+                      <input
+                        type="number"
+                        className="leafora-input"
+                        value={bannerForm.display_order}
+                        onChange={(e) => setBannerForm({ ...bannerForm, display_order: e.target.value })}
+                      />
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 24 }}>
+                      <input
+                        type="checkbox"
+                        id="bannerActive"
+                        checked={bannerForm.is_active}
+                        onChange={(e) => setBannerForm({ ...bannerForm, is_active: e.target.checked })}
+                        style={{ width: 18, height: 18 }}
+                      />
+                      <label htmlFor="bannerActive" style={{ fontSize: 14, fontWeight: 600, color: '#0F172A', cursor: 'pointer' }}>Active on Homepage</label>
+                    </div>
+                  </div>
+
+                  <div className="leafora-modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                    <button type="button" className="leafora-btn leafora-btn-secondary" onClick={() => setBannerModalData(null)}>Cancel</button>
+                    <button type="submit" className="leafora-btn leafora-btn-primary">Save Banner</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* EDIT SECTION MODAL (GLOBAL LEVEL) */}
+          {editSectionModalData && (
+            <div className="leafora-modal-overlay" onClick={() => setEditSectionModalData(null)}>
+              <div className="leafora-modal" style={{ maxWidth: 500 }} onClick={(e) => e.stopPropagation()}>
+                <div className="leafora-modal-header">
+                  <h3>Configure Section: {editSectionModalData.section_name}</h3>
+                  <button className="close-btn" onClick={() => setEditSectionModalData(null)}><X size={18} /></button>
+                </div>
+                <form onSubmit={handleSaveSectionSettings}>
+                  <div className="leafora-modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                    <div>
+                      <label className="leafora-form-label">Custom Display Title</label>
+                      <input
+                        type="text"
+                        className="leafora-input"
+                        placeholder={editSectionModalData.section_name}
+                        value={sectionForm.custom_title}
+                        onChange={(e) => setSectionForm({ ...sectionForm, custom_title: e.target.value })}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="leafora-form-label">Custom Subtitle / Tagline</label>
+                      <input
+                        type="text"
+                        className="leafora-input"
+                        placeholder="Discover our top choices..."
+                        value={sectionForm.custom_subtitle}
+                        onChange={(e) => setSectionForm({ ...sectionForm, custom_subtitle: e.target.value })}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="leafora-form-label">Max Items Limit (Number of items to show)</label>
+                      <input
+                        type="number"
+                        className="leafora-input"
+                        min="1"
+                        max="24"
+                        value={sectionForm.item_limit}
+                        onChange={(e) => setSectionForm({ ...sectionForm, item_limit: e.target.value })}
+                      />
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <input
+                        type="checkbox"
+                        id="secActive"
+                        checked={sectionForm.is_active}
+                        onChange={(e) => setSectionForm({ ...sectionForm, is_active: e.target.checked })}
+                        style={{ width: 18, height: 18 }}
+                      />
+                      <label htmlFor="secActive" style={{ fontSize: 14, fontWeight: 600, color: '#0F172A', cursor: 'pointer' }}>Visible on Homepage</label>
+                    </div>
+                  </div>
+
+                  <div className="leafora-modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                    <button type="button" className="leafora-btn leafora-btn-secondary" onClick={() => setEditSectionModalData(null)}>Cancel</button>
+                    <button type="submit" className="leafora-btn leafora-btn-primary">Save Section Settings</button>
+                  </div>
+                </form>
+              </div>
             </div>
           )}
         </div>
