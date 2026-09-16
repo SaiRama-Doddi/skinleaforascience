@@ -142,7 +142,9 @@ const initDb = async () => {
       "ALTER TABLE categories MODIFY COLUMN banner_url LONGTEXT",
       "ALTER TABLE products MODIFY COLUMN image_url LONGTEXT",
       "ALTER TABLE products MODIFY COLUMN images LONGTEXT",
-      "ALTER TABLE product_images MODIFY COLUMN image_url LONGTEXT"
+      "ALTER TABLE product_images MODIFY COLUMN image_url LONGTEXT",
+      "ALTER TABLE homepage_banners MODIFY COLUMN desktop_image_url LONGTEXT",
+      "ALTER TABLE homepage_banners MODIFY COLUMN mobile_image_url LONGTEXT"
     ];
 
     for (const query of longtextQueries) {
