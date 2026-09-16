@@ -614,6 +614,7 @@ export default function AdminDashboard() {
   // ─── HOMEPAGE CMS & BUILDER STATE & HANDLERS ───
   const [cmsSubTab, setCmsSubTab] = useState('builder'); // 'builder', 'banners', 'curation'
   const [cmsBannerTypeTab, setCmsBannerTypeTab] = useState('all'); // 'all', 'hero', 'offer', 'category', 'flash_sale'
+  const [bannerSearchQuery, setBannerSearchQuery] = useState('');
   const [homepageBanners, setHomepageBanners] = useState([]);
   const [homepageSections, setHomepageSections] = useState([]);
   const [curatedProducts, setCuratedProducts] = useState([]);
@@ -3154,77 +3155,6 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                {/* Data Tables Row */}
-                <div className="leafora-tables-row">
-                  <div className="leafora-card">
-                    <div className="leafora-card-header">
-                      <h3 className="leafora-card-title">Recent Orders</h3>
-                      <span className="leafora-link-action" onClick={openOrdersModal}>View All ({dbOrders.length}) <ArrowRight size={14} /></span>
-                    </div>
-                    <table className="leafora-table">
-                      <thead>
-                        <tr><th>#</th><th>Customer</th><th>Amount</th><th>Status</th><th>Date</th></tr>
-                      </thead>
-                      <tbody>
-                        {filteredOrders.length === 0 ? (
-                          <tr><td colSpan="5" style={{ textAlign: 'center', padding: '24px', color: '#9CA3AF' }}>No orders recorded in database</td></tr>
-                        ) : (
-                          filteredOrders.slice(0, 5).map((order, idx) => {
-                            const orderId = order.id ? `#${order.id}` : `#${idx + 1}`;
-                            const customerName = order.customer_name || order.user_name || order.email || `Customer ${order.id || idx + 1}`;
-                            const amt = order.total_amount || order.amount || 0;
-                            const formattedAmt = `₹${parseFloat(amt || 0).toFixed(2)}`;
-                            const status = order.status || 'Pending';
-                            const dateStr = order.created_at ? new Date(order.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Today';
-                            return (
-                              <tr key={order.id || idx}>
-                                <td style={{ fontWeight: 600, color: '#6B7280' }}>{orderId}</td>
-                                <td><div className="leafora-customer-cell"><img src={getCustomerAvatar(idx)} alt={customerName} className="leafora-customer-img" /><span>{customerName}</span></div></td>
-                                <td style={{ fontWeight: 600 }}>{formattedAmt}</td>
-                                <td><span className={`leafora-status-pill ${status.toLowerCase()}`}><span className="leafora-status-dot"></span>{status}</span></td>
-                                <td style={{ color: '#6B7280' }}>{dateStr}</td>
-                              </tr>
-                            );
-                          })
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  <div className="leafora-card">
-                    <div className="leafora-card-header">
-                      <h3 className="leafora-card-title">Top Selling Products</h3>
-                      <span className="leafora-link-action" onClick={openProductsModal}>View All ({dbProducts.length}) <ArrowRight size={14} /></span>
-                    </div>
-                    <table className="leafora-table">
-                      <thead>
-                        <tr><th>#</th><th>Product</th><th>Stock</th><th>Price</th></tr>
-                      </thead>
-                      <tbody>
-                        {filteredProducts.length === 0 ? (
-                          <tr><td colSpan="4" style={{ textAlign: 'center', padding: '24px', color: '#9CA3AF' }}>No products available in database</td></tr>
-                        ) : (
-                          filteredProducts.slice(0, 5).map((prod, idx) => {
-                            const prodId = prod.id || idx + 1;
-                            const prodName = prod.name || `Product ${prodId}`;
-                            const priceVal = parseFloat(prod.price || 0);
-                            const formattedPrice = `₹${priceVal.toFixed(2)}`;
-                            const stockVal = prod.stock ?? 0;
-                            const prodImg = prod.image_url || getProductImage(prodName, idx);
-                            return (
-                              <tr key={prod.id || idx}>
-                                <td style={{ fontWeight: 600, color: '#6B7280' }}>#{prodId}</td>
-                                <td><div className="leafora-product-cell"><img src={prodImg} alt={prodName} className="leafora-product-img" /><span>{prodName}</span></div></td>
-                                <td style={{ fontWeight: 600 }}>{stockVal} in stock</td>
-                                <td style={{ fontWeight: 600 }}>{formattedPrice}</td>
-                              </tr>
-                            );
-                          })
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
 
                 {/* Bottom Quick Actions Row */}
                 <div className="leafora-quick-actions-row">
