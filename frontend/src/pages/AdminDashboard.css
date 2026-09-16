@@ -266,11 +266,13 @@
 .leafora-admin-profile {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   background-color: #F5F4F0;
   border: 1px solid #E7E4DD;
-  padding: 4px 14px 4px 5px;
-  border-radius: 30px;
+  padding: 3px 10px 3px 4px;
+  border-radius: 20px;
+  height: 34px;
+  box-sizing: border-box;
   cursor: pointer;
   user-select: none;
   transition: background-color 0.2s ease;
@@ -281,33 +283,39 @@
 }
 
 .leafora-avatar {
-  width: 32px;
-  height: 32px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   background-color: #B5D4BD;
   color: #245233;
   font-weight: 700;
-  font-size: 13px;
+  font-size: 11px;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .leafora-admin-info {
   display: flex;
   flex-direction: column;
+  justify-content: center;
+  white-space: nowrap;
 }
 
 .leafora-admin-name {
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 700;
   color: #111827;
-  line-height: 1.2;
+  line-height: 1.1;
+  white-space: nowrap;
 }
 
 .leafora-admin-role {
-  font-size: 10px;
+  font-size: 9.5px;
   color: #6B7280;
+  line-height: 1.1;
+  white-space: nowrap;
 }
 
 /* Page Inner Content Area */
@@ -1915,7 +1923,9 @@ tr.selected-row {
   color: #DC2626;
   border: 1px solid #FECACA;
   border-radius: 20px;
-  padding: 6px 14px;
+  padding: 4px 14px;
+  height: 34px;
+  box-sizing: border-box;
   font-size: 12.5px;
   font-weight: 700;
   cursor: pointer;

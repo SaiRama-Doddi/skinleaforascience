@@ -2850,11 +2850,6 @@ export default function AdminDashboard() {
           </div>
 
           <div className="leafora-header-right">
-            <button className="leafora-notif-btn" onClick={() => showNotification('You have 4 new order notifications')}>
-              <Bell size={18} />
-              <span className="leafora-notif-badge">4</span>
-            </button>
-
             <div style={{ position: 'relative' }}>
               <div 
                 className="leafora-admin-profile" 
@@ -5748,73 +5743,6 @@ export default function AdminDashboard() {
           {/* ─── TAB 5: PAYMENTS & REVENUE MANAGEMENT SUITE (PREMIUM) ─── */}
           {activeTab === 'payments' && (
             <div>
-              {/* Metrics Header */}
-              <div className="leafora-metrics-grid" style={{ gridTemplateColumns: 'repeat(6, 1fr)', gap: 12, marginBottom: 18 }}>
-                <div className="leafora-metric-card">
-                  <div className="leafora-metric-top">
-                    <span className="leafora-metric-label">Total Revenue</span>
-                    <DollarSign size={16} color="#16A34A" />
-                  </div>
-                  <div className="leafora-metric-val" style={{ color: '#16A34A' }}>
-                    ${dbPayments.filter(p => p.status === 'Completed').reduce((acc, curr) => acc + parseFloat(curr.amount || 0), 0).toFixed(2)}
-                  </div>
-                  <div className="leafora-metric-sub">Gross processed volume</div>
-                </div>
-
-                <div className="leafora-metric-card">
-                  <div className="leafora-metric-top">
-                    <span className="leafora-metric-label">Successful</span>
-                    <CheckCircle2 size={16} color="#2563EB" />
-                  </div>
-                  <div className="leafora-metric-val">{dbPayments.filter(p => p.status === 'Completed').length}</div>
-                  <div className="leafora-metric-sub">Completed transactions</div>
-                </div>
-
-                <div className="leafora-metric-card">
-                  <div className="leafora-metric-top">
-                    <span className="leafora-metric-label">Total Refunded</span>
-                    <RotateCcw size={16} color="#DC2626" />
-                  </div>
-                  <div className="leafora-metric-val" style={{ color: '#DC2626' }}>
-                    ${dbPayments.reduce((acc, curr) => acc + parseFloat(curr.refunded_amount || (curr.status === 'Refunded' ? curr.amount : 0) || 0), 0).toFixed(2)}
-                  </div>
-                  <div className="leafora-metric-sub">Full & partial refunds</div>
-                </div>
-
-                <div className="leafora-metric-card">
-                  <div className="leafora-metric-top">
-                    <span className="leafora-metric-label">Pending COD</span>
-                    <Wallet size={16} color="#D97706" />
-                  </div>
-                  <div className="leafora-metric-val" style={{ color: '#D97706' }}>
-                    ${dbPayments.filter(p => p.gateway === 'COD' && !p.cod_collected).reduce((acc, curr) => acc + parseFloat(curr.amount || 0), 0).toFixed(2)}
-                  </div>
-                  <div className="leafora-metric-sub">Cash awaiting deposit</div>
-                </div>
-
-                <div className="leafora-metric-card">
-                  <div className="leafora-metric-top">
-                    <span className="leafora-metric-label">Failed Attempts</span>
-                    <AlertTriangle size={16} color="#DC2626" />
-                  </div>
-                  <div className="leafora-metric-val" style={{ color: '#DC2626' }}>
-                    {dbPayments.filter(p => p.status === 'Failed').length}
-                  </div>
-                  <div className="leafora-metric-sub">Retry link available</div>
-                </div>
-
-                <div className="leafora-metric-card">
-                  <div className="leafora-metric-top">
-                    <span className="leafora-metric-label">Bank Payouts</span>
-                    <ShieldCheck size={16} color="#0D9488" />
-                  </div>
-                  <div className="leafora-metric-val" style={{ color: '#0D9488' }}>
-                    ${dbSettlements.reduce((acc, curr) => acc + parseFloat(curr.net_settled_amount || 0), 0).toFixed(2)}
-                  </div>
-                  <div className="leafora-metric-sub">Settled to merchant bank</div>
-                </div>
-              </div>
-
               {/* Sub-Tabs Bar */}
               <div className="leafora-cat-tab-bar" style={{ marginBottom: 18 }}>
                 <button
