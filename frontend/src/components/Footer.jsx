@@ -1,5 +1,6 @@
 import React from 'react';
-import { Leaf, ShieldCheck, Heart, Mail, Phone, MapPin, Globe, Share2, MessageCircle } from 'lucide-react';
+import { ShieldCheck, Heart, Mail, Phone, MapPin, Globe, Share2, MessageCircle } from 'lucide-react';
+import leaforaLogo from '../assets/leafora-logo.png';
 
 export default function Footer() {
   return (
@@ -9,10 +10,12 @@ export default function Footer() {
           
           {/* Brand Col */}
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-              <div style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#A67C52', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
-                <Leaf size={20} />
-              </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+              <img 
+                src={leaforaLogo} 
+                alt="Leafora Life Sciences Logo" 
+                style={{ height: '42px', width: 'auto', objectFit: 'contain' }} 
+              />
               <span style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.4rem', fontWeight: 700, color: '#2D3748' }}>
                 Leafora
               </span>

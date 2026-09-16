@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Leaf, User, LogOut, Wallet, Search, ShoppingBag, ChevronDown, Sparkles, ShieldCheck, Menu, X, Trash2 } from 'lucide-react';
 import { checkHealth, getCategories, getProducts } from '../services/api';
 import { getCart, getCartCount, getCartSubtotal, updateCartQuantity, removeFromCart } from '../services/cartService';
+import leaforaLogo from '../assets/leafora-logo.png';
 import './Navbar.css';
 
 export default function Navbar() {
@@ -113,9 +114,12 @@ export default function Navbar() {
 
           {/* Center: Brand Logo */}
           <Link to="/" className="brand-logo">
-            <div className="logo-emblem">
-              <Leaf size={18} fill="#FFFFFF" />
-            </div>
+            <img 
+              src={leaforaLogo} 
+              alt="Leafora Life Sciences Logo" 
+              className="brand-logo-img"
+              style={{ height: '42px', width: 'auto', objectFit: 'contain', display: 'block' }} 
+            />
             <div className="brand-text-col">
               <span className="brand-title">LeafOra</span>
               <span className="brand-subtitle">LIFE SCIENCES</span>
@@ -126,7 +130,14 @@ export default function Navbar() {
           <nav className={`nav-links ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
             {/* Mobile Drawer Header */}
             <div className="mobile-drawer-top">
-              <span className="mobile-drawer-brand">LeafOra Life Sciences</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <img 
+                  src={leaforaLogo} 
+                  alt="LeafOra Logo" 
+                  style={{ height: '30px', width: 'auto', objectFit: 'contain' }} 
+                />
+                <span className="mobile-drawer-brand">LeafOra Life Sciences</span>
+              </div>
               <button className="btn-mobile-close" onClick={() => setIsMobileMenuOpen(false)}>
                 <X size={20} />
               </button>
