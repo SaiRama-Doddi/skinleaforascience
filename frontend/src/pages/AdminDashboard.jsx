@@ -613,7 +613,7 @@ export default function AdminDashboard() {
 
   // ─── HOMEPAGE CMS & BUILDER STATE & HANDLERS ───
   const [cmsSubTab, setCmsSubTab] = useState('builder'); // 'builder', 'banners', 'curation'
-  const [cmsBannerTypeTab, setCmsBannerTypeTab] = useState('hero'); // 'hero', 'offer', 'category', 'flash_sale'
+  const [cmsBannerTypeTab, setCmsBannerTypeTab] = useState('all'); // 'all', 'hero', 'offer', 'category', 'flash_sale'
   const [homepageBanners, setHomepageBanners] = useState([]);
   const [homepageSections, setHomepageSections] = useState([]);
   const [curatedProducts, setCuratedProducts] = useState([]);
@@ -693,6 +693,9 @@ export default function AdminDashboard() {
       if (cmsSubTab === 'banners') fetchHomepageBanners();
       if (cmsSubTab === 'curation') fetchCuratedProductsList();
     }
+    if (activeTab === 'banners') {
+      fetchHomepageBanners();
+    }
   }, [activeTab, cmsSubTab, cmsBannerTypeTab]);
 
   const handleMoveSection = async (index, direction) => {
@@ -765,7 +768,7 @@ export default function AdminDashboard() {
       setBannerModalData(banner);
       setBannerForm({
         id: banner.id,
-        banner_type: banner.banner_type || cmsBannerTypeTab,
+        banner_type: banner.banner_type || (cmsBannerTypeTab === 'all' ? 'hero' : cmsBannerTypeTab),
         title: banner.title || '',
         subtitle: banner.subtitle || '',
         desktop_image_url: banner.desktop_image_url || '',
@@ -781,7 +784,7 @@ export default function AdminDashboard() {
       setBannerModalData({});
       setBannerForm({
         id: null,
-        banner_type: cmsBannerTypeTab,
+        banner_type: cmsBannerTypeTab === 'all' ? 'hero' : (cmsBannerTypeTab || 'hero'),
         title: '',
         subtitle: '',
         desktop_image_url: '',
@@ -2994,7 +2997,7 @@ export default function AdminDashboard() {
               {activeTab === 'banners' && (
                 <button 
                   className="leafora-cat-btn-primary"
-                  onClick={handleOpenAddBanner}
+                  onClick={() => handleOpenBannerModal(null)}
                 >
                   <Plus size={16} /> + Add New Banner
                 </button>
@@ -5239,7 +5242,7 @@ export default function AdminDashboard() {
 
                           <td>
                             <div style={{ fontWeight: 700, fontSize: 14, color: '#111827' }}>
-                              ${parseFloat(ord.total_amount || 0).toFixed(2)}
+                              ₹{parseFloat(ord.total_amount || 0).toFixed(2)}
                             </div>
                             <span className="leafora-badge" style={{ backgroundColor: '#F3F4F6', color: '#4B5563', fontSize: 10 }}>
                               📦 {ord.items_count || 1} items
@@ -10834,6 +10837,20 @@ export default function AdminDashboard() {
                     </div>
                     <form onSubmit={handleSaveBannerSubmit}>
                       <div className="leafora-modal-body" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                        <div style={{ gridColumn: 'span 2' }}>
+                          <label className="leafora-form-label">Banner Placement Type *</label>
+                          <select
+                            className="leafora-input"
+                            value={bannerForm.banner_type}
+                            onChange={(e) => setBannerForm({ ...bannerForm, banner_type: e.target.value })}
+                          >
+                            <option value="hero">Hero Slider</option>
+                            <option value="offer">Special Offer</option>
+                            <option value="category">Category Banner</option>
+                            <option value="flash_sale">Flash Sale</option>
+                          </select>
+                        </div>
+
                         <div style={{ gridColumn: 'span 2' }}>
                           <label className="leafora-form-label">Banner Title *</label>
                           <input
