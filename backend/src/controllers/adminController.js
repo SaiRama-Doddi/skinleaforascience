@@ -2234,20 +2234,28 @@ const createHomepageBanner = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Title and Desktop Banner Image URL are required' });
     }
 
+    let formattedFlashSaleEndTime = null;
+    if (flash_sale_end_time && String(flash_sale_end_time).trim() !== '') {
+      formattedFlashSaleEndTime = String(flash_sale_end_time).replace('T', ' ');
+      if (formattedFlashSaleEndTime.length === 16) {
+        formattedFlashSaleEndTime += ':00';
+      }
+    }
+
     const [result] = await pool.query(
       `INSERT INTO homepage_banners (
         banner_type, title, subtitle, desktop_image_url, mobile_image_url, link_url, button_text, category_id, flash_sale_end_time, display_order, is_active
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
-        banner_type,
+        banner_type || 'hero',
         title,
         subtitle || null,
         desktop_image_url,
         mobile_image_url || desktop_image_url,
         link_url || null,
         button_text || 'Shop Now',
-        category_id || null,
-        flash_sale_end_time || null,
+        category_id && String(category_id).trim() !== '' ? Number(category_id) : null,
+        formattedFlashSaleEndTime,
         parseInt(display_order) || 0,
         is_active ? 1 : 0
       ]
@@ -2255,6 +2263,7 @@ const createHomepageBanner = async (req, res) => {
 
     return res.status(201).json({ success: true, message: 'Homepage banner created successfully', banner_id: result.insertId });
   } catch (error) {
+    console.error('Create Banner Error:', error);
     return res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -2276,6 +2285,16 @@ const updateHomepageBanner = async (req, res) => {
       is_active
     } = req.body;
 
+    let formattedFlashSaleEndTime = null;
+    if (flash_sale_end_time !== undefined && flash_sale_end_time !== null) {
+      if (String(flash_sale_end_time).trim() !== '') {
+        formattedFlashSaleEndTime = String(flash_sale_end_time).replace('T', ' ');
+        if (formattedFlashSaleEndTime.length === 16) {
+          formattedFlashSaleEndTime += ':00';
+        }
+      }
+    }
+
     await pool.query(
       `UPDATE homepage_banners SET
         banner_type = COALESCE(?, banner_type),
@@ -2285,8 +2304,8 @@ const updateHomepageBanner = async (req, res) => {
         mobile_image_url = COALESCE(?, mobile_image_url),
         link_url = COALESCE(?, link_url),
         button_text = COALESCE(?, button_text),
-        category_id = COALESCE(?, category_id),
-        flash_sale_end_time = COALESCE(?, flash_sale_end_time),
+        category_id = ?,
+        flash_sale_end_time = ?,
         display_order = COALESCE(?, display_order),
         is_active = COALESCE(?, is_active)
        WHERE id = ?`,
@@ -2298,9 +2317,9 @@ const updateHomepageBanner = async (req, res) => {
         mobile_image_url || null,
         link_url || null,
         button_text || null,
-        category_id || null,
-        flash_sale_end_time || null,
-        display_order !== undefined ? parseInt(display_order) : null,
+        category_id && String(category_id).trim() !== '' ? Number(category_id) : null,
+        formattedFlashSaleEndTime,
+        display_order !== undefined && display_order !== '' ? parseInt(display_order) : null,
         is_active !== undefined ? (is_active ? 1 : 0) : null,
         id
       ]
@@ -2308,6 +2327,7 @@ const updateHomepageBanner = async (req, res) => {
 
     return res.status(200).json({ success: true, message: 'Homepage banner updated successfully' });
   } catch (error) {
+    console.error('Update Banner Error:', error);
     return res.status(500).json({ success: false, message: error.message });
   }
 };

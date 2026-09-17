@@ -811,6 +811,10 @@ export default function AdminDashboard() {
 
   const handleSaveBannerSubmit = async (e) => {
     e.preventDefault();
+    if (!bannerForm.desktop_image_url) {
+      showNotification('Desktop banner image URL or uploaded file is required');
+      return;
+    }
     try {
       if (bannerForm.id) {
         const res = await adminUpdateHomepageBanner(bannerForm.id, bannerForm);
@@ -818,6 +822,8 @@ export default function AdminDashboard() {
           showNotification('Homepage banner updated successfully!');
           setBannerModalData(null);
           fetchHomepageBanners();
+        } else {
+          showNotification(res?.message || 'Error updating banner');
         }
       } else {
         const res = await adminCreateHomepageBanner(bannerForm);
@@ -825,10 +831,13 @@ export default function AdminDashboard() {
           showNotification('New homepage banner added!');
           setBannerModalData(null);
           fetchHomepageBanners();
+        } else {
+          showNotification(res?.message || 'Error creating banner');
         }
       }
     } catch (e) {
-      showNotification('Error saving banner');
+      console.error('Error saving banner:', e);
+      showNotification('Error saving banner: ' + (e.response?.data?.message || e.message || 'Server error'));
     }
   };
 
@@ -857,15 +866,40 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleBannerImageUpload = (e, fieldName) => {
+  const handleBannerImageUpload = async (e, fieldName) => {
     const file = e.target.files && e.target.files[0];
     if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      showNotification('Selected image file exceeds 10MB limit');
+      return;
+    }
+
     const reader = new FileReader();
-    reader.onloadend = () => {
-      setBannerForm(prev => ({
-        ...prev,
-        [fieldName]: reader.result
-      }));
+    reader.onloadend = async () => {
+      const base64Data = reader.result;
+      try {
+        const res = await adminUploadImage(base64Data);
+        if (res && res.success && res.url) {
+          setBannerForm(prev => ({
+            ...prev,
+            [fieldName]: res.url
+          }));
+          showNotification('Banner image uploaded successfully!');
+        } else {
+          setBannerForm(prev => ({
+            ...prev,
+            [fieldName]: base64Data
+          }));
+          showNotification('Banner image attached!');
+        }
+      } catch (uploadErr) {
+        setBannerForm(prev => ({
+          ...prev,
+          [fieldName]: base64Data
+        }));
+        showNotification('Banner image attached!');
+      }
     };
     reader.readAsDataURL(file);
   };
@@ -11817,14 +11851,41 @@ export default function AdminDashboard() {
                     {/* Desktop Image Upload Slot */}
                     <div style={{ gridColumn: 'span 2' }}>
                       <label className="leafora-form-label">Desktop Banner Image URL *</label>
+                      {bannerForm.desktop_image_url && (
+                        <div style={{ marginBottom: 10, position: 'relative', width: '100%', maxHeight: 140, borderRadius: 8, overflow: 'hidden', border: '1px solid #CBD5E1', backgroundColor: '#F8FAFC' }}>
+                          <img src={bannerForm.desktop_image_url} alt="Desktop Preview" style={{ width: '100%', height: 140, objectFit: 'cover' }} />
+                          <button
+                            type="button"
+                            onClick={() => setBannerForm(prev => ({ ...prev, desktop_image_url: '' }))}
+                            style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.7)', color: '#fff', border: 'none', borderRadius: '50%', width: 26, height: 26, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                            title="Remove Desktop Image"
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
+                      )}
                       <div style={{ display: 'flex', gap: 8 }}>
                         <input
                           type="text"
                           className="leafora-input"
-                          placeholder="/assets/hero_banner_1.jpg or https://..."
+                          placeholder="/assets/hero_banner_1.jpg or https://... or click Upload"
                           value={bannerForm.desktop_image_url}
                           onChange={(e) => setBannerForm({ ...bannerForm, desktop_image_url: e.target.value })}
                           required
+                        />
+                        <label
+                          htmlFor="desktop-banner-file-input"
+                          className="leafora-btn leafora-btn-secondary"
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer', whiteSpace: 'nowrap', padding: '8px 14px' }}
+                        >
+                          <Upload size={15} /> Upload Image
+                        </label>
+                        <input
+                          id="desktop-banner-file-input"
+                          type="file"
+                          accept="image/*"
+                          style={{ display: 'none' }}
+                          onChange={(e) => handleBannerImageUpload(e, 'desktop_image_url')}
                         />
                       </div>
                     </div>
@@ -11832,13 +11893,42 @@ export default function AdminDashboard() {
                     {/* Mobile Image Upload Slot */}
                     <div style={{ gridColumn: 'span 2' }}>
                       <label className="leafora-form-label">Mobile Banner Image URL (Mobile Device Optimization)</label>
-                      <input
-                        type="text"
-                        className="leafora-input"
-                        placeholder="/assets/hero_banner_1_mobile.jpg (Optional, defaults to Desktop Image)"
-                        value={bannerForm.mobile_image_url}
-                        onChange={(e) => setBannerForm({ ...bannerForm, mobile_image_url: e.target.value })}
-                      />
+                      {bannerForm.mobile_image_url && (
+                        <div style={{ marginBottom: 10, position: 'relative', width: 140, maxHeight: 140, borderRadius: 8, overflow: 'hidden', border: '1px solid #CBD5E1', backgroundColor: '#F8FAFC' }}>
+                          <img src={bannerForm.mobile_image_url} alt="Mobile Preview" style={{ width: 140, height: 140, objectFit: 'cover' }} />
+                          <button
+                            type="button"
+                            onClick={() => setBannerForm(prev => ({ ...prev, mobile_image_url: '' }))}
+                            style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.7)', color: '#fff', border: 'none', borderRadius: '50%', width: 26, height: 26, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                            title="Remove Mobile Image"
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
+                      )}
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <input
+                          type="text"
+                          className="leafora-input"
+                          placeholder="/assets/hero_banner_1_mobile.jpg (Optional, defaults to Desktop Image)"
+                          value={bannerForm.mobile_image_url}
+                          onChange={(e) => setBannerForm({ ...bannerForm, mobile_image_url: e.target.value })}
+                        />
+                        <label
+                          htmlFor="mobile-banner-file-input"
+                          className="leafora-btn leafora-btn-secondary"
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer', whiteSpace: 'nowrap', padding: '8px 14px' }}
+                        >
+                          <Upload size={15} /> Upload Image
+                        </label>
+                        <input
+                          id="mobile-banner-file-input"
+                          type="file"
+                          accept="image/*"
+                          style={{ display: 'none' }}
+                          onChange={(e) => handleBannerImageUpload(e, 'mobile_image_url')}
+                        />
+                      </div>
                     </div>
 
                     <div>
