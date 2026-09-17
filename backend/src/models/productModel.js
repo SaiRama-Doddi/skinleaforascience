@@ -38,16 +38,10 @@ class ProductModel {
   }
 
   static async findAll() {
-    if (cachedEnrichedProducts && (Date.now() - lastCacheTime < CACHE_TTL_MS)) {
-      return cachedEnrichedProducts;
-    }
-
     try {
       const [rows] = await pool.query('SELECT * FROM products WHERE deleted_at IS NULL ORDER BY id DESC');
       if (rows && rows.length > 0) {
         const enriched = rows.map(r => ProductModel.parseProductImages(r));
-        cachedEnrichedProducts = enriched;
-        lastCacheTime = Date.now();
         return enriched;
       }
     } catch (error) {

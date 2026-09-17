@@ -16,7 +16,7 @@ export default function Shop() {
   
   // Filter States matching reference image
   const [selectedCategory, setSelectedCategory] = useState('All Products');
-  const [priceMax, setPriceMax] = useState(100);
+  const [priceMax, setPriceMax] = useState(1000);
   const [selectedSkinTypes, setSelectedSkinTypes] = useState([]);
   const [selectedConcerns, setSelectedConcerns] = useState([]);
   const [inStockOnly, setInStockOnly] = useState(false);
@@ -33,7 +33,7 @@ export default function Shop() {
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 8;
+  const itemsPerPage = 24;
 
   const [dbCategories, setDbCategories] = useState([]);
 
@@ -76,14 +76,17 @@ export default function Shop() {
       .catch(() => {});
   }, []);
 
+  const normStr = (s) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
   const categoryOptions = useMemo(() => {
     const list = [{ name: 'All Products', count: products.length }];
     if (dbCategories.length > 0) {
       dbCategories.forEach(cat => {
-        const count = products.filter(p => 
-          p.category?.toLowerCase() === cat.name?.toLowerCase() ||
-          p.category_id === cat.id
-        ).length;
+        const count = products.filter(p => {
+          const pCat = normStr(p.category);
+          const cName = normStr(cat.name);
+          return pCat === cName || pCat.includes(cName) || cName.includes(pCat) || String(p.category_id) === String(cat.id);
+        }).length;
         list.push({ name: cat.name, count, id: cat.id });
       });
     } else {
@@ -127,7 +130,7 @@ export default function Shop() {
 
   const handleClearFilters = () => {
     setSelectedCategory('All Products');
-    setPriceMax(100);
+    setPriceMax(1000);
     setSelectedSkinTypes([]);
     setSelectedConcerns([]);
     setInStockOnly(false);
@@ -140,8 +143,11 @@ export default function Shop() {
   const filteredProducts = useMemo(() => {
     return products.filter(p => {
       // Category filter
-      if (selectedCategory !== 'All Products' && !p.category.toLowerCase().includes(selectedCategory.toLowerCase())) {
-        return false;
+      if (selectedCategory !== 'All Products') {
+        const selectedNorm = normStr(selectedCategory);
+        const prodCatNorm = normStr(p.category);
+        const match = prodCatNorm.includes(selectedNorm) || selectedNorm.includes(prodCatNorm);
+        if (!match) return false;
       }
       // Price filter
       if (p.price > priceMax) return false;
@@ -228,8 +234,8 @@ export default function Shop() {
             <input 
               type="range" 
               min="10" 
-              max="100" 
-              step="5"
+              max="1000" 
+              step="10"
               value={priceMax} 
               onChange={(e) => setPriceMax(Number(e.target.value))}
               className="range-slider"
@@ -513,8 +519,8 @@ export default function Shop() {
                 <input 
                   type="range" 
                   min="10" 
-                  max="100" 
-                  step="5"
+                  max="1000" 
+                  step="10"
                   value={priceMax} 
                   onChange={(e) => setPriceMax(Number(e.target.value))}
                   className="range-slider"
