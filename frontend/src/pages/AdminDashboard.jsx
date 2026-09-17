@@ -77,7 +77,7 @@ export default function AdminDashboard() {
   const [isCatFormOpen, setIsCatFormOpen] = useState(false);
   const [showSeoAccordion, setShowSeoAccordion] = useState(false);
   const [catPage, setCatPage] = useState(1);
-  const catPerPage = 8;
+  const [catPerPage, setCatPerPage] = useState('all');
 
   const initialCatForm = {
     name: '',
@@ -2679,7 +2679,8 @@ export default function AdminDashboard() {
     return true;
   });
 
-  const pagedCategories = displayedCategories.slice((catPage - 1) * catPerPage, catPage * catPerPage);
+  const effectiveCatPerPage = catPerPage === 'all' ? (displayedCategories.length || 1) : Number(catPerPage);
+  const pagedCategories = displayedCategories.slice((catPage - 1) * effectiveCatPerPage, catPage * effectiveCatPerPage);
 
   // Product Image Mapping Helper
   const getProductImage = (prodName, index) => {
@@ -3800,6 +3801,23 @@ export default function AdminDashboard() {
                     </select>
                   )}
 
+                  <select
+                    className="leafora-select-btn"
+                    value={catPerPage}
+                    onChange={(e) => {
+                      setCatPerPage(e.target.value === 'all' ? 'all' : Number(e.target.value));
+                      setCatPage(1);
+                    }}
+                    title="View Mode / Scroll Option"
+                  >
+                    <option value="all">Scroll View (All Categories)</option>
+                    <option value="5">5 per page</option>
+                    <option value="8">8 per page</option>
+                    <option value="15">15 per page</option>
+                    <option value="25">25 per page</option>
+                    <option value="50">50 per page</option>
+                  </select>
+
                   <button className="leafora-cat-btn-secondary" onClick={handleExportCategories} title="Export CSV">
                     <Download size={14} /> Export CSV
                   </button>
@@ -3833,43 +3851,44 @@ export default function AdminDashboard() {
               )}
 
               {/* Master Category Table */}
-              <table className="leafora-table">
-                <thead>
-                  <tr>
-                    <th style={{ width: 40, textAlign: 'center' }}>
-                      <input
-                        type="checkbox"
-                        checked={displayedCategories.length > 0 && displayedCategories.every(c => selectedCategoryIds.includes(c.id))}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedCategoryIds(displayedCategories.map(c => c.id));
-                          } else {
-                            setSelectedCategoryIds([]);
-                          }
-                        }}
-                      />
-                    </th>
-                    <th style={{ width: 60, textAlign: 'center' }}>Order</th>
-                    <th>ID</th>
-                    <th>Level</th>
-                    <th>Media</th>
-                    <th>Category Name & Parent</th>
-                    <th>Slug</th>
-                    <th>Status & Badges</th>
-                    <th style={{ textAlign: 'right' }}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pagedCategories.length === 0 ? (
+              <div className="leafora-table-scroll-wrapper">
+                <table className="leafora-table">
+                  <thead>
                     <tr>
-                      <td colSpan="9" style={{ textAlign: 'center', padding: 36, color: '#9CA3AF' }}>
-                        No categories found matching filters in {categoryViewTab === 'trash' ? 'Trash Bin' : 'Catalog'}.
-                      </td>
+                      <th style={{ width: 40, textAlign: 'center' }}>
+                        <input
+                          type="checkbox"
+                          checked={displayedCategories.length > 0 && displayedCategories.every(c => selectedCategoryIds.includes(c.id))}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedCategoryIds(displayedCategories.map(c => c.id));
+                            } else {
+                              setSelectedCategoryIds([]);
+                            }
+                          }}
+                        />
+                      </th>
+                      <th style={{ width: 60, textAlign: 'center' }}>Order</th>
+                      <th>ID</th>
+                      <th>Level</th>
+                      <th>Media</th>
+                      <th>Category Name & Parent</th>
+                      <th>Slug</th>
+                      <th>Status & Badges</th>
+                      <th style={{ textAlign: 'right' }}>Actions</th>
                     </tr>
-                  ) : (
-                    pagedCategories.map((cat, idx) => {
-                      const isSelected = selectedCategoryIds.includes(cat.id);
-                      const globalIdx = (catPage - 1) * catPerPage + idx;
+                  </thead>
+                  <tbody>
+                    {pagedCategories.length === 0 ? (
+                      <tr>
+                        <td colSpan="9" style={{ textAlign: 'center', padding: 36, color: '#9CA3AF' }}>
+                          No categories found matching filters in {categoryViewTab === 'trash' ? 'Trash Bin' : 'Catalog'}.
+                        </td>
+                      </tr>
+                    ) : (
+                      pagedCategories.map((cat, idx) => {
+                        const isSelected = selectedCategoryIds.includes(cat.id);
+                        const globalIdx = (catPage - 1) * effectiveCatPerPage + idx;
                       const parentCat = dbCategories.find(p => p.id === cat.parent_id);
 
                       return (
@@ -4001,12 +4020,13 @@ export default function AdminDashboard() {
                   )}
                 </tbody>
               </table>
+            </div>
 
-              {/* Pagination Footer */}
-              {displayedCategories.length > catPerPage && (
+              {/* Pagination / Scroll Status Footer */}
+              {catPerPage !== 'all' && displayedCategories.length > Number(catPerPage) && (
                 <div className="leafora-pagination-bar">
                   <span style={{ fontSize: 12, color: '#6B7280' }}>
-                    Showing {(catPage - 1) * catPerPage + 1} - {Math.min(catPage * catPerPage, displayedCategories.length)} of {displayedCategories.length} categories
+                    Showing {(catPage - 1) * Number(catPerPage) + 1} - {Math.min(catPage * Number(catPerPage), displayedCategories.length)} of {displayedCategories.length} categories
                   </span>
                   <div style={{ display: 'flex', gap: 6 }}>
                     <button
@@ -4017,7 +4037,7 @@ export default function AdminDashboard() {
                     >
                       Prev
                     </button>
-                    {Array.from({ length: Math.ceil(displayedCategories.length / catPerPage) }).map((_, pIdx) => (
+                    {Array.from({ length: Math.ceil(displayedCategories.length / Number(catPerPage)) }).map((_, pIdx) => (
                       <button
                         type="button"
                         key={pIdx}
@@ -4030,12 +4050,22 @@ export default function AdminDashboard() {
                     <button
                       type="button"
                       className="leafora-page-btn"
-                      disabled={catPage >= Math.ceil(displayedCategories.length / catPerPage)}
+                      disabled={catPage >= Math.ceil(displayedCategories.length / Number(catPerPage))}
                       onClick={() => setCatPage(prev => prev + 1)}
                     >
                       Next
                     </button>
                   </div>
+                </div>
+              )}
+              {catPerPage === 'all' && displayedCategories.length > 0 && (
+                <div className="leafora-pagination-bar" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: 12.5, color: '#374151', fontWeight: 600 }}>
+                    Showing all {displayedCategories.length} categories from database
+                  </span>
+                  <span style={{ fontSize: 11.5, color: '#8C6A3C', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+                    ↕ Scroll inside container to view full catalog
+                  </span>
                 </div>
               )}
             </div>
