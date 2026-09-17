@@ -2783,13 +2783,6 @@ export default function AdminDashboard() {
               <span>Orders</span>
             </li>
             <li 
-              className={`leafora-nav-item ${activeTab === 'shiprocket' ? 'active' : ''}`}
-              onClick={() => { setActiveTab('shiprocket'); setIsMobileSidebarOpen(false); }}
-            >
-              <Truck className="leafora-nav-icon" />
-              <span>Shiprocket</span>
-            </li>
-            <li 
               className={`leafora-nav-item ${activeTab === 'payments' ? 'active' : ''}`}
               onClick={() => { setActiveTab('payments'); setIsMobileSidebarOpen(false); }}
             >
@@ -2816,20 +2809,6 @@ export default function AdminDashboard() {
             >
               <Star className="leafora-nav-icon" />
               <span>Reviews</span>
-            </li>
-            <li 
-              className={`leafora-nav-item ${activeTab === 'marketing' ? 'active' : ''}`}
-              onClick={() => { setActiveTab('marketing'); setIsMobileSidebarOpen(false); }}
-            >
-              <Megaphone className="leafora-nav-icon" />
-              <span>Marketing</span>
-            </li>
-            <li 
-              className={`leafora-nav-item ${activeTab === 'reports' ? 'active' : ''}`}
-              onClick={() => { setActiveTab('reports'); setIsMobileSidebarOpen(false); }}
-            >
-              <BarChart2 className="leafora-nav-icon" />
-              <span>Reports</span>
             </li>
             <li 
               className={`leafora-nav-item ${activeTab === 'settings' ? 'active' : ''}`}
