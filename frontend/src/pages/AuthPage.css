@@ -42,72 +42,22 @@
 /* LEFT COLUMN: BOTANICAL EDITORIAL CONTENT */
 .auth-left-editorial {
   display: flex;
-  flex-direction: column;
-  padding-right: 6px;
-}
-
-.editorial-label {
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 2px;
-  color: #9E6E38;
-  margin-bottom: 4px;
-  text-transform: uppercase;
-}
-
-.editorial-title {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.85rem;
-  font-weight: 700;
-  color: #1A2E22;
-  line-height: 1.15;
-  margin: 0 0 6px 0;
-  letter-spacing: -0.3px;
-}
-
-.editorial-sub {
-  font-size: 0.85rem;
-  line-height: 1.35;
-  color: #475569;
-  margin: 0 0 10px 0;
-}
-
-.editorial-features-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-bottom: 10px;
-}
-
-.feature-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: #1A2E22;
-}
-
-.feature-icon-circle {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: #F4ECE1;
-  display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
+  width: 100%;
+  height: 100%;
 }
 
 .editorial-product-showcase {
   width: 100%;
-  max-width: 400px;
-  height: 120px;
-  border-radius: 12px;
+  max-width: 480px;
+  height: 100%;
+  min-height: 480px;
+  border-radius: 18px;
   overflow: hidden;
-  box-shadow: 0 8px 20px rgba(26, 46, 34, 0.08);
-  margin-bottom: 8px;
-  border: 1px solid #EFE8DE;
+  box-shadow: 0 16px 36px -8px rgba(26, 46, 34, 0.08);
+  border: 1px solid rgba(239, 232, 222, 0.85);
+  margin: 0;
 }
 
 .editorial-product-showcase img {
@@ -116,14 +66,6 @@
   object-fit: cover;
   object-position: center;
   display: block;
-}
-
-.editorial-quote {
-  font-family: 'Playfair Display', serif;
-  font-style: italic;
-  font-size: 0.82rem;
-  color: #64748B;
-  margin: 0;
 }
 
 /* RIGHT COLUMN: FLOATING WHITE SIGN-IN CARD */

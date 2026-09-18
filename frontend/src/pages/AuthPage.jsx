@@ -226,51 +226,11 @@ export default function AuthPage({ initialMode = 'login', onAuthSuccess, isModal
       {/* ─── MAIN TWO-COLUMN LAYOUT ─── */}
       <div className="auth-hero-grid">
 
-        {/* LEFT COLUMN: BOTANICAL HERITAGE BRANDING */}
+        {/* LEFT COLUMN: BOTANICAL SHOWCASE IMAGE ONLY */}
         <div className="auth-left-editorial">
-          <span className="editorial-label">NATURAL SKINCARE ———</span>
-
-          <h1 className="editorial-title">
-            Nature Nourishes<br />
-            A Healthier You
-          </h1>
-
-          <p className="editorial-sub">
-            Pure ingredients. Proven science.<br />
-            Real results.
-          </p>
-
-          <div className="editorial-features-list">
-            <div className="feature-item">
-              <div className="feature-icon-circle">
-                <Leaf size={18} color="#9E6E38" />
-              </div>
-              <span>Natural Ingredients</span>
-            </div>
-
-            <div className="feature-item">
-              <div className="feature-icon-circle">
-                <Sparkles size={18} color="#9E6E38" />
-              </div>
-              <span>Dermatologist Tested</span>
-            </div>
-
-            <div className="feature-item">
-              <div className="feature-icon-circle">
-                <Heart size={18} color="#9E6E38" />
-              </div>
-              <span>Safe for All Skin Types</span>
-            </div>
-          </div>
-
-          {/* MAIN BOTANICAL PRODUCTS IMAGE SHOWCASE */}
           <div className="editorial-product-showcase">
             <img src={loginProductImg} alt="Leafora Botanical Skincare Products" />
           </div>
-
-          <p className="editorial-quote">
-            “Good for your skin. Good for the planet.”
-          </p>
         </div>
 
           {/* RIGHT COLUMN: ELEGANT FLOATING SIGN-IN CARD */}
