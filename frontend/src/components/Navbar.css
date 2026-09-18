@@ -11,12 +11,12 @@
 
 /* 1. TOP ANNOUNCEMENT BAR */
 .top-announcement-bar {
-  background-color: var(--nav-cream-bg);
-  border-bottom: 1px solid var(--nav-border);
+  background-color: #A67C52;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
   padding: 8px 24px;
   font-family: 'Inter', sans-serif;
   font-size: 0.82rem;
-  color: var(--nav-text-dark);
+  color: #FFFFFF;
 }
 
 .top-bar-inner {
@@ -29,34 +29,36 @@
 }
 
 .announcement-text {
-  color: #475569;
+  color: #FFFFFF;
 }
 
 .navbar-cart-btn:hover {
-  background-color: #8C653E !important;
+  background-color: #F8F4EE !important;
+  color: #8C653E !important;
 }
 
 .top-bar-link {
-  color: var(--nav-text-dark);
+  color: #FFFFFF;
   text-decoration: none;
   display: flex;
   align-items: center;
   gap: 6px;
   font-size: 0.82rem;
-  transition: color 0.2s ease;
+  transition: opacity 0.2s ease;
 }
 
 .top-bar-link:hover {
-  color: var(--nav-bronze);
+  color: #FFFFFF;
+  opacity: 0.85;
 }
 
 /* 2. MAIN STICKY NAVBAR */
 .leafora-main-navbar {
-  background-color: #FFFFFF;
-  border-bottom: 1px solid var(--nav-border);
+  background-color: #A67C52;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
   padding: 14px 24px;
   font-family: 'Inter', sans-serif;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.08);
 }
 
 .navbar-inner {
@@ -92,7 +94,7 @@
   font-family: 'Playfair Display', Georgia, serif;
   font-size: 1.45rem;
   font-weight: 700;
-  color: #1F2937;
+  color: #FFFFFF;
   line-height: 1.1;
   display: block;
 }
@@ -101,7 +103,7 @@
   font-size: 0.62rem;
   text-transform: uppercase;
   letter-spacing: 1.2px;
-  color: var(--nav-bronze);
+  color: rgba(255, 255, 255, 0.9);
   font-weight: 700;
   display: block;
 }
@@ -117,19 +119,21 @@
 }
 
 .nav-item {
-  color: #334155;
+  color: #FFFFFF;
   text-decoration: none;
   font-size: 0.92rem;
   font-weight: 500;
   padding: 6px 0;
   position: relative;
-  transition: color 0.2s ease;
+  transition: color 0.2s ease, opacity 0.2s ease;
   white-space: nowrap;
+  opacity: 0.92;
 }
 
 .nav-item:hover, .nav-item.active {
-  color: var(--nav-bronze);
+  color: #FFFFFF;
   font-weight: 600;
+  opacity: 1;
 }
 
 .nav-item.active::after {
@@ -139,7 +143,7 @@
   left: 0;
   right: 0;
   height: 2px;
-  background-color: var(--nav-bronze);
+  background-color: #FFFFFF;
   border-radius: 2px;
 }
 
@@ -270,16 +274,18 @@
 .nav-signin-btn {
   font-size: 0.85rem;
   font-weight: 600;
-  color: var(--nav-bronze);
+  color: #FFFFFF;
   text-decoration: none;
   white-space: nowrap;
-  padding: 6px 10px;
+  padding: 6px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
   border-radius: 20px;
   transition: all 0.2s ease;
 }
 
 .nav-signin-btn:hover {
-  background-color: #F8F4EE;
+  background-color: #FFFFFF;
+  color: #A67C52;
 }
 
 .navbar-cart-btn {
@@ -288,13 +294,13 @@
   gap: 6px;
   font-size: 0.85rem;
   font-weight: 700;
-  color: #FFFFFF;
-  background-color: var(--nav-bronze);
+  color: #A67C52;
+  background-color: #FFFFFF;
   padding: 7px 16px;
   border-radius: 20px;
   text-decoration: none;
   white-space: nowrap;
-  transition: background-color 0.2s ease;
+  transition: all 0.2s ease;
   position: relative;
 }
 
@@ -302,18 +308,19 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: #F4EFEA;
+  background: rgba(255, 255, 255, 0.2);
   padding: 4px 12px 4px 6px;
   border-radius: 30px;
-  border: 1px solid #E7E0D6;
+  border: 1px solid rgba(255, 255, 255, 0.4);
   white-space: nowrap;
+  color: #FFFFFF;
 }
 
 .user-avatar-img {
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  background: var(--nav-bronze);
+  background: #FFFFFF;
 }
 
 .user-wallet-val {

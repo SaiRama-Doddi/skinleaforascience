@@ -239,7 +239,7 @@ export default function Navbar() {
                     alt={user.name} 
                     className="user-avatar-img"
                   />
-                  <span style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--leafora-green)' }}>
+                  <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#FFFFFF' }}>
                     {user.first_name || (user.name ? user.name.split(' ')[0] : 'Account')}
                   </span>
                 </Link>
