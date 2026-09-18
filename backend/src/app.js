@@ -39,10 +39,13 @@ app.use('/uploads', express.static(uploadsDir));
 app.use('/api', apiRoutes);
 
 // Serve static frontend build assets
+const rootBuildPath = path.join(__dirname, '../../build');
 const rootDistPath = path.join(__dirname, '../../dist');
-const frontendDistPath = fs.existsSync(rootDistPath)
-  ? rootDistPath
-  : path.join(__dirname, '../../frontend/dist');
+const frontendDistPath = fs.existsSync(rootBuildPath)
+  ? rootBuildPath
+  : fs.existsSync(rootDistPath)
+    ? rootDistPath
+    : path.join(__dirname, '../../frontend/dist');
 app.use(express.static(frontendDistPath));
 
 // Fallback for React Single Page Application (SPA) routing
