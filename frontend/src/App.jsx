@@ -29,6 +29,7 @@ function Layout() {
   const isAuthPage = ['/login', '/signup', '/forgot-password'].includes(location.pathname);
 
   useEffect(() => {
+    window.scrollTo(0, 0);
     if (isAdminRoute) {
       document.body.classList.add('admin-light-mode');
     } else {
@@ -37,7 +38,7 @@ function Layout() {
     return () => {
       document.body.classList.remove('admin-light-mode');
     };
-  }, [isAdminRoute]);
+  }, [location.pathname, isAdminRoute]);
 
   return (
     <div className={isAdminRoute ? "app-container admin-layout" : "app-container"}>

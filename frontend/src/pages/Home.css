@@ -276,7 +276,7 @@
 /* 2. SHOP BY CATEGORY (8 CIRCULAR PILLS) */
 .category-section-pixel {
   background-color: var(--leafora-card-bg);
-  padding: 60px 40px;
+  padding: 36px 40px;
   border-top: 1px solid var(--leafora-border);
   border-bottom: 1px solid var(--leafora-border);
 }
@@ -565,7 +565,7 @@
 /* 3. BESTSELLERS GRID (4 PRODUCT CARDS + 1 TALL GOLDEN PROMO CARD) */
 .bestsellers-section-pixel {
   background-color: var(--leafora-cream-bg);
-  padding: 80px 40px;
+  padding: 40px 40px;
 }
 
 .bestsellers-container-pixel {
@@ -722,7 +722,7 @@
   background-color: var(--leafora-card-cream);
   border-top: 1px solid var(--leafora-border);
   border-bottom: 1px solid var(--leafora-border);
-  padding: 40px;
+  padding: 28px 40px;
 }
 
 .value-props-row-pixel {
@@ -767,7 +767,7 @@
 /* 5. BRAND STORY BANNER ("Skincare That Cares") */
 .brand-story-section-pixel {
   background-color: var(--leafora-cream-bg);
-  padding: 80px 40px;
+  padding: 40px 40px;
 }
 
 .brand-story-banner-pixel {

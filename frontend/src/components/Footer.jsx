@@ -62,7 +62,6 @@ export default function Footer() {
               <li><a href="#returns" style={{ color: 'inherit', textDecoration: 'none' }}>30-Day Money Back Guarantee</a></li>
               <li><a href="#shipping" style={{ color: 'inherit', textDecoration: 'none' }}>Free Shipping Details</a></li>
               <li><a href="#faq" style={{ color: 'inherit', textDecoration: 'none' }}>Skincare FAQs</a></li>
-              <li><a href="/admin" style={{ color: '#FFFFFF', fontWeight: 700, textDecoration: 'underline' }}>Admin Console</a></li>
             </ul>
           </div>
 
