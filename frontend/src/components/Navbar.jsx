@@ -118,7 +118,7 @@ export default function Navbar() {
               src={leaforaLogo} 
               alt="Leafora Life Sciences Logo" 
               className="brand-logo-img"
-              style={{ height: '42px', width: 'auto', objectFit: 'contain', display: 'block' }} 
+              style={{ height: '56px', width: 'auto', objectFit: 'contain', display: 'block' }} 
             />
             <div className="brand-text-col">
               <span className="brand-title">LeafOra</span>
