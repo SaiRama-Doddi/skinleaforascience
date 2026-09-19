@@ -250,7 +250,7 @@ export default function Navbar() {
               onClick={() => setIsCartOpen(true)}
               aria-label={`Cart with ${cartCount || 0} items`}
             >
-              <ShoppingBag size={20} color="#A67C52" />
+              <ShoppingBag size={22} className="cart-icon-nav" />
               <span className="cart-badge-count">{cartCount || 0}</span>
             </button>
           </div>

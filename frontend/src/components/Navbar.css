@@ -296,8 +296,8 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  background-color: #FAF7F2;
-  border: 1.5px solid #EFE8DE;
+  background: transparent !important;
+  border: none !important;
   padding: 6px 10px;
   border-radius: 20px;
   text-decoration: none;
@@ -305,11 +305,25 @@
   transition: all 0.2s ease;
   position: relative;
   cursor: pointer;
+  box-shadow: none !important;
+}
+
+.cart-icon-nav {
+  color: #A67C52;
+  transition: color 0.2s ease, transform 0.2s ease;
 }
 
 .navbar-cart-btn:hover {
-  background-color: #F4EBE1;
-  border-color: #A67C52;
+  background-color: #A67C52 !important;
+}
+
+.navbar-cart-btn:hover .cart-icon-nav {
+  color: #FFFFFF !important;
+}
+
+.navbar-cart-btn:hover .cart-badge-count {
+  background-color: #FFFFFF !important;
+  color: #A67C52 !important;
 }
 
 .cart-badge-count {
@@ -322,6 +336,7 @@
   min-width: 18px;
   text-align: center;
   line-height: 1.2;
+  transition: all 0.2s ease;
 }
 
 .user-badge-nav {
