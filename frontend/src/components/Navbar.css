@@ -99,7 +99,7 @@
   font-family: 'Playfair Display', Georgia, serif;
   font-size: 1.7rem;
   font-weight: 700;
-  color: #1F2937;
+  color: #A67C52;
   line-height: 1.05;
   display: block;
 }
@@ -294,17 +294,34 @@
 .navbar-cart-btn {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: #FFFFFF;
-  background-color: var(--nav-bronze);
-  padding: 7px 16px;
+  background-color: #FAF7F2;
+  border: 1.5px solid #EFE8DE;
+  padding: 6px 10px;
   border-radius: 20px;
   text-decoration: none;
   white-space: nowrap;
-  transition: background-color 0.2s ease;
+  transition: all 0.2s ease;
   position: relative;
+  cursor: pointer;
+}
+
+.navbar-cart-btn:hover {
+  background-color: #F4EBE1;
+  border-color: #A67C52;
+}
+
+.cart-badge-count {
+  background-color: #A67C52;
+  color: #FFFFFF;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 12px;
+  min-width: 18px;
+  text-align: center;
+  line-height: 1.2;
 }
 
 .user-badge-nav {
@@ -419,7 +436,7 @@
     font-family: 'Playfair Display', serif !important;
     font-size: 1.45rem !important;
     font-weight: 700 !important;
-    color: #1F2937 !important;
+    color: #A67C52 !important;
     line-height: 1 !important;
     display: block !important;
   }

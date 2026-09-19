@@ -38,29 +38,58 @@ app.use('/uploads', express.static(uploadsDir));
 // API Routes
 app.use('/api', apiRoutes);
 
-// Serve static frontend build assets
-const rootBuildPath = path.join(__dirname, '../../build');
-const rootDistPath = path.join(__dirname, '../../dist');
-const frontendDistPath = fs.existsSync(rootBuildPath)
-  ? rootBuildPath
-  : fs.existsSync(rootDistPath)
-    ? rootDistPath
-    : path.join(__dirname, '../../frontend/dist');
-app.use(express.static(frontendDistPath));
+// Function to locate a valid static build directory containing index.html
+const getFrontendBuildDir = () => {
+  const candidateDirs = [
+    path.join(__dirname, '../../build'),
+    path.join(__dirname, '../../dist'),
+    path.join(__dirname, '../../frontend/dist'),
+    path.join(process.cwd(), 'build'),
+    path.join(process.cwd(), 'dist'),
+    path.join(process.cwd(), 'frontend/dist'),
+  ];
+
+  for (const dir of candidateDirs) {
+    if (fs.existsSync(path.join(dir, 'index.html'))) {
+      return dir;
+    }
+  }
+
+  return path.join(__dirname, '../../frontend/dist');
+};
+
+// Serve static frontend build assets from all available candidate folders
+const candidateDirs = [
+  path.join(__dirname, '../../build'),
+  path.join(__dirname, '../../dist'),
+  path.join(__dirname, '../../frontend/dist'),
+  path.join(process.cwd(), 'build'),
+  path.join(process.cwd(), 'dist'),
+  path.join(process.cwd(), 'frontend/dist'),
+];
+
+candidateDirs.forEach((dir) => {
+  if (fs.existsSync(dir)) {
+    app.use(express.static(dir));
+  }
+});
 
 // Fallback for React Single Page Application (SPA) routing
-app.use((req, res, next) => {
-  if (req.path.startsWith('/api')) {
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
     return next();
   }
 
-  res.sendFile(path.join(frontendDistPath, 'index.html'), (err) => {
-    if (err) {
-      res.json({
-        message: 'Welcome to Leafora Life Science API Server',
-        documentation: '/api/health',
-      });
-    }
+  const activeBuildDir = getFrontendBuildDir();
+  const indexPath = path.join(activeBuildDir, 'index.html');
+
+  if (fs.existsSync(indexPath)) {
+    return res.sendFile(indexPath);
+  }
+
+  return res.json({
+    message: 'Welcome to Leafora Life Science API Server',
+    documentation: '/api/health',
   });
 });
 

@@ -121,8 +121,8 @@ export default function Navbar() {
               style={{ height: '56px', width: 'auto', objectFit: 'contain', display: 'block' }} 
             />
             <div className="brand-text-col">
-              <span className="brand-title">LeafOra</span>
-              <span className="brand-subtitle">LIFE SCIENCES</span>
+              <span className="brand-title" style={{ color: '#A67C52' }}>LeafOra</span>
+              <span className="brand-subtitle" style={{ color: '#A67C52' }}>LIFE SCIENCES</span>
             </div>
           </Link>
 
@@ -161,16 +161,6 @@ export default function Navbar() {
             <Link to="/products" className={`nav-item ${location.pathname === '/products' ? 'active' : ''}`} onClick={() => setIsMobileMenuOpen(false)}>
               Shop Catalog
             </Link>
-            <div 
-              className="nav-item" 
-              style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
-              onMouseEnter={() => setShowMegaMenu(true)}
-              onMouseLeave={() => setShowMegaMenu(false)}
-              onClick={() => { setShowMegaMenu(!showMegaMenu); }}
-            >
-              <span>Skincare</span> <ChevronDown size={14} />
-            </div>
-            <Link to="/products" className="nav-item" onClick={() => setIsMobileMenuOpen(false)}>Best Sellers</Link>
             <Link to="/about" className={`nav-item ${location.pathname === '/about' ? 'active' : ''}`} onClick={() => setIsMobileMenuOpen(false)}>About Us</Link>
             <Link to="/contact" className={`nav-item ${location.pathname === '/contact' ? 'active' : ''}`} onClick={() => setIsMobileMenuOpen(false)}>Contact Us</Link>
 
@@ -258,57 +248,14 @@ export default function Navbar() {
               type="button"
               className="navbar-cart-btn"
               onClick={() => setIsCartOpen(true)}
+              aria-label={`Cart with ${cartCount || 0} items`}
             >
-              <ShoppingBag size={20} />
-              <span className="cart-btn-label">Cart </span>
+              <ShoppingBag size={20} color="#A67C52" />
               <span className="cart-badge-count">{cartCount || 0}</span>
             </button>
           </div>
 
         </div>
-
-        {/* MEGA MENU DROPDOWN DRAWER */}
-        {showMegaMenu && (
-          <div 
-            className="mega-menu-wrapper"
-            onMouseEnter={() => setShowMegaMenu(true)}
-            onMouseLeave={() => setShowMegaMenu(false)}
-          >
-            <div className="mega-menu-inner">
-              {categories.length > 0 ? (
-                categories.slice(0, 3).map(cat => (
-                  <div className="mega-column" key={cat.id}>
-                    <h4>{cat.name}</h4>
-                    <p style={{ fontSize: 12, color: '#78716C', marginBottom: 8 }}>
-                      {cat.description || 'Formulated with pure botanical science.'}
-                    </p>
-                    <ul>
-                      <li>
-                        <Link to={`/products?category=${encodeURIComponent(cat.slug || cat.name)}`}>
-                          Browse {cat.name} Collection
-                        </Link>
-                      </li>
-                    </ul>
-                  </div>
-                ))
-              ) : (
-                <div className="mega-column">
-                  <h4>Categories</h4>
-                  <p style={{ fontSize: 12, color: '#78716C' }}>No categories available in database.</p>
-                </div>
-              )}
-              <div className="mega-column" style={{ background: '#FAF7F2', padding: 16, borderRadius: 14 }}>
-                <h4 style={{ color: '#292524' }}>🌿 Pure Ingredients Guarantee</h4>
-                <p style={{ fontSize: 12, color: '#78716C', lineHeight: 1.5, marginTop: 4 }}>
-                  All Leafora formulations are 100% cruelty-free, paraben-free, and tested by dermatologists.
-                </p>
-                <Link to="/products" className="hero-cta-btn" style={{ fontSize: 12, padding: '8px 16px', marginTop: 10 }}>
-                  Explore Collection →
-                </Link>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* MINI CART SLIDE-OUT DRAWER */}
         {isCartOpen && (
