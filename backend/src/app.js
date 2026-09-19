@@ -38,40 +38,70 @@ app.use('/uploads', express.static(uploadsDir));
 // API Routes
 app.use('/api', apiRoutes);
 
-// Function to locate a valid static build directory containing index.html
+// Function to locate a valid static build directory containing index.html across all possible deployment structures
 const getFrontendBuildDir = () => {
   const candidateDirs = [
+    // Relative to __dirname (backend/src)
     path.join(__dirname, '../../build'),
     path.join(__dirname, '../../dist'),
     path.join(__dirname, '../../frontend/dist'),
+    path.join(__dirname, '../build'),
+    path.join(__dirname, '../dist'),
+    path.join(__dirname, '../public'),
+    path.join(__dirname, '../'),
+
+    // Relative to process.cwd()
     path.join(process.cwd(), 'build'),
     path.join(process.cwd(), 'dist'),
     path.join(process.cwd(), 'frontend/dist'),
+    path.join(process.cwd(), 'backend/build'),
+    path.join(process.cwd(), 'backend/dist'),
+    path.join(process.cwd(), 'backend/public'),
+    path.join(process.cwd(), 'public'),
+    process.cwd(),
+
+    // Absolute resolves
+    path.resolve('build'),
+    path.resolve('dist'),
+    path.resolve('frontend/dist'),
+    path.resolve('public'),
   ];
 
   for (const dir of candidateDirs) {
-    if (fs.existsSync(path.join(dir, 'index.html'))) {
-      return dir;
-    }
+    try {
+      if (fs.existsSync(path.join(dir, 'index.html'))) {
+        return path.resolve(dir);
+      }
+    } catch (e) {}
   }
 
-  return path.join(__dirname, '../../frontend/dist');
+  return path.resolve(path.join(__dirname, '../../frontend/dist'));
 };
 
-// Serve static frontend build assets from all available candidate folders
+// Serve static frontend build assets from all candidate folders
 const candidateDirs = [
   path.join(__dirname, '../../build'),
   path.join(__dirname, '../../dist'),
   path.join(__dirname, '../../frontend/dist'),
+  path.join(__dirname, '../build'),
+  path.join(__dirname, '../dist'),
+  path.join(__dirname, '../public'),
   path.join(process.cwd(), 'build'),
   path.join(process.cwd(), 'dist'),
   path.join(process.cwd(), 'frontend/dist'),
+  path.join(process.cwd(), 'backend/dist'),
+  path.join(process.cwd(), 'backend/public'),
+  path.resolve('dist'),
+  path.resolve('build'),
+  path.resolve('frontend/dist'),
 ];
 
 candidateDirs.forEach((dir) => {
-  if (fs.existsSync(dir)) {
-    app.use(express.static(dir));
-  }
+  try {
+    if (fs.existsSync(dir)) {
+      app.use(express.static(dir));
+    }
+  } catch (e) {}
 });
 
 // Fallback for React Single Page Application (SPA) routing
@@ -84,11 +114,21 @@ app.get('*', (req, res, next) => {
   const indexPath = path.join(activeBuildDir, 'index.html');
 
   if (fs.existsSync(indexPath)) {
-    return res.sendFile(indexPath);
+    return res.sendFile(indexPath, (err) => {
+      if (err && !res.headersSent) {
+        // Fallback send if primary sendFile encountered an issue
+        const candidateFallback = path.resolve('dist/index.html');
+        if (fs.existsSync(candidateFallback)) {
+          return res.sendFile(candidateFallback);
+        }
+        res.status(500).send('Error loading Leafora application.');
+      }
+    });
   }
 
-  return res.json({
+  return res.status(404).json({
     message: 'Welcome to Leafora Life Science API Server',
+    status: 'Frontend index.html build file not found',
     documentation: '/api/health',
   });
 });

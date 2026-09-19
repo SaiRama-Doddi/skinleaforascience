@@ -6,6 +6,8 @@ import {
 } from 'lucide-react';
 import { getProducts, getCategories } from '../services/api';
 import { addToCart } from '../services/cartService';
+import skincareStoryPhoto from '../assets/skincare_story_showcase.jpg';
+import botanicalProductsPhoto from '../assets/login_botanical_products.jpg';
 import './Shop.css';
 
 export default function Shop() {
@@ -13,7 +15,7 @@ export default function Shop() {
   const [products, setProducts] = useState([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
-  
+
   // Filter States matching reference image
   const [selectedCategory, setSelectedCategory] = useState('All Products');
   const [priceMax, setPriceMax] = useState(1000);
@@ -43,23 +45,28 @@ export default function Shop() {
     getProducts()
       .then(res => {
         if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
-          const apiMerged = res.data.map((p, i) => ({
-            id: p.id,
-            name: p.name,
-            brand: p.brand || 'Leafora',
-            category: p.category || 'Skincare',
-            price: Number(p.price) || 0,
-            rating: (4.7 + (i % 4) * 0.1).toFixed(1),
-            reviews: 40 + i * 14,
-            badge: i % 4 === 0 ? 'Best Seller' : i % 3 === 0 ? 'New' : null,
-            badgeType: i % 4 === 0 ? 'bestseller' : i % 3 === 0 ? 'new' : null,
-            skinType: ['Normal', 'Dry'],
-            concerns: ['Hydration'],
-            inStock: true,
-            image_url: p.image_url || p.image || '',
-            image: p.image_url || p.image || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400"><rect width="400" height="400" fill="%23F7F4EE"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%23A67C52" font-family="sans-serif" font-size="16">No Image Available</text></svg>',
-            description: p.description || 'Natural botanical formulation crafted with organic ingredients.'
-          }));
+          const apiMerged = res.data.map((p, i) => {
+            const hasValidImage = p.image_url && typeof p.image_url === 'string' && p.image_url.trim() !== '' && !p.image_url.includes('data:image/svg+xml');
+            const resolvedImg = hasValidImage ? p.image_url : (i % 2 === 0 ? botanicalProductsPhoto : skincareStoryPhoto);
+
+            return {
+              id: p.id,
+              name: p.name,
+              brand: p.brand || 'Leafora',
+              category: p.category || 'Skincare',
+              price: Number(p.price) || 0,
+              rating: (4.7 + (i % 4) * 0.1).toFixed(1),
+              reviews: 40 + i * 14,
+              badge: i % 4 === 0 ? 'Best Seller' : i % 3 === 0 ? 'New' : null,
+              badgeType: i % 4 === 0 ? 'bestseller' : i % 3 === 0 ? 'new' : null,
+              skinType: ['Normal', 'Dry'],
+              concerns: ['Hydration'],
+              inStock: true,
+              image_url: resolvedImg,
+              image: resolvedImg,
+              description: p.description || 'Natural botanical formulation crafted with organic ingredients.'
+            };
+          });
           setProducts(apiMerged);
         } else {
           setProducts([]);
