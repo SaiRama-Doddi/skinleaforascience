@@ -491,7 +491,7 @@ export default function Cart() {
       {/* CHECKOUT ADDRESS SELECTION MODAL */}
       {showCheckoutModal && (
         <div className="modal-backdrop" onClick={() => setShowCheckoutModal(false)}>
-          <div className="modal-content-card" onClick={e => e.stopPropagation()} style={{ maxWidth: 640 }}>
+          <div className="modal-content-card" onClick={e => e.stopPropagation()} style={{ maxWidth: 680, width: '94%' }}>
             <div className="modal-header">
               <h3>Select Delivery Address & Checkout</h3>
               <button onClick={() => setShowCheckoutModal(false)}><X size={20} /></button>

@@ -182,10 +182,12 @@
 .form-group-row {
   display: flex;
   gap: 16px;
+  width: 100%;
 }
 
 .form-group-col {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -198,6 +200,8 @@
 }
 
 .form-group-col input {
+  width: 100%;
+  box-sizing: border-box;
   padding: 10px 14px;
   border: 1px solid var(--leafora-border);
   border-radius: 8px;
@@ -487,10 +491,11 @@
 .modal-content-card {
   background: #FFFFFF;
   border-radius: 16px;
-  width: 100%;
-  max-width: 520px;
-  overflow: hidden;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+  width: 94%;
+  max-width: 680px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 35px rgba(0,0,0,0.2);
 }
 
 .modal-header {
@@ -554,5 +559,10 @@
 
   .wishlist-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .form-group-row {
+    flex-direction: column;
+    gap: 12px;
   }
 }
