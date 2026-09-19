@@ -2,10 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   ShoppingBag, Trash2, ArrowLeft, ShieldCheck, Truck, Sparkles, CheckCircle2, 
-  MapPin, Plus, Check, CreditCard, X, ChevronRight, AlertCircle, Phone, User
+  MapPin, Plus, Check, CreditCard, X, ChevronRight, AlertCircle, Phone, User, Navigation
 } from 'lucide-react';
 import { getCart, getCartSubtotal, updateCartQuantity, removeFromCart, clearCart, DEFAULT_PRODUCT_IMAGE } from '../services/cartService';
 import { userGetAddresses, userAddAddress, placeOrder, createRazorpayOrder, verifyRazorpayPayment } from '../services/api';
+import { detectLiveLocation } from '../services/locationService';
 import './Cart.css';
 
 const loadRazorpayScript = () => {
@@ -54,10 +55,30 @@ export default function Cart() {
   const [placingOrder, setPlacingOrder] = useState(false);
   const [orderPlacedData, setOrderPlacedData] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
+  const [detectingLoc, setDetectingLoc] = useState(false);
 
   const showToast = (msg) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
+  };
+
+  const handleDetectLocation = async () => {
+    setDetectingLoc(true);
+    try {
+      const loc = await detectLiveLocation();
+      setNewAddress(prev => ({
+        ...prev,
+        address_line1: loc.address_line1 || prev.address_line1,
+        city: loc.city || prev.city,
+        state: loc.state || prev.state,
+        pincode: loc.pincode || prev.pincode
+      }));
+      showToast('📍 Live location detected and filled successfully!');
+    } catch (err) {
+      showToast(err.message || 'Could not detect live location.');
+    } finally {
+      setDetectingLoc(false);
+    }
   };
 
   const refreshCart = () => {
@@ -539,6 +560,31 @@ export default function Cart() {
                 {(showInlineAddrForm || userAddresses.length === 0) && (
                   <form onSubmit={handleAddInlineAddress} style={{ background: '#FAF7F2', padding: 18, borderRadius: 12, border: '1px solid #EFE8DE' }}>
                     <h5 style={{ margin: '0 0 14px 0', color: '#1A2E22' }}>+ Add New Delivery Address</h5>
+                    
+                    <div style={{ marginBottom: 14 }}>
+                      <button 
+                        type="button"
+                        onClick={handleDetectLocation}
+                        disabled={detectingLoc}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          padding: '8px 16px',
+                          borderRadius: 20,
+                          background: '#FFFFFF',
+                          border: '1.5px solid #A67C52',
+                          color: '#A67C52',
+                          fontWeight: 700,
+                          fontSize: '0.85rem',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease'
+                        }}
+                      >
+                        <Navigation size={14} style={{ animation: detectingLoc ? 'pdpSpin 1s linear infinite' : 'none' }} />
+                        {detectingLoc ? 'Detecting Live Location...' : '📍 Detect My Live Location'}
+                      </button>
+                    </div>
                     
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
                       <input 

@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { 
   User, MapPin, Package, Heart, LogOut, Edit3, Plus, Trash2, CheckCircle2, 
-  Clock, ShieldCheck, Phone, Mail, Award, ChevronRight, Check, AlertCircle, ShoppingBag, Eye, X
+  Clock, ShieldCheck, Phone, Mail, Award, ChevronRight, Check, AlertCircle, ShoppingBag, Eye, X, Navigation
 } from 'lucide-react';
 import { 
   userGetProfile, userUpdateProfile, userGetAddresses, userAddAddress, 
   userDeleteAddress, userGetOrders, userGetWishlist 
 } from '../services/api';
 import { addToCart } from '../services/cartService';
+import { detectLiveLocation } from '../services/locationService';
 import './UserDashboard.css';
 
 export default function UserDashboard() {
@@ -45,10 +46,30 @@ export default function UserDashboard() {
   });
   const [addingAddr, setAddingAddr] = useState(false);
   const [selectedOrderDetails, setSelectedOrderDetails] = useState(null);
+  const [detectingLoc, setDetectingLoc] = useState(false);
 
   const showToast = (msg) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
+  };
+
+  const handleDetectLocation = async () => {
+    setDetectingLoc(true);
+    try {
+      const loc = await detectLiveLocation();
+      setNewAddr(prev => ({
+        ...prev,
+        address_line1: loc.address_line1 || prev.address_line1,
+        city: loc.city || prev.city,
+        state: loc.state || prev.state,
+        pincode: loc.pincode || prev.pincode
+      }));
+      showToast('📍 Live location detected and filled successfully!');
+    } catch (err) {
+      showToast(err.message || 'Could not detect live location.');
+    } finally {
+      setDetectingLoc(false);
+    }
   };
 
   // Load User Data
@@ -509,6 +530,31 @@ export default function UserDashboard() {
             </div>
 
             <form onSubmit={handleAddAddress} className="modal-form">
+              <div style={{ marginBottom: 16 }}>
+                <button 
+                  type="button"
+                  onClick={handleDetectLocation}
+                  disabled={detectingLoc}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '9px 18px',
+                    borderRadius: 24,
+                    background: '#FAF7F2',
+                    border: '1.5px solid #A67C52',
+                    color: '#A67C52',
+                    fontWeight: 700,
+                    fontSize: '0.88rem',
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 8px rgba(166, 124, 82, 0.12)',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  <Navigation size={15} style={{ animation: detectingLoc ? 'pdpSpin 1s linear infinite' : 'none' }} />
+                  {detectingLoc ? 'Detecting Live Location...' : '📍 Detect My Live Location'}
+                </button>
+              </div>
               <div className="form-group-row">
                 <div className="form-group-col">
                   <label>Full Name *</label>
