@@ -41,29 +41,22 @@ app.use('/api', apiRoutes);
 // Function to locate a valid static build directory containing index.html across all possible deployment structures
 const getFrontendBuildDir = () => {
   const candidateDirs = [
-    // Relative to __dirname (backend/src)
-    path.join(__dirname, '../../build'),
-    path.join(__dirname, '../../dist'),
-    path.join(__dirname, '../../frontend/dist'),
-    path.join(__dirname, '../build'),
-    path.join(__dirname, '../dist'),
+    // 1. Check backend/public (Committed to Git repo for GitHub Hostinger deployment)
     path.join(__dirname, '../public'),
-    path.join(__dirname, '../'),
-
-    // Relative to process.cwd()
-    path.join(process.cwd(), 'build'),
-    path.join(process.cwd(), 'dist'),
-    path.join(process.cwd(), 'frontend/dist'),
-    path.join(process.cwd(), 'backend/build'),
-    path.join(process.cwd(), 'backend/dist'),
     path.join(process.cwd(), 'backend/public'),
-    path.join(process.cwd(), 'public'),
-    process.cwd(),
 
-    // Absolute resolves
-    path.resolve('build'),
+    // 2. Check root dist (Committed to Git repo for GitHub Hostinger deployment)
+    path.join(__dirname, '../../dist'),
+    path.join(process.cwd(), 'dist'),
     path.resolve('dist'),
-    path.resolve('frontend/dist'),
+
+    // 3. Check other candidate dirs
+    path.join(__dirname, '../../build'),
+    path.join(__dirname, '../../frontend/dist'),
+    path.join(__dirname, '../dist'),
+    path.join(process.cwd(), 'build'),
+    path.join(process.cwd(), 'frontend/dist'),
+    path.resolve('build'),
     path.resolve('public'),
   ];
 
@@ -75,25 +68,20 @@ const getFrontendBuildDir = () => {
     } catch (e) {}
   }
 
-  return path.resolve(path.join(__dirname, '../../frontend/dist'));
+  return path.resolve(path.join(__dirname, '../public'));
 };
 
 // Serve static frontend build assets from all candidate folders
 const candidateDirs = [
-  path.join(__dirname, '../../build'),
-  path.join(__dirname, '../../dist'),
-  path.join(__dirname, '../../frontend/dist'),
-  path.join(__dirname, '../build'),
-  path.join(__dirname, '../dist'),
   path.join(__dirname, '../public'),
-  path.join(process.cwd(), 'build'),
-  path.join(process.cwd(), 'dist'),
-  path.join(process.cwd(), 'frontend/dist'),
-  path.join(process.cwd(), 'backend/dist'),
   path.join(process.cwd(), 'backend/public'),
+  path.join(__dirname, '../../dist'),
+  path.join(process.cwd(), 'dist'),
   path.resolve('dist'),
-  path.resolve('build'),
-  path.resolve('frontend/dist'),
+  path.join(__dirname, '../../build'),
+  path.join(__dirname, '../../frontend/dist'),
+  path.join(process.cwd(), 'build'),
+  path.join(process.cwd(), 'frontend/dist'),
 ];
 
 candidateDirs.forEach((dir) => {
@@ -116,14 +104,19 @@ app.get('*', (req, res, next) => {
   if (fs.existsSync(indexPath)) {
     return res.sendFile(indexPath, (err) => {
       if (err && !res.headersSent) {
-        // Fallback send if primary sendFile encountered an issue
-        const candidateFallback = path.resolve('dist/index.html');
-        if (fs.existsSync(candidateFallback)) {
-          return res.sendFile(candidateFallback);
+        const directPublicIndex = path.join(__dirname, '../public/index.html');
+        if (fs.existsSync(directPublicIndex)) {
+          return res.sendFile(directPublicIndex);
         }
         res.status(500).send('Error loading Leafora application.');
       }
     });
+  }
+
+  // Guaranteed direct fallback to backend/public/index.html tracked in Git
+  const directPublicIndex = path.join(__dirname, '../public/index.html');
+  if (fs.existsSync(directPublicIndex)) {
+    return res.sendFile(directPublicIndex);
   }
 
   return res.status(404).json({

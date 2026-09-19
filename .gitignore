@@ -5,8 +5,7 @@ backend/node_modules/
 
 # Production build output
 build/
-dist/
-frontend/dist/
+# dist/ (Tracked for GitHub deployment)
 frontend/dist-ssr/
 
 # Environment variables
