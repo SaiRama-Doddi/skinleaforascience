@@ -4,7 +4,7 @@ import {
   ShoppingBag, Trash2, ArrowLeft, ShieldCheck, Truck, Sparkles, CheckCircle2, 
   MapPin, Plus, Check, CreditCard, X, ChevronRight, AlertCircle, Phone, User
 } from 'lucide-react';
-import { getCart, getCartSubtotal, updateCartQuantity, removeFromCart, clearCart } from '../services/cartService';
+import { getCart, getCartSubtotal, updateCartQuantity, removeFromCart, clearCart, DEFAULT_PRODUCT_IMAGE } from '../services/cartService';
 import { userGetAddresses, userAddAddress, placeOrder, createRazorpayOrder, verifyRazorpayPayment } from '../services/api';
 import './Cart.css';
 
@@ -381,9 +381,13 @@ export default function Cart() {
                 {cartItems.map((item) => (
                   <div key={item.id} className="cart-item-row">
                     <img 
-                      src={item.image_url || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZHg9IjEwMCIgZmlsbD0iI0YzRjRGNiIvPjwvc3ZnPg=='} 
+                      src={item.image_url || DEFAULT_PRODUCT_IMAGE} 
                       alt={item.name} 
                       className="cart-item-image" 
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = DEFAULT_PRODUCT_IMAGE;
+                      }}
                     />
                     <div className="cart-item-info">
                       <h3 className="cart-item-name">{item.name}</h3>

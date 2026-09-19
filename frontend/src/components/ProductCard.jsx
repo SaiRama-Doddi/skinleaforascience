@@ -8,7 +8,7 @@ export default function ProductCard({ product }) {
   const navigate = useNavigate();
   const images = Array.isArray(product.images) && product.images.length > 0
     ? product.images
-    : [product.image_url || SVG_PLACEHOLDER];
+    : [product.image_url || product.image || SVG_PLACEHOLDER];
 
   const [selectedImgIndex, setSelectedImgIndex] = useState(0);
   const currentImg = images[selectedImgIndex] || images[0] || SVG_PLACEHOLDER;

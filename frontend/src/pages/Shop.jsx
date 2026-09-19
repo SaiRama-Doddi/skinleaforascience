@@ -56,7 +56,8 @@ export default function Shop() {
             skinType: ['Normal', 'Dry'],
             concerns: ['Hydration'],
             inStock: true,
-            image: p.image_url || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400"><rect width="400" height="400" fill="%23F7F4EE"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%23A67C52" font-family="sans-serif" font-size="16">No Image Available</text></svg>',
+            image_url: p.image_url || p.image || '',
+            image: p.image_url || p.image || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400"><rect width="400" height="400" fill="%23F7F4EE"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%23A67C52" font-family="sans-serif" font-size="16">No Image Available</text></svg>',
             description: p.description || 'Natural botanical formulation crafted with organic ingredients.'
           }));
           setProducts(apiMerged);

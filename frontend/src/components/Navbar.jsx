@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Leaf, User, LogOut, Wallet, Search, ShoppingBag, ChevronDown, Sparkles, ShieldCheck, Menu, X, Trash2 } from 'lucide-react';
 import { checkHealth, getCategories, getProducts } from '../services/api';
-import { getCart, getCartCount, getCartSubtotal, updateCartQuantity, removeFromCart } from '../services/cartService';
+import { getCart, getCartCount, getCartSubtotal, updateCartQuantity, removeFromCart, DEFAULT_PRODUCT_IMAGE } from '../services/cartService';
 import leaforaLogo from '../assets/leafora-logo.png';
 import './Navbar.css';
 
@@ -363,9 +363,13 @@ export default function Navbar() {
                       <div key={item.id} className="cart-item-card">
                         <div className="cart-item-top">
                           <img 
-                            src={item.image_url || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZHg9IjEwMCIgZmlsbD0iI0YzRjRGNiIvPjwvc3ZnPg=='} 
+                            src={item.image_url || DEFAULT_PRODUCT_IMAGE} 
                             alt={item.name} 
                             className="cart-item-thumb" 
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = DEFAULT_PRODUCT_IMAGE;
+                            }}
                           />
                           <div className="cart-item-details">
                             <div className="cart-item-title">{item.name}</div>

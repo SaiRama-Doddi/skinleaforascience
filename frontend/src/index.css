@@ -188,3 +188,44 @@ h1, h2, h3, h4, h5, h6 {
   50% { opacity: 1; transform: scale(1.1); }
   100% { opacity: 0.6; transform: scale(0.9); }
 }
+
+/* Floating Toast Notification Banner */
+.toast-banner {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  z-index: 99999 !important;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(135deg, #1A2E22 0%, #294433 100%) !important;
+  color: #FFFFFF !important;
+  padding: 14px 22px;
+  border-radius: 12px;
+  box-shadow: 0 12px 35px rgba(26, 46, 34, 0.35), 0 4px 14px rgba(0, 0, 0, 0.18) !important;
+  border: 1.5px solid #A67C52 !important;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  animation: toastSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.toast-banner svg {
+  color: #34D399 !important;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+}
+
+@keyframes toastSlideUp {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
