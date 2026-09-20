@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   ShoppingBag, Trash2, ArrowLeft, ShieldCheck, Truck, Sparkles, CheckCircle2, 
-  MapPin, Plus, Check, CreditCard, X, ChevronRight, AlertCircle, Phone, User, Navigation
+  MapPin, Plus, Check, CreditCard, X, ChevronRight, AlertCircle, Phone, User, Navigation, Lock
 } from 'lucide-react';
 import { getCart, getCartSubtotal, updateCartQuantity, removeFromCart, clearCart, DEFAULT_PRODUCT_IMAGE } from '../services/cartService';
 import { userGetAddresses, userAddAddress, placeOrder, createRazorpayOrder, verifyRazorpayPayment } from '../services/api';
@@ -138,31 +138,31 @@ export default function Cart() {
       if (u.email) {
         userGetAddresses(u.email)
           .then(res => {
-            const addrs = res?.addresses || res?.data?.addresses || [];
-            setUserAddresses(addrs);
-            if (addrs.length > 0) {
-              const def = addrs.find(a => a.is_default) || addrs[0];
+            if (res && res.data && res.data.length > 0) {
+              setUserAddresses(res.data);
+              const def = res.data.find(a => a.is_default) || res.data[0];
               setSelectedAddressId(def.id);
             } else {
               setShowInlineAddrForm(true);
             }
           })
-          .catch(() => setShowInlineAddrForm(true));
-      } else {
-        setShowInlineAddrForm(true);
+          .catch(() => {
+            setShowInlineAddrForm(true);
+          });
       }
 
       setShowCheckoutModal(true);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (e) {
       navigate('/login?redirect=/cart');
     }
   };
 
-  // Add Inline Address Submit
+  // Handle Add Inline Address Submit
   const handleAddInlineAddress = async (e) => {
     e.preventDefault();
     if (!newAddress.address_line1 || !newAddress.city || !newAddress.state || !newAddress.pincode) {
-      showToast('Please complete street address, city, state, and pincode.');
+      showToast('Please fill all mandatory address fields.');
       return;
     }
 
@@ -170,124 +170,124 @@ export default function Cart() {
     try {
       const payload = {
         ...newAddress,
-        email: user.email,
-        customer_id: user.id
+        email: user?.email,
+        phone: newAddress.phone || user?.phone || user?.mobile || '9999999999'
       };
+
       const res = await userAddAddress(payload);
-      if (res?.success || res?.data?.success) {
-        showToast('New delivery address saved!');
-        setShowInlineAddrForm(false);
-        // Refresh address list
-        const refreshed = await userGetAddresses(user.email);
-        const addrs = refreshed?.addresses || refreshed?.data?.addresses || [];
-        setUserAddresses(addrs);
-        const addrId = res?.address_id || res?.data?.address_id;
-        if (addrId) {
-          setSelectedAddressId(addrId);
-        } else if (addrs.length > 0) {
-          setSelectedAddressId(addrs[0].id);
+      if (res && res.success) {
+        showToast('Address saved successfully!');
+        if (user?.email) {
+          const addrs = await userGetAddresses(user.email);
+          if (addrs && addrs.data) {
+            setUserAddresses(addrs.data);
+            setSelectedAddressId(res.address_id || addrs.data[addrs.data.length - 1].id);
+          }
         }
+        setShowInlineAddrForm(false);
+      } else {
+        showToast(res?.message || 'Failed to save address.');
       }
-    } catch (err) {
-      showToast(err.message || 'Error saving delivery address.');
+    } catch (error) {
+      showToast(error.message || 'Error saving address.');
     } finally {
       setSavingAddress(false);
     }
   };
 
-  // Confirm Order Submit (Launches Razorpay Gateway Directly)
+  // Handle Razorpay Order Placement
   const handleConfirmOrder = async () => {
-    let chosenAddress = null;
-    if (selectedAddressId) {
-      chosenAddress = userAddresses.find(a => String(a.id) === String(selectedAddressId));
-    }
-    if (!chosenAddress && userAddresses.length > 0) {
-      chosenAddress = userAddresses[0];
-    }
-    if (!chosenAddress && (newAddress.address_line1 && newAddress.city && newAddress.pincode)) {
-      chosenAddress = newAddress;
-    }
-
-    if (!chosenAddress) {
-      showToast('Please select or add a delivery address.');
-      setShowInlineAddrForm(true);
+    if (cartItems.length === 0) {
+      showToast('Your shopping cart is empty.');
       return;
     }
 
+    let finalAddress = null;
+    if (userAddresses.length > 0 && selectedAddressId) {
+      finalAddress = userAddresses.find(a => a.id === selectedAddressId);
+    }
+
+    if (!finalAddress) {
+      if (!newAddress.address_line1 || !newAddress.city || !newAddress.pincode) {
+        showToast('Please select or add a delivery address to proceed.');
+        return;
+      }
+      finalAddress = newAddress;
+    }
+
     setPlacingOrder(true);
+
     try {
-      const scriptLoaded = await loadRazorpayScript();
-      if (!scriptLoaded) {
-        showToast('Failed to load Razorpay payment gateway. Check internet connection.');
+      const isRazorpayLoaded = await loadRazorpayScript();
+      if (!isRazorpayLoaded) {
+        showToast('Payment gateway failed to load. Check your internet connection.');
         setPlacingOrder(false);
         return;
       }
 
-      const rzpRes = await createRazorpayOrder(totalAmount);
-      const rzpData = rzpRes?.order_id ? rzpRes : (rzpRes?.data || {});
+      // 1. Create Razorpay backend order
+      const rzpOrderRes = await createRazorpayOrder({
+        amount: totalAmount,
+        currency: 'INR',
+        customer_email: user?.email,
+        customer_phone: finalAddress.phone || user?.phone || '9999999999'
+      });
 
-      if (!rzpData?.order_id) {
-        showToast(rzpData?.message || 'Error initializing Razorpay order.');
-        setPlacingOrder(false);
-        return;
+      if (!rzpOrderRes || !rzpOrderRes.success || !rzpOrderRes.order) {
+        throw new Error(rzpOrderRes?.message || 'Could not initialize payment order.');
       }
 
+      const rzpOrder = rzpOrderRes.order;
+
+      // 2. Launch Razorpay Standard Checkout Popup
       const options = {
-        key: rzpData.key_id || 'rzp_test_SwedUUn1KgRMs0',
-        amount: rzpData.amount,
-        currency: rzpData.currency || 'INR',
-        name: 'Leafora Life Sciences',
-        description: `Order Payment - ₹${totalAmount.toFixed(2)}`,
-        image: 'https://api.dicebear.com/7.x/bottts/svg?seed=Leafora',
-        order_id: rzpData.order_id,
+        key: rzpOrderRes.key_id,
+        amount: rzpOrder.amount,
+        currency: rzpOrder.currency,
+        name: 'Leafora Life Science',
+        description: `Order for ${cartItems.length} Botanical Skincare Product(s)`,
+        image: 'https://leaforalifescience.com/assets/leafora-logo.png',
+        order_id: rzpOrder.id,
         prefill: {
-          name: user?.name || chosenAddress?.name || (user?.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : 'Valued Customer'),
+          name: finalAddress.name || user?.name || '',
           email: user?.email || '',
-          contact: user?.phone || chosenAddress?.phone || ''
+          contact: finalAddress.phone || user?.phone || ''
         },
         theme: {
-          color: '#A67C52'
+          color: '#0C4F25'
         },
         handler: async function (response) {
           try {
+            setPlacingOrder(true);
+            showToast('Verifying payment and generating order invoice...');
+
+            // 3. Verify Payment Signature
             const verifyRes = await verifyRazorpayPayment({
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature
+              razorpay_signature: response.razorpay_signature,
+              customer_email: user?.email,
+              shipping_address: finalAddress,
+              items: cartItems,
+              total_amount: totalAmount,
+              payment_method: 'Razorpay Online'
             });
-            const verifyData = verifyRes?.verified ? verifyRes : (verifyRes?.data || {});
 
-            if (verifyData?.success || verifyData?.verified) {
-              const payload = {
-                customer_name: user?.name || (user?.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : 'Valued Customer'),
-                customer_email: user?.email,
-                customer_phone: user?.phone || chosenAddress.phone || '',
-                shipping_address: chosenAddress,
-                items: cartItems,
-                subtotal,
-                shipping_fee: shippingCost,
+            if (verifyRes && verifyRes.success) {
+              clearCart();
+              setShowCheckoutModal(false);
+              setOrderPlacedData({
+                order_number: verifyRes.order_number || verifyRes.order_id || `LFA-${Date.now().toString().slice(-6)}`,
                 total_amount: totalAmount,
-                payment_method: 'Razorpay',
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature
-              };
-
-              const res = await placeOrder(payload);
-              const orderData = res?.order || res?.data?.order;
-              if (res?.success || res?.data?.success) {
-                setOrderPlacedData(orderData || { order_number: 'ORD-' + Date.now().toString().slice(-6) });
-                setShowCheckoutModal(false);
-                clearCart();
-                refreshCart();
-              } else {
-                showToast(res?.message || 'Error saving order after payment.');
-              }
+                payment_id: response.razorpay_payment_id
+              });
+              showToast('🎉 Order placed successfully! Thank you.');
             } else {
-              showToast('Payment signature verification failed.');
+              showToast(verifyRes?.message || 'Payment verification failed. Please contact support.');
             }
-          } catch (e) {
-            showToast('Error verifying Razorpay payment.');
+          } catch (verErr) {
+            console.error('Verification error:', verErr);
+            showToast(verErr.message || 'Payment verification failed.');
           } finally {
             setPlacingOrder(false);
           }
@@ -295,260 +295,142 @@ export default function Cart() {
         modal: {
           ondismiss: function () {
             setPlacingOrder(false);
-            showToast('Razorpay payment window closed.');
+            showToast('Payment window closed. You can retry checkout anytime.');
           }
         }
       };
 
-      const rzp = new window.Razorpay(options);
-      rzp.on('payment.failed', function (response) {
+      const razorpayInstance = new window.Razorpay(options);
+      razorpayInstance.on('payment.failed', function (resp) {
+        showToast(`Payment failed: ${resp.error.description}`);
         setPlacingOrder(false);
-        showToast(response.error?.description || 'Razorpay Payment Failed.');
       });
-      rzp.open();
 
-    } catch (err) {
-      showToast(err.message || 'Failed to launch Razorpay checkout.');
+      razorpayInstance.open();
+    } catch (error) {
+      console.error('Checkout error:', error);
+      showToast(error.message || 'Failed to open payment gateway.');
       setPlacingOrder(false);
     }
   };
 
   return (
     <div className="cart-page-container">
-      {/* Toast Banner */}
+      
+      {/* FLOATING TOAST NOTIFICATION */}
       {toastMessage && (
-        <div className="toast-banner" style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 999 }}>
-          <CheckCircle2 size={18} />
+        <div className="cart-toast-banner">
+          <Sparkles size={18} />
           <span>{toastMessage}</span>
         </div>
       )}
 
-      <div className="cart-page-inner">
-        {/* HEADER BREADCRUMB */}
-        <div className="cart-page-header">
-          <Link to="/products" className="cart-back-link">
-            <ArrowLeft size={18} /> Continue Shopping
-          </Link>
-          <h1 className="cart-page-title">
-            Your Shopping Bag <span className="cart-title-count">({cartItems.reduce((a, b) => a + (b.quantity || 1), 0)})</span>
-          </h1>
-        </div>
-
-        {cartItems.length === 0 && !orderPlacedData ? (
-          <div className="cart-page-empty">
-            <div className="cart-empty-icon-wrap">
-              <ShoppingBag size={56} color="#A67C52" />
+      {/* ───────────────────────────────────────────────────────────── */}
+      {/* 1. ORDER CONFIRMED SUCCESS VIEW */}
+      {/* ───────────────────────────────────────────────────────────── */}
+      {orderPlacedData ? (
+        <div className="cart-page-inner" style={{ maxWidth: 720 }}>
+          <div className="cart-success-luxury-card">
+            <div className="cart-success-icon-wrap">
+              <CheckCircle2 size={68} color="#0C4F25" />
             </div>
-            <h2>Your Shopping Bag is Empty</h2>
-            <p>Looks like you haven't added any botanical skincare items to your cart yet.</p>
-            <Link to="/products" className="cart-shop-now-btn">
-              Explore Our Collection →
-            </Link>
-          </div>
-        ) : orderPlacedData ? (
-          /* SUCCESS ORDER CONFIRMATION DISPLAY */
-          <div className="cart-page-empty" style={{ maxWidth: 640 }}>
-            <div className="cart-empty-icon-wrap" style={{ background: '#E6F4EA', color: '#15803D' }}>
-              <CheckCircle2 size={64} color="#15803D" />
+            <h2>Order Confirmed Successfully!</h2>
+            <div className="cart-success-order-num">
+              Order Reference: <strong>#{orderPlacedData.order_number}</strong>
             </div>
-            <h2 style={{ color: '#1A2E22' }}>Order Confirmed Successfully!</h2>
-            <p style={{ fontSize: '1.05rem', color: '#475569', margin: '8px 0 16px 0' }}>
-              Order Number: <strong style={{ color: '#A67C52' }}>#{orderPlacedData.order_number}</strong>
-            </p>
-            <p style={{ fontSize: '0.92rem', color: '#64748B', lineHeight: 1.6 }}>
-              A confirmation email has been dispatched to <strong>{user?.email}</strong>. You can track your order status live from your personal dashboard.
+            <p className="cart-success-note">
+              We've dispatched your confirmation details to <strong>{user?.email}</strong>. Our herbalists are preparing your fresh botanical order.
             </p>
 
-            <div style={{ display: 'flex', gap: 14, justifyContent: 'center', marginTop: 28 }}>
-              <Link to="/dashboard?tab=orders" className="cart-shop-now-btn" style={{ background: '#1A2E22' }}>
+            <div className="cart-success-btn-group">
+              <Link to="/dashboard?tab=orders" className="cart-primary-action-btn">
                 View Order in Dashboard →
               </Link>
-              <Link to="/products" className="cart-shop-now-btn" style={{ background: '#FFFFFF', color: '#A67C52', border: '1.5px solid #A67C52' }}>
+              <Link to="/products" className="cart-secondary-action-btn">
                 Continue Shopping
               </Link>
             </div>
           </div>
-        ) : (
-          <div className="cart-page-grid">
-            {/* LEFT COLUMN: CART ITEMS LIST */}
-            <div className="cart-items-section">
-              {/* FREE SHIPPING BANNER */}
-              <div className="cart-shipping-alert">
-                {subtotal >= 999 ? (
-                  <div className="shipping-alert-success">
-                    <Truck size={20} color="#15803D" />
-                    <div>
-                      <strong>Free Express Shipping Unlocked!</strong>
-                      <div className="shipping-subtext">You qualify for free delivery across India.</div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="shipping-alert-progress">
-                    <Truck size={20} color="#A67C52" />
-                    <div style={{ flex: 1 }}>
-                      <div>Add <strong>₹{(999 - subtotal).toFixed(2)}</strong> more to unlock <strong>FREE Express Shipping</strong></div>
-                      <div className="cart-progress-bar-bg" style={{ marginTop: 6 }}>
-                        <div 
-                          className="cart-progress-bar-fill" 
-                          style={{ width: `${Math.min(100, (subtotal / 999) * 100)}%` }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
+        </div>
+      ) : showCheckoutModal ? (
 
-              <div className="cart-items-card-list">
-                {cartItems.map((item) => (
-                  <div key={item.id} className="cart-item-row">
-                    <img 
-                      src={item.image_url || DEFAULT_PRODUCT_IMAGE} 
-                      alt={item.name} 
-                      className="cart-item-image" 
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = DEFAULT_PRODUCT_IMAGE;
-                      }}
-                    />
-                    <div className="cart-item-info">
-                      <h3 className="cart-item-name">{item.name}</h3>
-                      <div className="cart-item-brand">{item.brand || 'LeafOra Life Sciences'}</div>
-                      <div className="cart-item-unit-cost">₹{parseFloat(item.price || 0).toFixed(2)} / unit</div>
-                      
-                      <div className="cart-item-controls-mobile">
-                        <div className="cart-qty-picker">
-                          <button onClick={() => updateCartQuantity(item.id, item.quantity - 1)}>-</button>
-                          <span>{item.quantity}</span>
-                          <button onClick={() => updateCartQuantity(item.id, item.quantity + 1)}>+</button>
-                        </div>
-                        <button className="cart-remove-icon-btn" onClick={() => removeFromCart(item.id)}>
-                          <Trash2 size={16} /> Remove
-                        </button>
-                      </div>
-                    </div>
+        /* ───────────────────────────────────────────────────────────── */
+        /* 2. FULL SCREEN WIDTH LUXURY CHECKOUT & ADDRESS VIEW */
+        /* ───────────────────────────────────────────────────────────── */
+        <div className="cart-fullscreen-checkout-view">
+          
+          {/* TOP CHECKOUT NAVIGATION BAR */}
+          <div className="checkout-fullscreen-topbar">
+            <button 
+              type="button" 
+              className="checkout-back-to-bag-btn"
+              onClick={() => setShowCheckoutModal(false)}
+            >
+              <ArrowLeft size={18} /> Back to Shopping Bag
+            </button>
 
-                    <div className="cart-item-total-col">
-                      <div className="cart-item-total-price">
-                        ₹{(parseFloat(item.price || 0) * item.quantity).toFixed(2)}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="cart-actions-bar">
-                <button className="cart-clear-btn" onClick={() => clearCart()}>
-                  <Trash2 size={15} /> Clear Shopping Bag
-                </button>
-                <Link to="/products" className="cart-continue-link">
-                  + Add More Products
-                </Link>
-              </div>
+            <div className="checkout-stepper-track">
+              <span className="step-tag-pill completed">1. Bag ({cartItems.length})</span>
+              <span className="step-arrow-divider">›</span>
+              <span className="step-tag-pill active">2. Choose Delivery Address & Payment</span>
             </div>
 
-            {/* RIGHT COLUMN: ORDER SUMMARY */}
-            <div className="cart-summary-section">
-              <div className="cart-summary-card">
-                <h3 className="summary-title">Order Summary</h3>
-
-                <div className="summary-row">
-                  <span>Items Subtotal</span>
-                  <span className="summary-val">₹{subtotal.toFixed(2)}</span>
-                </div>
-
-                <div className="summary-row">
-                  <span>Shipping Fee</span>
-                  <span className="summary-val">
-                    {shippingCost === 0 ? <strong style={{ color: '#15803D' }}>FREE</strong> : `₹${shippingCost.toFixed(2)}`}
-                  </span>
-                </div>
-
-                <div className="summary-divider" />
-
-                <div className="summary-row summary-total-row">
-                  <span>Total Amount</span>
-                  <span className="summary-total-val">₹{totalAmount.toFixed(2)}</span>
-                </div>
-
-                <button 
-                  className="cart-checkout-main-btn"
-                  onClick={handlePlaceOrderClick}
-                >
-                  Place Order Now →
-                </button>
-
-                <div className="cart-trust-badges">
-                  <div className="trust-item"><ShieldCheck size={16} color="#15803D" /> 100% Secure Checkout</div>
-                  <div className="trust-item"><Sparkles size={16} color="#A67C52" /> Pure Herbal Formulations</div>
-                  <div className="trust-item"><CheckCircle2 size={16} color="#2563EB" /> 7-Day Easy Returns</div>
-                </div>
-              </div>
+            <div className="checkout-security-badge">
+              <Lock size={15} color="#0C4F25" />
+              <span>256-Bit SSL Encrypted Checkout</span>
             </div>
           </div>
-        )}
-      </div>
 
-      {/* CHECKOUT ADDRESS SELECTION MODAL */}
-      {showCheckoutModal && (
-        <div className="modal-backdrop" onClick={() => setShowCheckoutModal(false)}>
-          <div className="modal-content-card" onClick={e => e.stopPropagation()} style={{ maxWidth: 680, width: '94%' }}>
-            <div className="modal-header">
-              <h3>Select Delivery Address & Checkout</h3>
-              <button onClick={() => setShowCheckoutModal(false)}><X size={20} /></button>
-            </div>
-
-            <div style={{ padding: 24, maxHeight: '80vh', overflowY: 'auto' }}>
+          {/* FULL WIDTH 2-COLUMN MAIN CHECKOUT GRID */}
+          <div className="checkout-fullscreen-grid">
+            
+            {/* LEFT COLUMN: DELIVERY ADDRESS & PAYMENT (65% WIDTH) */}
+            <div className="checkout-left-main-col">
               
-              {/* ADDRESS SELECTION SECTION */}
-              <div style={{ marginBottom: 24 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                  <h4 style={{ margin: 0, fontFamily: 'Playfair Display, serif', fontSize: '1.2rem', color: '#1A2E22' }}>
-                    1. Choose Delivery Address
-                  </h4>
+              {/* SECTION 1: CHOOSE DELIVERY ADDRESS */}
+              <div className="checkout-panel-box">
+                <div className="checkout-panel-header">
+                  <div className="panel-title-group">
+                    <span className="panel-step-num">1</span>
+                    <h3 className="panel-heading">Choose Delivery Address</h3>
+                  </div>
                   {!showInlineAddrForm && (
                     <button 
+                      type="button"
+                      className="add-new-addr-trigger-btn"
                       onClick={() => setShowInlineAddrForm(true)}
-                      style={{ background: 'none', border: 'none', color: '#A67C52', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
                     >
-                      <Plus size={14} /> Add New Address
+                      <Plus size={16} /> Add New Address
                     </button>
                   )}
                 </div>
 
-                {/* SAVED ADDRESSES RADIO LIST */}
+                {/* SAVED ADDRESSES LIST */}
                 {!showInlineAddrForm && userAddresses.length > 0 && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <div className="saved-addresses-grid">
                     {userAddresses.map((addr) => (
                       <label 
                         key={addr.id} 
-                        style={{
-                          display: 'flex',
-                          alignItems: 'flex-start',
-                          gap: 12,
-                          padding: 16,
-                          border: `1.5px solid ${selectedAddressId === addr.id ? '#A67C52' : '#EFE8DE'}`,
-                          borderRadius: 12,
-                          background: selectedAddressId === addr.id ? '#FAF7F2' : '#FFFFFF',
-                          cursor: 'pointer'
-                        }}
+                        className={`saved-address-luxury-card ${selectedAddressId === addr.id ? 'is-selected' : ''}`}
                       >
                         <input 
                           type="radio" 
-                          name="checkout_address" 
+                          name="checkout_delivery_addr" 
                           checked={selectedAddressId === addr.id}
                           onChange={() => setSelectedAddressId(addr.id)}
-                          style={{ marginTop: 4 }}
+                          className="addr-radio-input"
                         />
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#2D3748', display: 'flex', alignItems: 'center', gap: 8 }}>
-                            {addr.name || user?.name}
-                            {addr.is_default && <span style={{ fontSize: '0.7rem', background: '#A67C52', color: '#FFF', padding: '2px 8px', borderRadius: 10 }}>Default</span>}
+                        <div className="addr-card-body">
+                          <div className="addr-card-name-row">
+                            <span className="addr-person-name">{addr.name || user?.name}</span>
+                            {addr.is_default && <span className="addr-default-badge">Default</span>}
+                            {selectedAddressId === addr.id && <span className="addr-selected-tag">Selected</span>}
                           </div>
-                          <div style={{ fontSize: '0.88rem', color: '#64748B', marginTop: 4 }}>
-                            {addr.address_line1}{addr.address_line2 ? `, ${addr.address_line2}` : ''}, {addr.city}, {addr.state} - {addr.pincode}
-                          </div>
-                          <div style={{ fontSize: '0.82rem', color: '#2D3748', fontWeight: 600, marginTop: 4 }}>
-                            Phone: {addr.phone || user?.phone}
+                          <p className="addr-street-line">
+                            {addr.address_line1}{addr.address_line2 ? `, ${addr.address_line2}` : ''}, {addr.city}, {addr.state} - <strong>{addr.pincode}</strong>
+                          </p>
+                          <div className="addr-phone-line">
+                            <Phone size={14} /> Phone: <span>{addr.phone || user?.phone || user?.mobile}</span>
                           </div>
                         </div>
                       </label>
@@ -558,102 +440,100 @@ export default function Cart() {
 
                 {/* INLINE ADD NEW ADDRESS FORM */}
                 {(showInlineAddrForm || userAddresses.length === 0) && (
-                  <form onSubmit={handleAddInlineAddress} style={{ background: '#FAF7F2', padding: 18, borderRadius: 12, border: '1px solid #EFE8DE' }}>
-                    <h5 style={{ margin: '0 0 14px 0', color: '#1A2E22' }}>+ Add New Delivery Address</h5>
-                    
-                    <div style={{ marginBottom: 14 }}>
+                  <form onSubmit={handleAddInlineAddress} className="inline-add-address-card">
+                    <div className="inline-form-top">
+                      <h4>+ Add New Delivery Address</h4>
                       <button 
                         type="button"
                         onClick={handleDetectLocation}
                         disabled={detectingLoc}
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 6,
-                          padding: '8px 16px',
-                          borderRadius: 20,
-                          background: '#FFFFFF',
-                          border: '1.5px solid #A67C52',
-                          color: '#A67C52',
-                          fontWeight: 700,
-                          fontSize: '0.85rem',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s ease'
-                        }}
+                        className="detect-live-location-btn"
                       >
-                        <Navigation size={14} style={{ animation: detectingLoc ? 'pdpSpin 1s linear infinite' : 'none' }} />
-                        {detectingLoc ? 'Detecting Live Location...' : '📍 Detect My Live Location'}
+                        <Navigation size={15} style={{ animation: detectingLoc ? 'spinLoc 1s linear infinite' : 'none' }} />
+                        {detectingLoc ? 'Detecting Location...' : '📍 Detect My Live Location'}
                       </button>
                     </div>
-                    
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+
+                    <div className="inline-form-row two-cols">
+                      <div className="form-input-field">
+                        <label>Full Name *</label>
+                        <input 
+                          type="text" 
+                          placeholder="e.g. Himmat Ahir"
+                          value={newAddress.name}
+                          onChange={e => setNewAddress({ ...newAddress, name: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div className="form-input-field">
+                        <label>Mobile Number *</label>
+                        <input 
+                          type="tel" 
+                          placeholder="10-digit mobile number"
+                          value={newAddress.phone}
+                          onChange={e => setNewAddress({ ...newAddress, phone: e.target.value })}
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="form-input-field full-width">
+                      <label>Flat, House No., Building, Street Address *</label>
                       <input 
                         type="text" 
-                        placeholder="Full Name *"
-                        value={newAddress.name}
-                        onChange={e => setNewAddress({ ...newAddress, name: e.target.value })}
+                        placeholder="29 harekrishna park, near shivaji chowk nikol"
+                        value={newAddress.address_line1}
+                        onChange={e => setNewAddress({ ...newAddress, address_line1: e.target.value })}
                         required
-                        style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid #EFE8DE', fontSize: '0.88rem' }}
-                      />
-                      <input 
-                        type="tel" 
-                        placeholder="Mobile Number *"
-                        value={newAddress.phone}
-                        onChange={e => setNewAddress({ ...newAddress, phone: e.target.value })}
-                        required
-                        style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid #EFE8DE', fontSize: '0.88rem' }}
                       />
                     </div>
 
-                    <input 
-                      type="text" 
-                      placeholder="Flat, House No., Building, Street *"
-                      value={newAddress.address_line1}
-                      onChange={e => setNewAddress({ ...newAddress, address_line1: e.target.value })}
-                      required
-                      style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #EFE8DE', fontSize: '0.88rem', marginBottom: 12, boxSizing: 'border-box' }}
-                    />
-
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 12 }}>
-                      <input 
-                        type="text" 
-                        placeholder="City *"
-                        value={newAddress.city}
-                        onChange={e => setNewAddress({ ...newAddress, city: e.target.value })}
-                        required
-                        style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid #EFE8DE', fontSize: '0.88rem' }}
-                      />
-                      <input 
-                        type="text" 
-                        placeholder="State *"
-                        value={newAddress.state}
-                        onChange={e => setNewAddress({ ...newAddress, state: e.target.value })}
-                        required
-                        style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid #EFE8DE', fontSize: '0.88rem' }}
-                      />
-                      <input 
-                        type="text" 
-                        placeholder="Pincode *"
-                        value={newAddress.pincode}
-                        onChange={e => setNewAddress({ ...newAddress, pincode: e.target.value })}
-                        required
-                        style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid #EFE8DE', fontSize: '0.88rem' }}
-                      />
+                    <div className="inline-form-row three-cols">
+                      <div className="form-input-field">
+                        <label>City *</label>
+                        <input 
+                          type="text" 
+                          placeholder="e.g. Ahmedabad"
+                          value={newAddress.city}
+                          onChange={e => setNewAddress({ ...newAddress, city: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div className="form-input-field">
+                        <label>State *</label>
+                        <input 
+                          type="text" 
+                          placeholder="e.g. Gujarat"
+                          value={newAddress.state}
+                          onChange={e => setNewAddress({ ...newAddress, state: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div className="form-input-field">
+                        <label>Pincode *</label>
+                        <input 
+                          type="text" 
+                          placeholder="e.g. 382350"
+                          value={newAddress.pincode}
+                          onChange={e => setNewAddress({ ...newAddress, pincode: e.target.value })}
+                          required
+                        />
+                      </div>
                     </div>
 
-                    <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                    <div className="inline-form-actions-row">
                       <button 
                         type="submit" 
                         disabled={savingAddress}
-                        style={{ padding: '8px 18px', background: '#A67C52', color: '#FFF', border: 'none', borderRadius: 6, fontWeight: 600, cursor: 'pointer', fontSize: '0.85rem' }}
+                        className="save-addr-primary-btn"
                       >
-                        {savingAddress ? 'Saving...' : 'Save & Select Address'}
+                        {savingAddress ? 'Saving Address...' : 'Save & Deliver to this Address'}
                       </button>
                       {userAddresses.length > 0 && (
                         <button 
                           type="button" 
                           onClick={() => setShowInlineAddrForm(false)}
-                          style={{ background: 'none', border: 'none', color: '#64748B', fontSize: '0.85rem', cursor: 'pointer' }}
+                          className="cancel-addr-btn"
                         >
                           Cancel
                         </button>
@@ -661,76 +541,259 @@ export default function Cart() {
                     </div>
                   </form>
                 )}
-                {/* PAYMENT METHOD SECTION - RAZORPAY EXCLUSIVE */}
-              <div style={{ marginBottom: 24 }}>
-                <h4 style={{ margin: '0 0 12px 0', fontFamily: 'Playfair Display, serif', fontSize: '1.2rem', color: '#1A2E22' }}>
-                  2. Payment Gateway
-                </h4>
-                
-                <div 
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justify: 'space-between',
-                    padding: '16px 20px',
-                    border: '2px solid #A67C52',
-                    borderRadius: 12,
-                    background: '#FAF7F2',
-                    boxShadow: '0 4px 12px rgba(166, 124, 82, 0.08)'
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                    <div style={{ width: 44, height: 44, borderRadius: 10, background: '#1A2E22', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FFF' }}>
-                      <CreditCard size={22} />
+              </div>
+
+              {/* SECTION 2: PAYMENT GATEWAY */}
+              <div className="checkout-panel-box">
+                <div className="checkout-panel-header">
+                  <div className="panel-title-group">
+                    <span className="panel-step-num">2</span>
+                    <h3 className="panel-heading">Payment Gateway</h3>
+                  </div>
+                </div>
+
+                <div className="razorpay-gateway-highlight-card">
+                  <div className="gateway-left-meta">
+                    <div className="gateway-icon-circle">
+                      <CreditCard size={24} />
                     </div>
                     <div>
-                      <div style={{ fontWeight: 700, fontSize: '0.98rem', color: '#1A2E22', display: 'flex', alignItems: 'center', gap: 8 }}>
-                        Razorpay Secure Gateway
-                        <span style={{ fontSize: '0.7rem', background: '#15803D', color: '#FFF', padding: '2px 8px', borderRadius: 10, fontWeight: 600 }}>SSL Encrypted</span>
+                      <div className="gateway-name-row">
+                        <h4>Razorpay Secure Gateway</h4>
+                        <span className="gateway-ssl-badge">SSL Encrypted</span>
                       </div>
-                      <div style={{ fontSize: '0.83rem', color: '#64748B', marginTop: 2 }}>
-                        Pay via UPI, GPay, PhonePe, Credit/Debit Cards, NetBanking & Wallets
-                      </div>
+                      <p className="gateway-desc">
+                        Pay securely via UPI (Google Pay, PhonePe, Paytm, BHIM), Credit/Debit Cards, NetBanking & Wallets.
+                      </p>
                     </div>
                   </div>
-                  <CheckCircle2 size={22} color="#A67C52" />
+                  <div className="gateway-check-circle">
+                    <CheckCircle2 size={24} color="#0C4F25" />
+                  </div>
                 </div>
               </div>
 
-              {/* ORDER RECAP & FINAL RAZORPAY PAYMENT BUTTON */}
-              <div style={{ background: '#FAF7F2', padding: 18, borderRadius: 12, border: '1px solid #EFE8DE', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <div style={{ fontSize: '0.85rem', color: '#64748B' }}>Total Payable Amount</div>
-                  <div style={{ fontSize: '1.4rem', fontWeight: 700, color: '#1A2E22' }}>₹{totalAmount.toFixed(2)}</div>
+            </div>
+
+            {/* RIGHT COLUMN: STICKY ORDER SUMMARY (35% WIDTH) */}
+            <div className="checkout-right-summary-col">
+              <div className="checkout-summary-sticky-card">
+                <h3 className="summary-card-title">Order Summary ({cartItems.length} items)</h3>
+                
+                {/* ITEMS MINI PREVIEW */}
+                <div className="checkout-items-preview-scroll">
+                  {cartItems.map((item) => (
+                    <div key={item.id} className="checkout-preview-item-row">
+                      <img 
+                        src={item.image_url || DEFAULT_PRODUCT_IMAGE} 
+                        alt={item.name} 
+                        className="preview-item-img"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = DEFAULT_PRODUCT_IMAGE;
+                        }}
+                      />
+                      <div className="preview-item-info">
+                        <span className="preview-item-name">{item.name}</span>
+                        <span className="preview-item-qty">Qty: {item.quantity}</span>
+                      </div>
+                      <div className="preview-item-price">
+                        ₹{(parseFloat(item.price || 0) * item.quantity).toFixed(2)}
+                      </div>
+                    </div>
+                  ))}
                 </div>
 
+                <div className="summary-price-breakdown">
+                  <div className="price-row">
+                    <span>Items Subtotal</span>
+                    <span>₹{subtotal.toFixed(2)}</span>
+                  </div>
+
+                  <div className="price-row">
+                    <span>Shipping Fee</span>
+                    <span>
+                      {shippingCost === 0 ? <strong style={{ color: '#0C4F25' }}>FREE</strong> : `₹${shippingCost.toFixed(2)}`}
+                    </span>
+                  </div>
+
+                  <div className="summary-divider-line"></div>
+
+                  <div className="price-row total-amount-row">
+                    <span>Total Payable Amount</span>
+                    <span className="final-price-bold">₹{totalAmount.toFixed(2)}</span>
+                  </div>
+                </div>
+
+                {/* PROCEED TO PAY CTA BUTTON */}
                 <button 
                   onClick={handleConfirmOrder}
                   disabled={placingOrder}
-                  style={{
-                    padding: '12px 28px',
-                    background: '#A67C52',
-                    color: '#FFFFFF',
-                    border: 'none',
-                    borderRadius: 24,
-                    fontWeight: 700,
-                    fontSize: '1rem',
-                    cursor: 'pointer',
-                    boxShadow: '0 4px 14px rgba(166, 124, 82, 0.35)',
-                    transition: 'transform 0.2s ease'
-                  }}
+                  className="checkout-pay-now-btn"
                 >
                   {placingOrder ? 'Opening Razorpay Gateway...' : `Proceed to Pay with Razorpay →`}
                 </button>
+
+                <div className="checkout-guarantee-badges">
+                  <div className="g-badge-item"><ShieldCheck size={16} color="#0C4F25" /> 100% Safe & Verified Transactions</div>
+                  <div className="g-badge-item"><Truck size={16} color="#B88E2F" /> Express Insured Shipping Across India</div>
+                  <div className="g-badge-item"><Sparkles size={16} color="#0C4F25" /> 100% Authentic Botanical Formulations</div>
+                </div>
               </div>
             </div>
 
-            </div>
           </div>
+
+        </div>
+
+      ) : (
+
+        /* ───────────────────────────────────────────────────────────── */
+        /* 3. STANDARD SHOPPING BAG VIEW */
+        /* ───────────────────────────────────────────────────────────── */
+        <div className="cart-page-inner">
+          <div className="cart-page-header">
+            <Link to="/products" className="cart-back-link">
+              <ArrowLeft size={16} /> Continue Shopping
+            </Link>
+            <h1 className="cart-page-title">
+              Your Shopping Bag
+              <span className="cart-title-count">({cartItems.length} {cartItems.length === 1 ? 'item' : 'items'})</span>
+            </h1>
+          </div>
+
+          {cartItems.length === 0 ? (
+            <div className="cart-page-empty">
+              <div className="cart-empty-icon-wrap">
+                <ShoppingBag size={56} color="#A67C52" />
+              </div>
+              <h2>Your Shopping Bag is Empty</h2>
+              <p>Looks like you haven't added any botanical skincare items to your cart yet.</p>
+              <Link to="/products" className="cart-shop-now-btn">
+                Explore Our Collection →
+              </Link>
+            </div>
+          ) : (
+            <div className="cart-page-grid">
+              {/* LEFT COLUMN: CART ITEMS LIST */}
+              <div className="cart-items-section">
+                {/* FREE SHIPPING BANNER */}
+                <div className="cart-shipping-alert">
+                  {subtotal >= 999 ? (
+                    <div className="shipping-alert-success">
+                      <Truck size={20} color="#15803D" />
+                      <div>
+                        <strong>Free Express Shipping Unlocked!</strong>
+                        <div className="shipping-subtext">You qualify for free delivery across India.</div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="shipping-alert-progress">
+                      <Truck size={20} color="#A67C52" />
+                      <div style={{ flex: 1 }}>
+                        <div>Add <strong>₹{(999 - subtotal).toFixed(2)}</strong> more to unlock <strong>FREE Express Shipping</strong></div>
+                        <div className="cart-progress-bar-bg" style={{ marginTop: 6 }}>
+                          <div 
+                            className="cart-progress-bar-fill" 
+                            style={{ width: `${Math.min(100, (subtotal / 999) * 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="cart-items-card-list">
+                  {cartItems.map((item) => (
+                    <div key={item.id} className="cart-item-row">
+                      <img 
+                        src={item.image_url || DEFAULT_PRODUCT_IMAGE} 
+                        alt={item.name} 
+                        className="cart-item-image" 
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = DEFAULT_PRODUCT_IMAGE;
+                        }}
+                      />
+                      <div className="cart-item-info">
+                        <h3 className="cart-item-name">{item.name}</h3>
+                        <div className="cart-item-brand">{item.brand || 'LeafOra Life Sciences'}</div>
+                        <div className="cart-item-unit-cost">₹{parseFloat(item.price || 0).toFixed(2)} / unit</div>
+                        
+                        <div className="cart-item-controls-mobile">
+                          <div className="cart-qty-picker">
+                            <button onClick={() => updateCartQuantity(item.id, item.quantity - 1)}>-</button>
+                            <span>{item.quantity}</span>
+                            <button onClick={() => updateCartQuantity(item.id, item.quantity + 1)}>+</button>
+                          </div>
+                          <button className="cart-remove-icon-btn" onClick={() => removeFromCart(item.id)}>
+                            <Trash2 size={16} /> Remove
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="cart-item-total-col">
+                        <div className="cart-item-total-price">
+                          ₹{(parseFloat(item.price || 0) * item.quantity).toFixed(2)}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="cart-actions-bar">
+                  <button className="cart-clear-btn" onClick={() => clearCart()}>
+                    <Trash2 size={15} /> Clear Shopping Bag
+                  </button>
+                  <Link to="/products" className="cart-continue-link">
+                    + Add More Products
+                  </Link>
+                </div>
+              </div>
+
+              {/* RIGHT COLUMN: ORDER SUMMARY */}
+              <div className="cart-summary-section">
+                <div className="cart-summary-card">
+                  <h3 className="summary-title">Order Summary</h3>
+
+                  <div className="summary-row">
+                    <span>Items Subtotal</span>
+                    <span className="summary-val">₹{subtotal.toFixed(2)}</span>
+                  </div>
+
+                  <div className="summary-row">
+                    <span>Shipping Fee</span>
+                    <span className="summary-val">
+                      {shippingCost === 0 ? <strong style={{ color: '#15803D' }}>FREE</strong> : `₹${shippingCost.toFixed(2)}`}
+                    </span>
+                  </div>
+
+                  <div className="summary-divider" />
+
+                  <div className="summary-row summary-total-row">
+                    <span>Total Amount</span>
+                    <span className="summary-total-val">₹{totalAmount.toFixed(2)}</span>
+                  </div>
+
+                  <button 
+                    className="cart-checkout-main-btn"
+                    onClick={handlePlaceOrderClick}
+                  >
+                    Place Order Now →
+                  </button>
+
+                  <div className="cart-trust-badges">
+                    <div className="trust-item"><ShieldCheck size={16} color="#15803D" /> 100% Secure Checkout</div>
+                    <div className="trust-item"><Sparkles size={16} color="#A67C52" /> Pure Herbal Formulations</div>
+                    <div className="trust-item"><CheckCircle2 size={16} color="#2563EB" /> 7-Day Easy Returns</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
     </div>
   );
 }
-
