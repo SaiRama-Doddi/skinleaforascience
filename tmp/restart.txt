@@ -1,0 +1,2 @@
+# Restart trigger for Hostinger Phusion Passenger Node.js app
+restart
