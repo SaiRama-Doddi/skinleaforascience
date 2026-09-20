@@ -4,7 +4,7 @@ import leaforaLogo from '../assets/leafora-logo.png';
 
 export default function Footer() {
   return (
-    <footer style={{ backgroundColor: '#A67C52', borderTop: '1px solid rgba(255, 255, 255, 0.2)', paddingTop: 60, paddingBottom: 40, color: '#FFFFFF' }}>
+    <footer style={{ backgroundColor: '#0C4F25', borderTop: '1px solid rgba(255, 255, 255, 0.15)', paddingTop: 60, paddingBottom: 40, color: '#FFFFFF' }}>
       <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 40, marginBottom: 48 }}>
           
