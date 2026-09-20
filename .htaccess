@@ -6,14 +6,15 @@
   # Stop rewriting if index.html is already requested
   RewriteRule ^index\.html$ - [L]
 
-  # Serve existing files, directories, and uploads directly
+  # Route /api and /uploads to Node.js backend running on port 5000 if Apache/LiteSpeed reverse proxy is active
+  <IfModule mod_proxy.c>
+    RewriteRule ^api/(.*)$ http://127.0.0.1:5000/api/$1 [P,L]
+    RewriteRule ^uploads/(.*)$ http://127.0.0.1:5000/uploads/$1 [P,L]
+  </IfModule>
+
+  # Serve existing files, directories directly
   RewriteCond %{REQUEST_FILENAME} -f [OR]
   RewriteCond %{REQUEST_FILENAME} -d
-  RewriteRule ^ - [L]
-
-  # Exclude API routes and Uploads from SPA rewrite (let Node.js handle /api and /uploads)
-  RewriteCond %{REQUEST_URI} ^/api [NC,OR]
-  RewriteCond %{REQUEST_URI} ^/uploads [NC]
   RewriteRule ^ - [L]
 
   # Fallback all other frontend routes to /index.html for Single Page App (SPA) routing
