@@ -216,7 +216,7 @@ export const userDeleteAddress = (id) => api.delete(`/user/addresses/${id}`);
 export const userGetOrders = (email) => api.get('/user/orders', { params: { email } });
 export const userGetWishlist = (email) => api.get('/user/wishlist', { params: { email } });
 export const placeOrder = (orderData) => api.post('/orders/place', orderData);
-export const createRazorpayOrder = (amount) => api.post('/payments/create-razorpay-order', { amount });
+export const createRazorpayOrder = (data) => api.post('/payments/create-razorpay-order', typeof data === 'object' ? data : { amount: data });
 export const verifyRazorpayPayment = (data) => api.post('/payments/verify-razorpay-payment', data);
 
 export default api;

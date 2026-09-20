@@ -236,21 +236,24 @@ export default function Cart() {
         customer_phone: finalAddress.phone || user?.phone || '9999999999'
       });
 
-      if (!rzpOrderRes || !rzpOrderRes.success || !rzpOrderRes.order) {
+      if (!rzpOrderRes || !rzpOrderRes.success) {
         throw new Error(rzpOrderRes?.message || 'Could not initialize payment order.');
       }
 
-      const rzpOrder = rzpOrderRes.order;
+      const orderKeyId = (rzpOrderRes.key_id || 'rzp_test_SwedUUn1KgRMs0').trim();
+      const orderId = rzpOrderRes.order_id || rzpOrderRes.order?.id;
+      const orderAmount = rzpOrderRes.amount || rzpOrderRes.order?.amount || Math.round(totalAmount * 100);
+      const orderCurrency = rzpOrderRes.currency || rzpOrderRes.order?.currency || 'INR';
 
       // 2. Launch Razorpay Standard Checkout Popup
       const options = {
-        key: rzpOrderRes.key_id,
-        amount: rzpOrder.amount,
-        currency: rzpOrder.currency,
+        key: orderKeyId,
+        amount: orderAmount,
+        currency: orderCurrency,
         name: 'Leafora Life Science',
         description: `Order for ${cartItems.length} Botanical Skincare Product(s)`,
         image: 'https://leaforalifescience.com/assets/leafora-logo.png',
-        order_id: rzpOrder.id,
+        order_id: orderId,
         prefill: {
           name: finalAddress.name || user?.name || '',
           email: user?.email || '',
