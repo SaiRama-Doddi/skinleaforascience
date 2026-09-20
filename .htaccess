@@ -3,17 +3,22 @@
   RewriteEngine On
   RewriteBase /
 
+  # Stop rewriting if index.html is already requested
+  RewriteRule ^index\.html$ - [L]
+
   # Serve existing files, directories, and uploads directly
   RewriteCond %{REQUEST_FILENAME} -f [OR]
   RewriteCond %{REQUEST_FILENAME} -d
   RewriteRule ^ - [L]
 
-  # Exclude API routes and Uploads from SPA rewrite (let Node.js handle them)
+  # Exclude API routes and Uploads from SPA rewrite (let Node.js handle /api and /uploads)
   RewriteCond %{REQUEST_URI} ^/api [NC,OR]
   RewriteCond %{REQUEST_URI} ^/uploads [NC]
   RewriteRule ^ - [L]
 
-  # Fallback all other frontend routes to index.html for Single Page App (SPA) routing
-  RewriteRule ^ index.html [L]
+  # Fallback all other frontend routes to /index.html for Single Page App (SPA) routing
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /index.html [L]
 </IfModule>
 
