@@ -143,12 +143,23 @@ class ProductModel {
     }
 
     try {
-      const queryPromise = pool.query('SELECT * FROM products WHERE deleted_at IS NULL ORDER BY id DESC');
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('DB Query Timeout')), 1200)
-      );
+      let rows;
+      try {
+        const queryPromise = pool.query('SELECT * FROM products WHERE deleted_at IS NULL ORDER BY id ASC');
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('DB Query Timeout')), 3000)
+        );
+        const [r] = await Promise.race([queryPromise, timeoutPromise]);
+        rows = r;
+      } catch (colErr) {
+        const queryPromise = pool.query('SELECT * FROM products ORDER BY id ASC');
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('DB Query Timeout')), 3000)
+        );
+        const [r] = await Promise.race([queryPromise, timeoutPromise]);
+        rows = r;
+      }
 
-      const [rows] = await Promise.race([queryPromise, timeoutPromise]);
       if (rows && rows.length > 0) {
         const enriched = rows.map(r => ProductModel.parseProductImages(r));
         cachedEnrichedProducts = enriched;

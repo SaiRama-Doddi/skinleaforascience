@@ -14,17 +14,17 @@ if (rawHost === 'srv1473.hstgr.io' || rawHost.includes('hstgr.io')) {
 // Create connection pool for MySQL
 const pool = mysql.createPool({
   host: rawHost,
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'leafora_db',
+  user: process.env.DB_USER || 'u858419112_leafora',
+  password: process.env.DB_PASSWORD || 'Leaforalifescience@123',
+  database: process.env.DB_NAME || 'u858419112_leafora',
   port: Number(process.env.DB_PORT) || 3306,
   waitForConnections: true,
   connectionLimit: Number(process.env.DB_CONNECTION_LIMIT) || 10,
-  connectTimeout: 1500,
+  connectTimeout: 4000,
   queueLimit: 0,
 });
 
-// Helper function to test DB connection with a strict 1.2s timeout
+// Helper function to test DB connection
 const testConnection = async () => {
   try {
     const connPromise = pool.getConnection().then((conn) => {
@@ -32,7 +32,7 @@ const testConnection = async () => {
       return true;
     });
     const timeoutPromise = new Promise((resolve) =>
-      setTimeout(() => resolve(false), 1200)
+      setTimeout(() => resolve(false), 3000)
     );
 
     const isConnected = await Promise.race([connPromise, timeoutPromise]);
