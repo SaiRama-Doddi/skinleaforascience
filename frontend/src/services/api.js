@@ -1,12 +1,11 @@
 import axios from 'axios';
-import { FALLBACK_PRODUCTS, FALLBACK_CATEGORIES } from './fallbackData';
 
 export const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
-// Create configured Axios instance with 5s timeout
+// Create configured Axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 5000,
+  timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -28,7 +27,7 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response.data,
   (error) => {
-    console.warn('API Notice:', error?.response?.data || error.message);
+    console.error('API Notice:', error?.response?.data || error.message);
     if (error?.response?.status === 401 && window.location.pathname.startsWith('/admin')) {
       localStorage.removeItem('leafora_admin_token');
       localStorage.removeItem('leafora_admin_user');
@@ -38,19 +37,11 @@ api.interceptors.response.use(
   }
 );
 
-// Public API with guaranteed fallback resilience
-export const checkHealth = () => api.get('/health').catch(() => ({ success: true, services: { api: 'healthy' } }));
-export const getProducts = () =>
-  api.get('/products').catch(() => ({ success: true, data: FALLBACK_PRODUCTS }));
-export const getProductById = (id) =>
-  api
-    .get(`/products/${id}`)
-    .catch(() => ({
-      success: true,
-      data: FALLBACK_PRODUCTS.find((p) => String(p.id) === String(id)) || FALLBACK_PRODUCTS[0],
-    }));
-export const getCategories = (params) =>
-  api.get('/categories', { params }).catch(() => ({ success: true, data: FALLBACK_CATEGORIES }));
+// Public Database APIs
+export const checkHealth = () => api.get('/health');
+export const getProducts = () => api.get('/products');
+export const getProductById = (id) => api.get(`/products/${id}`);
+export const getCategories = (params) => api.get('/categories', { params });
 
 // Admin Auth API
 export const adminSendOtp = (email) => api.post('/admin/send-otp', { email });

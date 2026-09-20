@@ -3,7 +3,6 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Leaf, User, LogOut, Wallet, Search, ShoppingBag, ChevronDown, Sparkles, ShieldCheck, Menu, X, Trash2 } from 'lucide-react';
 import { checkHealth, getCategories, getProducts } from '../services/api';
 import { getCart, getCartCount, getCartSubtotal, updateCartQuantity, removeFromCart, DEFAULT_PRODUCT_IMAGE } from '../services/cartService';
-import { FALLBACK_CATEGORIES } from '../services/fallbackData';
 import leaforaLogo from '../assets/leafora-logo.png';
 import './Navbar.css';
 
@@ -16,7 +15,7 @@ export default function Navbar() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [showMegaMenu, setShowMegaMenu] = useState(false);
-  const [categories, setCategories] = useState(FALLBACK_CATEGORIES);
+  const [categories, setCategories] = useState([]);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const location = useLocation();

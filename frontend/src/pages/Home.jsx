@@ -8,16 +8,15 @@ import { getCategories, getProducts } from '../services/api';
 import { addToCart } from '../services/cartService';
 import heroImage from '../assets/heroimage.jpeg';
 import skincareStoryImg from '../assets/skincare_story_showcase.jpg';
-import { FALLBACK_CATEGORIES, FALLBACK_PRODUCTS } from '../services/fallbackData';
 import './Home.css';
 
 export default function Home() {
   const navigate = useNavigate();
   const [toastMsg, setToastMsg] = useState(null);
-  const [categories, setCategories] = useState(FALLBACK_CATEGORIES);
-  const [products, setProducts] = useState(FALLBACK_PRODUCTS);
-  const [loadingCats, setLoadingCats] = useState(false);
-  const [loadingProds, setLoadingProds] = useState(false);
+  const [categories, setCategories] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [loadingCats, setLoadingCats] = useState(true);
+  const [loadingProds, setLoadingProds] = useState(true);
   const [showAllCategories, setShowAllCategories] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 

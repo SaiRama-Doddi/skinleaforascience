@@ -205,39 +205,13 @@ const getAnalytics = async (req, res) => {
   }
 };
 
-// In-memory Category Store for seamless Dev & DB Fallback
-let inMemoryCategories = [
-  { id: 1, parent_id: null, level: 'category', name: 'Herbal Extracts', slug: 'herbal-extracts', description: 'Pharma-grade pure herbal extracts', image_url: '/assets/sunscreen_spf50.jpg', icon_url: '', banner_url: '', meta_title: 'Herbal Extracts | Leafora', meta_description: 'Organic botanical extracts', meta_keywords: 'herbal, extracts', is_active: 1, is_featured: 1, is_trending: 1, display_order: 1, deleted_at: null },
-  { id: 2, parent_id: null, level: 'category', name: 'Supplements', slug: 'supplements', description: 'Natural bio-vital nutraceuticals', image_url: '/assets/face_wash.jpg', icon_url: '', banner_url: '', meta_title: 'Nutraceutical Supplements', meta_description: 'Bio-vital supplements', meta_keywords: 'supplements, bio', is_active: 1, is_featured: 1, is_trending: 0, display_order: 2, deleted_at: null },
-  { id: 3, parent_id: null, level: 'category', name: 'Formulations', slug: 'biotech-formulations', description: 'Active science solutions', image_url: '/assets/hydra_glow_moisturizer.jpg', icon_url: '', banner_url: '', meta_title: 'Biotech Formulations', meta_description: 'Advanced active science', meta_keywords: 'biotech, formulas', is_active: 1, is_featured: 0, is_trending: 1, display_order: 3, deleted_at: null },
-  { id: 4, parent_id: null, level: 'category', name: 'Skin Care', slug: 'skin-care-actives', description: 'Pure skin wellness bio-compounds', image_url: '/assets/vitamin_c_serum.jpg', icon_url: '', banner_url: '', meta_title: 'Skin Care Actives', meta_description: 'Pure skin bio-compounds', meta_keywords: 'skincare, actives', is_active: 1, is_featured: 1, is_trending: 1, display_order: 4, deleted_at: null },
-  { id: 5, parent_id: null, level: 'category', name: 'Face Creams', slug: 'face-creams', description: 'Nourishing facial creams and hydrators', image_url: '/assets/night_cream.jpg', icon_url: '', banner_url: '', meta_title: 'Face Creams', meta_description: 'Facial creams', meta_keywords: 'cream, face', is_active: 1, is_featured: 1, is_trending: 0, display_order: 5, deleted_at: null },
-  { id: 7, parent_id: null, level: 'category', name: 'Moisturizers', slug: 'moisturizers', description: 'Deep hydration moisturizers', image_url: '/assets/hydra_glow_moisturizer.jpg', icon_url: '', banner_url: '', meta_title: 'Moisturizers', meta_description: 'Moisturizers', meta_keywords: 'moisturizers', is_active: 1, is_featured: 1, is_trending: 1, display_order: 6, deleted_at: null },
-  { id: 8, parent_id: null, level: 'category', name: 'Face Masks', slug: 'face-masks', description: 'Revitalizing face masks', image_url: '/assets/face_wash.jpg', icon_url: '', banner_url: '', meta_title: 'Face Masks', meta_description: 'Face masks', meta_keywords: 'masks', is_active: 1, is_featured: 0, is_trending: 0, display_order: 7, deleted_at: '2026-09-16T10:54:18.000Z' },
-  { id: 9, parent_id: null, level: 'category', name: 'Sun Screens', slug: 'sun-screens', description: 'SPF50 broad spectrum protection', image_url: '/assets/sunscreen_spf50.jpg', icon_url: '', banner_url: '', meta_title: 'Sun Screens', meta_description: 'Sun protection', meta_keywords: 'sunscreen, spf', is_active: 1, is_featured: 1, is_trending: 1, display_order: 8, deleted_at: null },
-  { id: 10, parent_id: null, level: 'category', name: 'Body Care', slug: 'body-care', description: 'Full body organic nourishment', image_url: '/assets/face_wash.jpg', icon_url: '', banner_url: '', meta_title: 'Body Care', meta_description: 'Body care products', meta_keywords: 'bodycare', is_active: 1, is_featured: 1, is_trending: 0, display_order: 9, deleted_at: null },
-  { id: 11, parent_id: null, level: 'category', name: 'Hair Care', slug: 'hair-care', description: 'Botanical hair & scalp therapy', image_url: '/assets/vitamin_c_serum.jpg', icon_url: '', banner_url: '', meta_title: 'Hair Care', meta_description: 'Hair therapy', meta_keywords: 'haircare', is_active: 1, is_featured: 1, is_trending: 1, display_order: 10, deleted_at: null }
-];
-
-let categoryCacheMap = new Map();
-
 const getCategories = async (req, res) => {
   try {
-    let rows;
-    try {
-      const [r] = await pool.query('SELECT * FROM categories ORDER BY id ASC');
-      rows = r;
-    } catch (queryErr) {
-      console.warn('DB Category Query Error:', queryErr.message);
-    }
-
-    if (rows && rows.length > 0) {
-      return res.status(200).json({ success: true, count: rows.length, data: rows });
-    }
-    return res.status(200).json({ success: true, data: inMemoryCategories });
+    const [rows] = await pool.query('SELECT * FROM categories ORDER BY id ASC');
+    return res.status(200).json({ success: true, count: rows.length, data: rows });
   } catch (error) {
-    console.warn('DB Category Fetch Notice (using seed fallback):', error.message);
-    return res.status(200).json({ success: true, data: inMemoryCategories });
+    console.error('Database Category Query Error:', error.message);
+    return res.status(200).json({ success: true, count: 0, data: [] });
   }
 };
 
