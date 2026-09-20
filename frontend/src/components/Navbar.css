@@ -11,8 +11,8 @@
 
 /* 1. TOP ANNOUNCEMENT BAR */
 .top-announcement-bar {
-  background-color: #A67C52;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  background-color: #1A2E22;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
   padding: 8px 24px;
   font-family: 'Inter', sans-serif;
   font-size: 0.82rem;
