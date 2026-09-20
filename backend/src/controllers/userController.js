@@ -73,7 +73,7 @@ const getUserAddresses = async (req, res) => {
     }
 
     if (!custId) {
-      return res.status(200).json({ success: true, addresses: [] });
+      return res.status(200).json({ success: true, count: 0, data: [], addresses: [] });
     }
 
     const [addresses] = await pool.query(
@@ -83,6 +83,8 @@ const getUserAddresses = async (req, res) => {
 
     return res.status(200).json({
       success: true,
+      count: addresses.length,
+      data: addresses,
       addresses
     });
   } catch (error) {
@@ -99,7 +101,15 @@ const addUserAddress = async (req, res) => {
     let custId = customer_id;
     if (!custId && email) {
       const [rows] = await pool.query('SELECT id FROM customers WHERE LOWER(email) = LOWER(?)', [email.trim()]);
-      if (rows.length > 0) custId = rows[0].id;
+      if (rows.length > 0) {
+        custId = rows[0].id;
+      } else {
+        const [newCust] = await pool.query(
+          'INSERT INTO customers (name, email, phone, status) VALUES (?, ?, ?, ?)',
+          [name || 'Customer', email.trim().toLowerCase(), phone || '', 'Active']
+        );
+        custId = newCust.insertId;
+      }
     }
 
     if (!address_line1 || !city || !state || !pincode) {
@@ -128,10 +138,13 @@ const addUserAddress = async (req, res) => {
       ]
     );
 
+    const [savedRows] = await pool.query('SELECT * FROM customer_addresses WHERE id = ?', [result.insertId]);
+
     return res.status(201).json({
       success: true,
       message: 'New delivery address added successfully!',
-      address_id: result.insertId
+      address_id: result.insertId,
+      data: savedRows[0] || null
     });
   } catch (error) {
     console.error('Error adding user address:', error);

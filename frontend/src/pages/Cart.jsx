@@ -170,18 +170,21 @@ export default function Cart() {
     try {
       const payload = {
         ...newAddress,
+        name: newAddress.name || user?.name || 'Customer',
         email: user?.email,
         phone: newAddress.phone || user?.phone || user?.mobile || '9999999999'
       };
 
       const res = await userAddAddress(payload);
       if (res && res.success) {
-        showToast('Address saved successfully!');
+        showToast('Delivery address saved successfully in database!');
+        const savedId = res.address_id || (res.data && res.data.id);
         if (user?.email) {
           const addrs = await userGetAddresses(user.email);
-          if (addrs && addrs.data) {
-            setUserAddresses(addrs.data);
-            setSelectedAddressId(res.address_id || addrs.data[addrs.data.length - 1].id);
+          const list = addrs?.data || addrs?.addresses || [];
+          if (list.length > 0) {
+            setUserAddresses(list);
+            setSelectedAddressId(savedId || list[0].id);
           }
         }
         setShowInlineAddrForm(false);
