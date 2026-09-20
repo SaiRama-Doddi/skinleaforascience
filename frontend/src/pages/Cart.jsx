@@ -252,7 +252,6 @@ export default function Cart() {
         currency: orderCurrency,
         name: 'Leafora Life Science',
         description: `Order for ${cartItems.length} Botanical Skincare Product(s)`,
-        image: 'https://leaforalifescience.com/assets/leafora-logo.png',
         order_id: orderId,
         prefill: {
           name: finalAddress.name || user?.name || '',
