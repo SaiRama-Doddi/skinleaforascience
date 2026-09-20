@@ -62,6 +62,8 @@ const createRazorpayOrder = async (req, res) => {
 };
 
 // 2. VERIFY RAZORPAY PAYMENT SIGNATURE
+const verifyRazorpayPayment = async (req, res) => {
+  try {
     const { 
       razorpay_order_id, razorpay_payment_id, razorpay_signature,
       customer_email, customer_name, customer_phone, shipping_address, items, total_amount 
