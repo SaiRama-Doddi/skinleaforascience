@@ -145,19 +145,10 @@ class ProductModel {
     try {
       let rows;
       try {
-        const queryPromise = pool.query('SELECT * FROM products WHERE deleted_at IS NULL ORDER BY id ASC');
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('DB Query Timeout')), 3000)
-        );
-        const [r] = await Promise.race([queryPromise, timeoutPromise]);
+        const [r] = await pool.query('SELECT * FROM products ORDER BY id ASC');
         rows = r;
       } catch (colErr) {
-        const queryPromise = pool.query('SELECT * FROM products ORDER BY id ASC');
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('DB Query Timeout')), 3000)
-        );
-        const [r] = await Promise.race([queryPromise, timeoutPromise]);
-        rows = r;
+        console.warn('DB Product Query Error:', colErr.message);
       }
 
       if (rows && rows.length > 0) {

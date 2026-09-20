@@ -223,52 +223,18 @@ let categoryCacheMap = new Map();
 
 const getCategories = async (req, res) => {
   try {
-    const { status, level, search, parent_id } = req.query;
-
-    let query = `
-      SELECT c.*, p.name as parent_name 
-      FROM categories c 
-      LEFT JOIN categories p ON c.parent_id = p.id 
-      WHERE 1=1
-    `;
-    const params = [];
-
-    if (status === 'deleted') {
-      query += ' AND c.deleted_at IS NOT NULL';
-    } else if (status === 'active') {
-      query += ' AND c.deleted_at IS NULL AND c.is_active = 1';
-    } else if (status === 'inactive') {
-      query += ' AND c.deleted_at IS NULL AND c.is_active = 0';
-    } else if (status !== 'all') {
-      query += ' AND c.deleted_at IS NULL';
+    let rows;
+    try {
+      const [r] = await pool.query('SELECT * FROM categories ORDER BY id ASC');
+      rows = r;
+    } catch (queryErr) {
+      console.warn('DB Category Query Error:', queryErr.message);
     }
 
-    if (level && level !== 'all') {
-      query += ' AND c.level = ?';
-      params.push(level);
+    if (rows && rows.length > 0) {
+      return res.status(200).json({ success: true, count: rows.length, data: rows });
     }
-
-    if (parent_id) {
-      query += ' AND c.parent_id = ?';
-      params.push(Number(parent_id));
-    }
-
-    if (search) {
-      query += ' AND (c.name LIKE ? OR c.slug LIKE ? OR c.description LIKE ?)';
-      const s = `%${search}%`;
-      params.push(s, s, s);
-    }
-
-    query += ' ORDER BY c.display_order ASC, c.id DESC';
-    const queryPromise = pool.query(query, params);
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('DB Query Timeout')), 1200)
-    );
-
-    const [rows] = await Promise.race([queryPromise, timeoutPromise]);
-    const finalData = rows && rows.length > 0 ? rows : inMemoryCategories;
-    
-    return res.status(200).json({ success: true, data: finalData });
+    return res.status(200).json({ success: true, data: inMemoryCategories });
   } catch (error) {
     console.warn('DB Category Fetch Notice (using seed fallback):', error.message);
     return res.status(200).json({ success: true, data: inMemoryCategories });
