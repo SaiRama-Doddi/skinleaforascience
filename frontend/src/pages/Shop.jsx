@@ -10,10 +10,22 @@ import skincareStoryPhoto from '../assets/skincare_story_showcase.jpg';
 import botanicalProductsPhoto from '../assets/login_botanical_products.jpg';
 import './Shop.css';
 
+import { FALLBACK_PRODUCTS, FALLBACK_CATEGORIES } from '../services/fallbackData';
+
 export default function Shop() {
   const navigate = useNavigate();
-  const [products, setProducts] = useState([]);
-  const [loadingProducts, setLoadingProducts] = useState(true);
+  const [products, setProducts] = useState(() => {
+    return FALLBACK_PRODUCTS.map((p, i) => ({
+      ...p,
+      rating: p.rating || (4.7 + (i % 4) * 0.1).toFixed(1),
+      reviews: p.reviews || (40 + i * 14),
+      skinType: p.skinType || ['Normal', 'Dry'],
+      concerns: p.concerns || ['Hydration'],
+      inStock: p.inStock !== false,
+      image: p.image || p.image_url || (i % 2 === 0 ? botanicalProductsPhoto : skincareStoryPhoto),
+    }));
+  });
+  const [loadingProducts, setLoadingProducts] = useState(false);
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
 
   // Filter States matching reference image
@@ -37,11 +49,10 @@ export default function Shop() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 24;
 
-  const [dbCategories, setDbCategories] = useState([]);
+  const [dbCategories, setDbCategories] = useState(FALLBACK_CATEGORIES);
 
   // Load API products & categories from Database
   useEffect(() => {
-    setLoadingProducts(true);
     getProducts()
       .then(res => {
         if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
@@ -68,16 +79,14 @@ export default function Shop() {
             };
           });
           setProducts(apiMerged);
-        } else {
-          setProducts([]);
         }
       })
-      .catch(() => setProducts([]))
+      .catch(() => {})
       .finally(() => setLoadingProducts(false));
 
     getCategories()
       .then(res => {
-        if (res?.data && Array.isArray(res.data)) {
+        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
           setDbCategories(res.data);
         }
       })
