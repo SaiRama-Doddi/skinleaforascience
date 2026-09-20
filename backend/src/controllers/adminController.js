@@ -262,7 +262,7 @@ const getCategories = async (req, res) => {
     query += ' ORDER BY c.display_order ASC, c.id DESC';
     const queryPromise = pool.query(query, params);
     const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('DB Query Timeout')), 2500)
+      setTimeout(() => reject(new Error('DB Query Timeout')), 1200)
     );
 
     const [rows] = await Promise.race([queryPromise, timeoutPromise]);

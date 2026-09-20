@@ -136,20 +136,31 @@ class ProductModel {
   }
 
   static async findAll() {
+    // Return cached products if valid
+    const now = Date.now();
+    if (cachedEnrichedProducts && (now - lastCacheTime < CACHE_TTL_MS)) {
+      return cachedEnrichedProducts;
+    }
+
     try {
       const queryPromise = pool.query('SELECT * FROM products WHERE deleted_at IS NULL ORDER BY id DESC');
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('DB Query Timeout')), 2500)
+        setTimeout(() => reject(new Error('DB Query Timeout')), 1200)
       );
 
       const [rows] = await Promise.race([queryPromise, timeoutPromise]);
       if (rows && rows.length > 0) {
         const enriched = rows.map(r => ProductModel.parseProductImages(r));
+        cachedEnrichedProducts = enriched;
+        lastCacheTime = now;
         return enriched;
       }
     } catch (error) {
       console.warn('⚠️ Database product query notice (using fallback):', error.message);
     }
+
+    cachedEnrichedProducts = fallbackProducts;
+    lastCacheTime = now;
     return fallbackProducts;
   }
 
@@ -157,7 +168,7 @@ class ProductModel {
     try {
       const queryPromise = pool.query('SELECT * FROM products WHERE id = ?', [id]);
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('DB Query Timeout')), 2500)
+        setTimeout(() => reject(new Error('DB Query Timeout')), 1200)
       );
 
       const [rows] = await Promise.race([queryPromise, timeoutPromise]);

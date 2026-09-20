@@ -12,20 +12,30 @@ const pool = mysql.createPool({
   port: Number(process.env.DB_PORT) || 3306,
   waitForConnections: true,
   connectionLimit: Number(process.env.DB_CONNECTION_LIMIT) || 10,
-  connectTimeout: 3000,
+  connectTimeout: 2000,
   queueLimit: 0,
 });
 
-// Helper function to test DB connection
+// Helper function to test DB connection with a strict 1.2s timeout
 const testConnection = async () => {
   try {
-    const connection = await pool.getConnection();
-    console.log('✅ MySQL Database connected successfully.');
-    connection.release();
-    return true;
+    const connPromise = pool.getConnection().then((conn) => {
+      conn.release();
+      return true;
+    });
+    const timeoutPromise = new Promise((resolve) =>
+      setTimeout(() => resolve(false), 1200)
+    );
+
+    const isConnected = await Promise.race([connPromise, timeoutPromise]);
+    if (isConnected) {
+      console.log('✅ MySQL Database connected successfully.');
+    } else {
+      console.warn('⚠️  MySQL Database connection check timed out (using fast fallback).');
+    }
+    return Boolean(isConnected);
   } catch (error) {
     console.warn('⚠️  MySQL Database connection failed:', error.message);
-    console.warn('💡 Tip: Ensure MySQL service is running and credentials in .env are correct.');
     return false;
   }
 };
