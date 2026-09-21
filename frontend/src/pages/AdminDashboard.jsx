@@ -1157,7 +1157,7 @@ export default function AdminDashboard() {
     try {
       const res = await adminGetSystemUsers();
       if (res && res.success) {
-        setSystemUsersList(res.data || []);
+        setSystemUsersList(Array.isArray(res.data) ? res.data : []);
       }
     } catch (e) {
       console.warn('Error fetching admin users:', e);
@@ -1170,7 +1170,7 @@ export default function AdminDashboard() {
     try {
       const res = await adminGetSystemRoles();
       if (res && res.success) {
-        setSystemRolesList(res.data || []);
+        setSystemRolesList(Array.isArray(res.data) ? res.data : []);
       }
     } catch (e) {
       console.warn('Error fetching admin roles:', e);
@@ -1182,7 +1182,7 @@ export default function AdminDashboard() {
     try {
       const res = await adminGetActivityLogs();
       if (res && res.success) {
-        setActivityLogsList(res.data || []);
+        setActivityLogsList(Array.isArray(res.data) ? res.data : []);
       }
     } catch (e) {
       console.warn('Error fetching activity logs:', e);
@@ -1195,7 +1195,7 @@ export default function AdminDashboard() {
     try {
       const res = await adminGetLoginHistory();
       if (res && res.success) {
-        setLoginHistoryList(res.data || []);
+        setLoginHistoryList(Array.isArray(res.data) ? res.data : []);
       }
     } catch (e) {
       console.warn('Error fetching login history:', e);
@@ -3127,7 +3127,7 @@ export default function AdminDashboard() {
                   className="leafora-cat-btn-primary"
                   onClick={handleOpenAddProduct}
                 >
-                  <Plus size={16} /> + Add Product
+                  <Plus size={16} /> Add Product
                 </button>
               )}
 
@@ -3136,7 +3136,7 @@ export default function AdminDashboard() {
                   className="leafora-cat-btn-primary"
                   onClick={() => handleOpenBannerModal(null)}
                 >
-                  <Plus size={16} /> + Add New Banner
+                  <Plus size={16} /> Add New Banner
                 </button>
               )}
 
@@ -3352,7 +3352,7 @@ export default function AdminDashboard() {
                   className="leafora-cat-btn-primary"
                   onClick={() => handleOpenBannerModal(null)}
                 >
-                  <Plus size={16} /> + Add New Banner
+                  <Plus size={16} /> Add New Banner
                 </button>
               </div>
 
@@ -11412,7 +11412,7 @@ export default function AdminDashboard() {
                               </td>
                             </tr>
                           ) : (
-                            systemUsersList.map(u => (
+                            (Array.isArray(systemUsersList) ? systemUsersList : []).map(u => (
                               <tr key={u.id}>
                                 <td>#{u.id}</td>
                                 <td><span style={{ fontWeight: 700, color: '#0F172A' }}>{u.name}</span></td>
@@ -11468,7 +11468,7 @@ export default function AdminDashboard() {
                   <div className="leafora-card" style={{ padding: 24 }}>
                     <h3 style={{ fontSize: 16, fontWeight: 700, color: '#0F172A', marginBottom: 16 }}>Role-Based Access Control (RBAC) Permissions Matrix</h3>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16 }}>
-                      {systemRolesList.map(r => (
+                      {(Array.isArray(systemRolesList) ? systemRolesList : []).map(r => (
                         <div key={r.id} style={{ background: '#F8FAFC', borderRadius: 8, padding: 16, border: '1px solid #E2E8F0' }}>
                           <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>{r.role_name}</div>
                           <div style={{ fontSize: 12, color: '#64748B', marginTop: 4, minHeight: 36 }}>{r.description}</div>
@@ -11516,10 +11516,10 @@ export default function AdminDashboard() {
                               </td>
                             </tr>
                           ) : (
-                            activityLogsList.map(l => (
+                            (Array.isArray(activityLogsList) ? activityLogsList : []).map(l => (
                               <tr key={l.id}>
                                 <td>#{l.id}</td>
-                                <td style={{ fontSize: 12, color: '#64748B' }}>{new Date(l.created_at).toLocaleString()}</td>
+                                <td style={{ fontSize: 12, color: '#64748B' }}>{l?.created_at ? new Date(l.created_at).toLocaleString() : 'N/A'}</td>
                                 <td><span style={{ fontWeight: 600, color: '#0F172A' }}>{l.admin_name}</span></td>
                                 <td>
                                   <span style={{ fontSize: 11, background: '#F1F5F9', color: '#334155', padding: '2px 8px', borderRadius: 4, fontWeight: 700 }}>
@@ -11554,9 +11554,9 @@ export default function AdminDashboard() {
                           </tr>
                         </thead>
                         <tbody>
-                          {loginHistoryList.map(lh => (
+                          {(Array.isArray(loginHistoryList) ? loginHistoryList : []).map(lh => (
                             <tr key={lh.id}>
-                              <td style={{ fontSize: 12, color: '#64748B' }}>{new Date(lh.created_at).toLocaleString()}</td>
+                              <td style={{ fontSize: 12, color: '#64748B' }}>{lh?.created_at ? new Date(lh.created_at).toLocaleString() : 'N/A'}</td>
                               <td style={{ fontWeight: 600, color: '#0F172A' }}>{lh.admin_email}</td>
                               <td style={{ fontSize: 12, color: '#475569' }}>{lh.browser}</td>
                               <td style={{ fontSize: 12, fontFamily: 'monospace' }}>{lh.ip_address}</td>
@@ -11650,190 +11650,6 @@ export default function AdminDashboard() {
                         Download Database Backup (.json)
                       </button>
                     </div>
-                  </div>
-                </div>
-              )}
-
-              {/* ADD / EDIT HOMEPAGE BANNER MODAL */}
-              {isBannerModalOpen && (
-                <div className="leafora-modal-overlay" onClick={() => setIsBannerModalOpen(false)}>
-                  <div className="leafora-modal" style={{ maxWidth: 600, width: '90%' }} onClick={(e) => e.stopPropagation()}>
-                    <div className="leafora-modal-header" style={{ borderBottom: '1px solid #EFECE6', paddingBottom: 12, marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#111827', display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <Image size={20} color="#A37F3F" />
-                        {editingBanner ? 'Edit Homepage Banner' : 'Add New Homepage Banner'}
-                      </h3>
-                      <button className="close-btn" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B7280' }} onClick={() => setIsBannerModalOpen(false)}>
-                        <X size={20} />
-                      </button>
-                    </div>
-
-                    <form onSubmit={handleSaveBannerSubmit}>
-                      <div className="leafora-modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 14, maxHeight: '70vh', overflowY: 'auto', paddingRight: 6 }}>
-                        <div>
-                          <label className="leafora-form-label" style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 4 }}>
-                            Banner Title *
-                          </label>
-                          <input
-                            type="text"
-                            className="leafora-input"
-                            placeholder="e.g. Clinical Skin Radiance & Hydration"
-                            value={bannerForm.title}
-                            onChange={(e) => setBannerForm({ ...bannerForm, title: e.target.value })}
-                            required
-                            style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: 13 }}
-                          />
-                        </div>
-
-                        <div>
-                          <label className="leafora-form-label" style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 4 }}>
-                            Subtitle / Tagline (Optional)
-                          </label>
-                          <input
-                            type="text"
-                            className="leafora-input"
-                            placeholder="e.g. Formulated with Vitamin C & Hyaluronic Acid Hybrids"
-                            value={bannerForm.subtitle}
-                            onChange={(e) => setBannerForm({ ...bannerForm, subtitle: e.target.value })}
-                            style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: 13 }}
-                          />
-                        </div>
-
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-                          <div>
-                            <label className="leafora-form-label" style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 4 }}>
-                              Banner Placement / Type *
-                            </label>
-                            <select
-                              className="leafora-select"
-                              value={bannerForm.banner_type}
-                              onChange={(e) => setBannerForm({ ...bannerForm, banner_type: e.target.value })}
-                              style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: 13 }}
-                            >
-                              <option value="hero">Hero Slider</option>
-                              <option value="offer">Special Offer Banner</option>
-                              <option value="category">Category Banner</option>
-                              <option value="flash_sale">Flash Sale Banner</option>
-                            </select>
-                          </div>
-
-                          <div>
-                            <label className="leafora-form-label" style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 4 }}>
-                              Display Order
-                            </label>
-                            <input
-                              type="number"
-                              className="leafora-input"
-                              placeholder="0"
-                              value={bannerForm.display_order}
-                              onChange={(e) => setBannerForm({ ...bannerForm, display_order: parseInt(e.target.value) || 0 })}
-                              style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: 13 }}
-                            />
-                          </div>
-                        </div>
-
-                        {/* Desktop Image Section with Preview */}
-                        <div>
-                          <label className="leafora-form-label" style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 4 }}>
-                            Desktop Banner Image URL *
-                          </label>
-                          <div style={{ display: 'flex', gap: 10 }}>
-                            <input
-                              type="text"
-                              className="leafora-input"
-                              placeholder="https://... or upload file"
-                              value={bannerForm.desktop_image_url}
-                              onChange={(e) => setBannerForm({ ...bannerForm, desktop_image_url: e.target.value })}
-                              required
-                              style={{ flex: 1, padding: '9px 12px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: 13 }}
-                            />
-                            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 14px', backgroundColor: '#FAF7F2', border: '1px solid #EFE8DE', borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#8C653E', whiteSpace: 'nowrap' }}>
-                              <Upload size={14} /> Upload
-                              <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => handleBannerImageUpload(e, 'desktop_image_url')} />
-                            </label>
-                          </div>
-                          {bannerForm.desktop_image_url && (
-                            <div style={{ marginTop: 8, width: '100%', height: 100, borderRadius: 8, overflow: 'hidden', border: '1px solid #E5E7EB' }}>
-                              <img src={bannerForm.desktop_image_url} alt="Desktop Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Mobile Image Section */}
-                        <div>
-                          <label className="leafora-form-label" style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 4 }}>
-                            Mobile Image URL (Optional)
-                          </label>
-                          <div style={{ display: 'flex', gap: 10 }}>
-                            <input
-                              type="text"
-                              className="leafora-input"
-                              placeholder="Leave blank to use desktop image"
-                              value={bannerForm.mobile_image_url}
-                              onChange={(e) => setBannerForm({ ...bannerForm, mobile_image_url: e.target.value })}
-                              style={{ flex: 1, padding: '9px 12px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: 13 }}
-                            />
-                            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 14px', backgroundColor: '#FAF7F2', border: '1px solid #EFE8DE', borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#8C653E', whiteSpace: 'nowrap' }}>
-                              <Upload size={14} /> Upload
-                              <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => handleBannerImageUpload(e, 'mobile_image_url')} />
-                            </label>
-                          </div>
-                        </div>
-
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-                          <div>
-                            <label className="leafora-form-label" style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 4 }}>
-                              Link URL
-                            </label>
-                            <input
-                              type="text"
-                              className="leafora-input"
-                              placeholder="/products or /offers"
-                              value={bannerForm.link_url}
-                              onChange={(e) => setBannerForm({ ...bannerForm, link_url: e.target.value })}
-                              style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: 13 }}
-                            />
-                          </div>
-
-                          <div>
-                            <label className="leafora-form-label" style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 4 }}>
-                              Button Label Text
-                            </label>
-                            <input
-                              type="text"
-                              className="leafora-input"
-                              placeholder="Shop Now"
-                              value={bannerForm.button_text}
-                              onChange={(e) => setBannerForm({ ...bannerForm, button_text: e.target.value })}
-                              style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: 13 }}
-                            />
-                          </div>
-                        </div>
-
-                        {/* Active Switch Checkbox */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 6, backgroundColor: '#FAF9F6', padding: 12, borderRadius: 8, border: '1px solid #EFECE6' }}>
-                          <input
-                            type="checkbox"
-                            id="bannerIsActive"
-                            checked={bannerForm.is_active}
-                            onChange={(e) => setBannerForm({ ...bannerForm, is_active: e.target.checked })}
-                            style={{ width: 18, height: 18, accentColor: '#10B981', cursor: 'pointer' }}
-                          />
-                          <label htmlFor="bannerIsActive" style={{ fontSize: 13, fontWeight: 600, color: '#1E293B', cursor: 'pointer' }}>
-                            Banner Active (Visible on Storefront Homepage)
-                          </label>
-                        </div>
-                      </div>
-
-                      <div className="leafora-modal-footer" style={{ borderTop: '1px solid #EFECE6', paddingTop: 14, marginTop: 16, display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-                        <button type="button" className="leafora-cat-btn-secondary" onClick={() => setIsBannerModalOpen(false)}>
-                          Cancel
-                        </button>
-                        <button type="submit" className="leafora-cat-btn-primary">
-                          {editingBanner ? 'Save Changes' : 'Create Banner'}
-                        </button>
-                      </div>
-                    </form>
                   </div>
                 </div>
               )}
@@ -12187,27 +12003,26 @@ export default function AdminDashboard() {
           {showAddReviewModal && (
             <div className="leafora-modal-overlay" onClick={() => setShowAddReviewModal(false)}>
               <div className="leafora-modal" style={{ maxWidth: 640, width: '92%' }} onClick={(e) => e.stopPropagation()}>
-                <div className="leafora-modal-header" style={{ padding: '16px 20px', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div className="leafora-modal-header">
+                  <h3 className="leafora-modal-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <Star size={20} color="#D97706" fill="#D97706" /> Add Product Review (Admin)
                   </h3>
                   <button className="close-btn" onClick={() => setShowAddReviewModal(false)}><X size={18} /></button>
                 </div>
 
                 <form onSubmit={handleSubmitAddReview}>
-                  <div className="leafora-modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 16, maxHeight: '72vh', overflowY: 'auto', padding: '20px' }}>
+                  <div className="leafora-modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 16, maxHeight: '70vh', overflowY: 'auto' }}>
                     
                     {/* Target Product Selection */}
                     <div>
-                      <label className="leafora-form-label" style={{ fontWeight: 600, color: '#334155', marginBottom: 6, display: 'block' }}>
+                      <label className="leafora-form-label">
                         Select Product <span style={{ color: '#DC2626' }}>*</span>
                       </label>
                       <select
-                        className="leafora-input"
+                        className="leafora-select"
                         value={addReviewForm.product_id}
                         onChange={(e) => setAddReviewForm({ ...addReviewForm, product_id: e.target.value })}
                         required
-                        style={{ width: '100%' }}
                       >
                         <option value="">-- Select Product --</option>
                         {dbProducts.map((prod) => (
@@ -12219,9 +12034,9 @@ export default function AdminDashboard() {
                     </div>
 
                     {/* Customer Name & Email */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    <div className="leafora-form-row-2col">
                       <div>
-                        <label className="leafora-form-label" style={{ fontWeight: 600, color: '#334155', marginBottom: 6, display: 'block' }}>
+                        <label className="leafora-form-label">
                           Customer / Reviewer Name <span style={{ color: '#DC2626' }}>*</span>
                         </label>
                         <input
@@ -12234,7 +12049,7 @@ export default function AdminDashboard() {
                         />
                       </div>
                       <div>
-                        <label className="leafora-form-label" style={{ fontWeight: 600, color: '#334155', marginBottom: 6, display: 'block' }}>
+                        <label className="leafora-form-label">
                           Customer Email (Optional)
                         </label>
                         <input
@@ -12248,9 +12063,9 @@ export default function AdminDashboard() {
                     </div>
 
                     {/* Rating & Status */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    <div className="leafora-form-row-2col">
                       <div>
-                        <label className="leafora-form-label" style={{ fontWeight: 600, color: '#334155', marginBottom: 6, display: 'block' }}>
+                        <label className="leafora-form-label">
                           Star Rating <span style={{ color: '#DC2626' }}>*</span>
                         </label>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
@@ -12282,11 +12097,11 @@ export default function AdminDashboard() {
                       </div>
 
                       <div>
-                        <label className="leafora-form-label" style={{ fontWeight: 600, color: '#334155', marginBottom: 6, display: 'block' }}>
+                        <label className="leafora-form-label">
                           Publication Status
                         </label>
                         <select
-                          className="leafora-input"
+                          className="leafora-select"
                           value={addReviewForm.status}
                           onChange={(e) => setAddReviewForm({ ...addReviewForm, status: e.target.value })}
                         >
@@ -12299,7 +12114,7 @@ export default function AdminDashboard() {
 
                     {/* Headline / Title */}
                     <div>
-                      <label className="leafora-form-label" style={{ fontWeight: 600, color: '#334155', marginBottom: 6, display: 'block' }}>
+                      <label className="leafora-form-label">
                         Review Headline / Title
                       </label>
                       <input
@@ -12313,11 +12128,11 @@ export default function AdminDashboard() {
 
                     {/* Review Comment */}
                     <div>
-                      <label className="leafora-form-label" style={{ fontWeight: 600, color: '#334155', marginBottom: 6, display: 'block' }}>
+                      <label className="leafora-form-label">
                         Review Content / Feedback <span style={{ color: '#DC2626' }}>*</span>
                       </label>
                       <textarea
-                        className="leafora-input"
+                        className="leafora-textarea"
                         rows="4"
                         placeholder="Type customer product review description..."
                         value={addReviewForm.comment}
@@ -12356,17 +12171,17 @@ export default function AdminDashboard() {
 
                     {/* Image Attachments */}
                     <div>
-                      <label className="leafora-form-label" style={{ fontWeight: 600, color: '#334155', marginBottom: 6, display: 'block' }}>
+                      <label className="leafora-form-label">
                         Review Images (Optional)
                       </label>
-                      <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 10 }}>
+                      <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 10, flexWrap: 'wrap' }}>
                         <input
                           type="text"
                           className="leafora-input"
                           placeholder="Image URL (e.g. /assets/vitamin_c_serum.jpg or https://...)"
                           value={reviewImageInput}
                           onChange={(e) => setReviewImageInput(e.target.value)}
-                          style={{ flex: 1 }}
+                          style={{ flex: 1, minWidth: 200 }}
                         />
                         <button
                           type="button"
@@ -12416,11 +12231,11 @@ export default function AdminDashboard() {
 
                   </div>
 
-                  <div className="leafora-modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, padding: '14px 20px', borderTop: '1px solid #E2E8F0' }}>
+                  <div className="leafora-modal-footer">
                     <button type="button" className="leafora-btn leafora-btn-secondary" onClick={() => setShowAddReviewModal(false)}>
                       Cancel
                     </button>
-                    <button type="submit" className="leafora-cat-btn-primary" disabled={submittingReview}>
+                    <button type="submit" className="leafora-btn leafora-btn-primary" disabled={submittingReview}>
                       {submittingReview ? 'Posting Review...' : 'Publish Review'}
                     </button>
                   </div>

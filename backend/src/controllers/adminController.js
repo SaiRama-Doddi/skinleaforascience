@@ -2543,7 +2543,7 @@ const getSystemSettings = async (req, res) => {
 
 const updateSystemSettingsGroup = async (req, res) => {
   try {
-    const settingsObj = req.body || {};
+    const settingsObj = req.body.settings || req.body || {};
     const keys = Object.keys(settingsObj);
     for (const key of keys) {
       const val = String(settingsObj[key] ?? '');
