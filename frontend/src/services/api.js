@@ -37,11 +37,40 @@ api.interceptors.response.use(
   }
 );
 
-// Public Database APIs
+// In-memory API Response Caching for fast component loading
+let productsCache = null;
+let productsCacheTime = 0;
+let categoriesCache = null;
+let categoriesCacheTime = 0;
+const API_CACHE_TTL = 30000; // 30 seconds TTL
+
 export const checkHealth = () => api.get('/health');
-export const getProducts = () => api.get('/products');
+
+export const getProducts = async (forceRefresh = false) => {
+  const now = Date.now();
+  if (!forceRefresh && productsCache && (now - productsCacheTime < API_CACHE_TTL)) {
+    return productsCache;
+  }
+  const data = await api.get('/products');
+  productsCache = data;
+  productsCacheTime = now;
+  return data;
+};
+
 export const getProductById = (id) => api.get(`/products/${id}`);
-export const getCategories = (params) => api.get('/categories', { params });
+
+export const getCategories = async (params, forceRefresh = false) => {
+  const now = Date.now();
+  if (!forceRefresh && !params && categoriesCache && (now - categoriesCacheTime < API_CACHE_TTL)) {
+    return categoriesCache;
+  }
+  const data = await api.get('/categories', { params });
+  if (!params) {
+    categoriesCache = data;
+    categoriesCacheTime = now;
+  }
+  return data;
+};
 
 // Admin Auth API
 export const adminSendOtp = (email) => api.post('/admin/send-otp', { email });

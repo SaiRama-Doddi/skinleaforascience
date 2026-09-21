@@ -4,26 +4,32 @@
   --font-heading: 'Outfit', sans-serif;
   --font-body: 'Plus Jakarta Sans', sans-serif;
 
-  /* Color Palette - Nature & Life Science Emerald Theme */
-  --color-bg-dark: #091310;
-  --color-bg-card: rgba(16, 32, 26, 0.75);
-  --color-bg-card-hover: rgba(24, 46, 37, 0.85);
+  /* Official Brand Color Palette */
+  --primary-forest: #0F3B2E;      /* Deep Forest Green */
+  --secondary-leaf: #1E513B;      /* Natural Leaf Green */
+  --luxury-gold: #C58A2A;         /* Luxury Gold */
+  --dark-gold: #A96B21;           /* Dark Gold */
 
-  --primary-emerald: #10b981;
-  --primary-emerald-glow: rgba(16, 185, 129, 0.35);
-  --primary-teal: #14b8a6;
-  --accent-cyan: #06b6d4;
-  --accent-mint: #34d399;
+  /* Legacy variable mappings for complete site harmony */
+  --color-bg-dark: #0F3B2E;
+  --color-bg-card: rgba(15, 59, 46, 0.95);
+  --color-bg-card-hover: #1E513B;
 
-  --text-main: #f0fdf4;
-  --text-muted: #94a3b8;
-  --text-dim: #64748b;
+  --primary-emerald: #C58A2A;
+  --primary-emerald-glow: rgba(197, 138, 42, 0.35);
+  --primary-teal: #1E513B;
+  --accent-cyan: #C58A2A;
+  --accent-mint: #C58A2A;
 
-  --border-light: rgba(255, 255, 255, 0.08);
-  --border-emerald: rgba(16, 185, 129, 0.25);
+  --text-main: #FFFFFF;
+  --text-muted: #F3EBDD;
+  --text-dim: #A96B21;
 
-  --glass-bg: rgba(15, 23, 20, 0.65);
-  --glass-border: rgba(16, 185, 129, 0.15);
+  --border-light: rgba(197, 138, 42, 0.25);
+  --border-emerald: rgba(169, 107, 33, 0.4);
+
+  --glass-bg: rgba(15, 59, 46, 0.92);
+  --glass-border: rgba(197, 138, 42, 0.3);
   --glass-backdrop: blur(16px);
 
   --radius-sm: 8px;

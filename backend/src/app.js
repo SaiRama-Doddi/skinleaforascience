@@ -27,13 +27,27 @@ app.use(morgan('dev'));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Serve uploaded images statically
+// Static file caching options for high performance asset loading
+const staticCacheOptions = {
+  maxAge: '7d',
+  etag: true,
+  lastModified: true,
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+    } else if (filePath.match(/\.(jpg|jpeg|png|gif|webp|svg|ico|css|js|woff2)$/i)) {
+      res.setHeader('Cache-Control', 'public, max-age=604800, immutable');
+    }
+  }
+};
+
+// Serve uploaded images statically with caching
 const fs = require('fs');
 const uploadsDir = path.join(__dirname, '../public/uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
-app.use('/uploads', express.static(uploadsDir));
+app.use('/uploads', express.static(uploadsDir, staticCacheOptions));
 
 // API Routes
 app.use('/api', apiRoutes);
@@ -94,7 +108,7 @@ const candidateDirs = [
 candidateDirs.forEach((dir) => {
   try {
     if (fs.existsSync(dir)) {
-      app.use(express.static(dir));
+      app.use(express.static(dir, staticCacheOptions));
     }
   } catch (e) {}
 });

@@ -188,7 +188,7 @@ export default function ContactUs() {
                 {/* Call Us */}
                 <div className="info-item-row">
                   <div className="info-icon-circle">
-                    <Phone size={20} color="#9E6E38" />
+                    <Phone size={20} color="#C58A2A" />
                   </div>
                   <div className="info-text-box">
                     <strong>Call Us</strong>
@@ -200,7 +200,7 @@ export default function ContactUs() {
                 {/* Email Us */}
                 <div className="info-item-row">
                   <div className="info-icon-circle">
-                    <Mail size={20} color="#9E6E38" />
+                    <Mail size={20} color="#C58A2A" />
                   </div>
                   <div className="info-text-box">
                     <strong>Email Us</strong>
@@ -212,7 +212,7 @@ export default function ContactUs() {
                 {/* Visit Us */}
                 <div className="info-item-row">
                   <div className="info-icon-circle">
-                    <MapPin size={20} color="#9E6E38" />
+                    <MapPin size={20} color="#C58A2A" />
                   </div>
                   <div className="info-text-box">
                     <strong>Visit Us</strong>
@@ -224,7 +224,7 @@ export default function ContactUs() {
                 {/* Business Hours */}
                 <div className="info-item-row">
                   <div className="info-icon-circle">
-                    <Clock size={20} color="#9E6E38" />
+                    <Clock size={20} color="#C58A2A" />
                   </div>
                   <div className="info-text-box">
                     <strong>Business Hours</strong>
@@ -318,8 +318,8 @@ export default function ContactUs() {
           <div className="faq-modal-card" onClick={(e) => e.stopPropagation()}>
             <div className="faq-modal-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <HelpCircle size={22} color="#9E6E38" />
-                <h3 style={{ margin: 0, fontFamily: 'Playfair Display, serif', fontSize: '1.4rem', color: '#1A2E22' }}>
+                <HelpCircle size={22} color="#C58A2A" />
+                <h3 style={{ margin: 0, fontFamily: 'Playfair Display, serif', fontSize: '1.4rem', color: '#0F3B2E' }}>
                   Frequently Asked Questions
                 </h3>
               </div>

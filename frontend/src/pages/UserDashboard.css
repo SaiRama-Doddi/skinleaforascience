@@ -2,11 +2,11 @@
 :root {
   --leafora-bg: #FAF7F2;
   --leafora-card-bg: #FFFFFF;
-  --leafora-bronze: #A67C52;
-  --leafora-bronze-hover: #8E653E;
-  --leafora-green: #1A2E22;
-  --leafora-text-dark: #2D3748;
-  --leafora-text-muted: #64748B;
+  --leafora-bronze: #C58A2A;
+  --leafora-bronze-hover: #A96B21;
+  --leafora-green: #0F3B2E;
+  --leafora-text-dark: #0F3B2E;
+  --leafora-text-muted: #1E513B;
   --leafora-border: #EFE8DE;
 }
 

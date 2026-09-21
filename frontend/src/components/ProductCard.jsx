@@ -29,7 +29,7 @@ export default function ProductCard({ product }) {
     >
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--accent-mint)', background: 'rgba(52, 211, 153, 0.1)', padding: '4px 10px', borderRadius: 20 }}>
+          <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#C58A2A', background: 'rgba(197, 138, 42, 0.12)', padding: '4px 10px', borderRadius: 20 }}>
             {product.category || 'Biotech'}
           </span>
           <span style={{ color: 'var(--text-dim)', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -42,6 +42,8 @@ export default function ProductCard({ product }) {
           <img 
             src={currentImg} 
             alt={product.name} 
+            loading="lazy"
+            decoding="async"
             style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'all 0.3s ease' }} 
           />
           {images.length > 1 && (
@@ -59,6 +61,8 @@ export default function ProductCard({ product }) {
                 key={idx}
                 src={img}
                 alt={`Thumb ${idx + 1}`}
+                loading="lazy"
+                decoding="async"
                 onClick={(e) => {
                   e.stopPropagation();
                   setSelectedImgIndex(idx);
@@ -69,7 +73,7 @@ export default function ProductCard({ product }) {
                   borderRadius: 6,
                   objectFit: 'cover',
                   cursor: 'pointer',
-                  border: selectedImgIndex === idx ? '2px solid #34D399' : '1px solid rgba(255,255,255,0.2)',
+                  border: selectedImgIndex === idx ? '2px solid #C58A2A' : '1px solid rgba(197, 138, 42, 0.3)',
                   opacity: selectedImgIndex === idx ? 1 : 0.6,
                   transition: 'all 0.2s ease'
                 }}
@@ -87,7 +91,7 @@ export default function ProductCard({ product }) {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border-light)' }}>
         <div>
           <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)', display: 'block' }}>Unit Price</span>
-          <span style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--primary-emerald)' }}>
+          <span style={{ fontSize: '1.25rem', fontWeight: 700, color: '#C58A2A' }}>
             ₹{Number(product.price).toFixed(2)}
           </span>
         </div>

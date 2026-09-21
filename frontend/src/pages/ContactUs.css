@@ -18,7 +18,7 @@
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 2.5px;
-  color: #9E6E38;
+  color: #C58A2A;
   text-transform: uppercase;
   margin-bottom: 10px;
   display: block;
@@ -28,7 +28,7 @@
   font-family: 'Playfair Display', serif;
   font-size: 3.2rem;
   font-weight: 700;
-  color: #1A2E22;
+  color: #0F3B2E;
   line-height: 1.12;
   margin: 0 0 16px 0;
   letter-spacing: -0.6px;
@@ -226,7 +226,7 @@
   font-family: 'Playfair Display', serif;
   font-size: 2.1rem;
   font-weight: 700;
-  color: #1A2E22;
+  color: #0F3B2E;
   margin: 0 0 6px 0;
 }
 
@@ -250,7 +250,7 @@
 
 .contact-alert.success {
   background: #E6F4EA;
-  color: #15803D;
+  color: #1E513B;
   border: 1px solid #BBF7D0;
 }
 
@@ -280,7 +280,7 @@
 .field-group label {
   font-size: 0.82rem;
   font-weight: 700;
-  color: #1A2E22;
+  color: #0F3B2E;
   margin-bottom: 6px;
 }
 
@@ -293,7 +293,7 @@
 .box-icon {
   position: absolute;
   left: 14px;
-  color: #9E6E38;
+  color: #C58A2A;
   pointer-events: none;
 }
 
@@ -306,7 +306,7 @@
   border: 1.5px solid #EFE8DE;
   background: #FAF7F2;
   font-size: 0.9rem;
-  color: #1A2E22;
+  color: #0F3B2E;
   outline: none;
   transition: all 0.2s ease;
   box-sizing: border-box;
@@ -315,9 +315,9 @@
 .input-box input:focus,
 .input-box select:focus,
 .textarea-box textarea:focus {
-  border-color: #9E6E38;
+  border-color: #C58A2A;
   background: #FFFFFF;
-  box-shadow: 0 0 0 3px rgba(158, 110, 56, 0.1);
+  box-shadow: 0 0 0 3px rgba(197, 138, 42, 0.15);
 }
 
 .input-box input::placeholder,
@@ -333,7 +333,7 @@
   background: #FAF7F2;
   font-size: 0.9rem;
   font-family: inherit;
-  color: #1A2E22;
+  color: #0F3B2E;
   outline: none;
   transition: all 0.2s ease;
   box-sizing: border-box;
@@ -343,7 +343,7 @@
 .contact-btn-bronze {
   width: 100%;
   height: 48px;
-  background: linear-gradient(135deg, #A67C52 0%, #8C5E28 100%);
+  background: linear-gradient(135deg, #C58A2A 0%, #A96B21 100%);
   color: #FFFFFF;
   border: none;
   border-radius: 24px;
@@ -396,7 +396,7 @@
   font-family: 'Playfair Display', serif;
   font-size: 1.85rem;
   font-weight: 700;
-  color: #1A2E22;
+  color: #0F3B2E;
   margin: 0 0 4px 0;
 }
 
@@ -439,19 +439,20 @@
 .info-text-box strong {
   font-size: 0.9rem;
   font-weight: 700;
-  color: #1A2E22;
+  color: #0F3B2E;
   margin-bottom: 2px;
 }
 
 .info-main-link {
   font-size: 0.9rem;
   font-weight: 700;
-  color: #1A2E22;
+  color: #0F3B2E;
   text-decoration: none;
+  transition: color 0.2s ease;
 }
 
 .info-main-link:hover {
-  color: #9E6E38;
+  color: #A96B21;
 }
 
 .info-main-text {
@@ -597,7 +598,7 @@
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 2px;
-  color: #9E6E38;
+  color: #C58A2A;
   margin-bottom: 6px;
 }
 
@@ -605,7 +606,7 @@
   font-family: 'Playfair Display', serif;
   font-size: 2.2rem;
   font-weight: 700;
-  color: #1A2E22;
+  color: #0F3B2E;
   margin: 0 0 6px 0;
 }
 
@@ -620,8 +621,8 @@
   align-items: center;
   gap: 8px;
   background: #FFFFFF;
-  border: 1.5px solid #9E6E38;
-  color: #9E6E38;
+  border: 1.5px solid #C58A2A;
+  color: #C58A2A;
   font-size: 0.88rem;
   font-weight: 700;
   padding: 12px 24px;
@@ -632,8 +633,9 @@
 }
 
 .faq-btn-outline:hover {
-  background: #9E6E38;
+  background: linear-gradient(135deg, #C58A2A 0%, #A96B21 100%);
   color: #FFFFFF;
+  border-color: #A96B21;
   transform: translateY(-2px);
 }
 

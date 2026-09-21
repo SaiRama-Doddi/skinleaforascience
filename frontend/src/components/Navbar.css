@@ -4,15 +4,16 @@
 :root {
   --nav-cream-bg: #FAF7F2;
   --nav-border: #EFE8DE;
-  --nav-text-dark: #1F2937;
-  --nav-text-muted: #64748B;
-  --nav-bronze: #A67C52;
+  --nav-text-dark: #0F3B2E;
+  --nav-text-muted: #1E513B;
+  --nav-bronze: #C58A2A;
+  --nav-dark-gold: #A96B21;
 }
 
 /* 1. TOP ANNOUNCEMENT BAR */
 .top-announcement-bar {
-  background-color: #0C4F25;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  background-color: #0F3B2E;
+  border-bottom: 1px solid rgba(197, 138, 42, 0.25);
   padding: 8px 24px;
   font-family: 'Inter', sans-serif;
   font-size: 0.82rem;
@@ -33,7 +34,7 @@
 }
 
 .navbar-cart-btn:hover {
-  background-color: #8C653E !important;
+  background-color: #A96B21 !important;
 }
 
 .top-bar-link {
@@ -99,7 +100,7 @@
   font-family: 'Playfair Display', Georgia, serif;
   font-size: 1.7rem;
   font-weight: 700;
-  color: #A67C52;
+  color: #C58A2A;
   line-height: 1.05;
   display: block;
 }

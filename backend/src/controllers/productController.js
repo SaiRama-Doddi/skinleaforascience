@@ -2,6 +2,7 @@ const ProductModel = require('../models/productModel');
 
 const getAllProducts = async (req, res, next) => {
   try {
+    res.set('Cache-Control', 'public, max-age=30, s-maxage=120, stale-while-revalidate=60');
     const products = await ProductModel.findAll();
     res.status(200).json({
       success: true,
