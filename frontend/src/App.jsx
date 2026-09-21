@@ -29,16 +29,36 @@ function Layout() {
   const isAuthPage = ['/login', '/signup', '/forgot-password'].includes(location.pathname);
 
   useEffect(() => {
-    window.scrollTo(0, 0);
+    // Disable browser automatic scroll restoration to prevent opening mid-page
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
+
+    const forceScrollTop = () => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    };
+
+    // Instant scroll to top
+    forceScrollTop();
+
+    // Ensure async rendering layout shifts also land strictly at the top
+    const timer1 = setTimeout(forceScrollTop, 10);
+    const timer2 = setTimeout(forceScrollTop, 100);
+
     if (isAdminRoute) {
       document.body.classList.add('admin-light-mode');
     } else {
       document.body.classList.remove('admin-light-mode');
     }
+
     return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
       document.body.classList.remove('admin-light-mode');
     };
-  }, [location.pathname, isAdminRoute]);
+  }, [location.pathname, location.search, isAdminRoute]);
 
   return (
     <div className={isAdminRoute ? "app-container admin-layout" : "app-container"}>

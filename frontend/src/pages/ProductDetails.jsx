@@ -603,7 +603,7 @@ export default function ProductDetails() {
               className="shop-card"
               onClick={() => {
                 navigate(`/products/${item.id}`);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                window.scrollTo({ top: 0, behavior: 'instant' });
               }}
               style={{ cursor: 'pointer' }}
             >
