@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Leaf, User, LogOut, Wallet, Search, ShoppingBag, ChevronDown, Sparkles, ShieldCheck, Menu, X, Trash2 } from 'lucide-react';
+import { Leaf, User, LogOut, Wallet, Search, ShoppingBag, ChevronDown, Sparkles, ShieldCheck, Menu, X, Trash2, Home } from 'lucide-react';
 import { checkHealth, getCategories, getProducts } from '../services/api';
 import { getCart, getCartCount, getCartSubtotal, updateCartQuantity, removeFromCart, DEFAULT_PRODUCT_IMAGE } from '../services/cartService';
 import leaforaLogo from '../assets/leafora-logo.png';
@@ -381,6 +381,44 @@ export default function Navbar() {
           </>
         )}
       </header>
+
+      {/* MOBILE STICKY BOTTOM NAVIGATION BAR */}
+      <div className="mobile-bottom-nav">
+        <Link 
+          to="/" 
+          className={`mobile-bottom-tab ${location.pathname === '/' ? 'active' : ''}`}
+        >
+          <Home size={20} />
+          <span>Home</span>
+        </Link>
+        
+        <Link 
+          to="/products" 
+          className={`mobile-bottom-tab ${location.pathname.startsWith('/products') ? 'active' : ''}`}
+        >
+          <ShoppingBag size={20} />
+          <span>Shop</span>
+        </Link>
+        
+        <Link 
+          to={user ? "/dashboard" : "/login"} 
+          className={`mobile-bottom-tab ${location.pathname === '/login' || location.pathname === '/dashboard' ? 'active' : ''}`}
+        >
+          <User size={20} />
+          <span>Account</span>
+        </Link>
+        
+        <button 
+          className={`mobile-bottom-tab ${isCartOpen ? 'active' : ''}`} 
+          onClick={() => setIsCartOpen(true)}
+        >
+          <div className="cart-tab-icon-wrapper">
+            <ShoppingBag size={20} />
+            {cartCount > 0 && <span className="mobile-tab-cart-badge">{cartCount}</span>}
+          </div>
+          <span>Cart</span>
+        </button>
+      </div>
     </div>
   );
 }

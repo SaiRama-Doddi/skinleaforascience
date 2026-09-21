@@ -925,25 +925,9 @@
     display: block !important;
   }
 
-  /* Show "Filters" button in mobile toolbar */
+  /* Hide "Filters" button on mobile as requested */
   .btn-mobile-filter-trigger {
-    display: inline-flex !important;
-    align-items: center;
-    gap: 8px;
-    background: var(--leafora-bronze);
-    color: #FFFFFF;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 8px;
-    font-size: 0.88rem;
-    font-weight: 600;
-    cursor: pointer;
-    box-shadow: 0 2px 8px rgba(197, 138, 42, 0.25);
-    transition: all 0.2s ease;
-  }
-
-  .btn-mobile-filter-trigger:hover {
-    background: var(--leafora-bronze-hover);
+    display: none !important;
   }
 
   .shop-products-grid {
