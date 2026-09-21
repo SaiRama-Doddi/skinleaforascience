@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   Search, Grid, List, Filter, Heart, ShoppingBag, Star, 
   ChevronRight, X, RotateCcw, CheckCircle2, ShieldCheck, Leaf, Award, Eye, Sparkles
@@ -38,6 +38,7 @@ const getCategoryImg = (name, index = 0, dbImg = null) => {
 
 export default function Shop() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
@@ -52,6 +53,12 @@ export default function Shop() {
   // Sort and Search
   const [sortBy, setSortBy] = useState('featured');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Sync searchQuery from URL params (e.g. /products?search=sun)
+  useEffect(() => {
+    const q = searchParams.get('search');
+    if (q) setSearchQuery(q);
+  }, [searchParams]);
   
   // Interactive UI States
   const [wishlist, setWishlist] = useState([]);

@@ -60,15 +60,32 @@ export default function Navbar() {
   const handleSearchChange = async (e) => {
     const q = e.target.value;
     setSearchQuery(q);
-    if (q.trim().length >= 2) {
+    if (q.trim().length >= 1) {
       try {
         const res = await getProducts();
-        if (res && res.data) {
-          const filtered = res.data.filter(p => p.name.toLowerCase().includes(q.toLowerCase()) || (p.category && p.category.toLowerCase().includes(q.toLowerCase())));
-          setSearchResults(filtered.slice(0, 5));
+        if (res && res.data && Array.isArray(res.data) && res.data.length > 0) {
+          const filtered = res.data.filter(p => 
+            p.name.toLowerCase().includes(q.toLowerCase()) || 
+            (p.category && p.category.toLowerCase().includes(q.toLowerCase())) ||
+            (p.description && p.description.toLowerCase().includes(q.toLowerCase()))
+          );
+          setSearchResults(filtered.slice(0, 6));
+        } else {
+          setSearchResults([]);
         }
-      } catch (err) {}
+      } catch (err) {
+        setSearchResults([]);
+      }
     } else {
+      setSearchResults([]);
+    }
+  };
+
+  const handleSearchSubmit = (e) => {
+    if (e) e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
+      setIsMobileMenuOpen(false);
       setSearchResults([]);
     }
   };
@@ -144,7 +161,7 @@ export default function Navbar() {
             </div>
 
             {/* Mobile Dedicated Search Field */}
-            <div className="mobile-drawer-search">
+            <form className="mobile-drawer-search" onSubmit={handleSearchSubmit}>
               <Search size={16} className="search-icon-nav" />
               <input
                 type="text"
@@ -153,7 +170,28 @@ export default function Navbar() {
                 value={searchQuery}
                 onChange={handleSearchChange}
               />
-            </div>
+              {searchQuery && (
+                <X size={14} color="#94A3B8" style={{ cursor: 'pointer', marginLeft: 6 }} onClick={() => { setSearchQuery(''); setSearchResults([]); }} />
+              )}
+              {searchResults.length > 0 && (
+                <div className="search-results-dropdown">
+                  {searchResults.map(item => (
+                    <Link 
+                      key={item.id} 
+                      to={`/products/${item.id}`} 
+                      className="search-result-item"
+                      onClick={() => { setSearchQuery(''); setSearchResults([]); setIsMobileMenuOpen(false); }}
+                    >
+                      <img src={item.image_url || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZHg9IjEwMCIgZmlsbD0iI0YzRjRGNiIvPjwvc3ZnPg=='} alt={item.name} style={{ width: 32, height: 32, borderRadius: 6, objectFit: 'cover' }} />
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: '#292524' }}>{item.name}</div>
+                        <div style={{ fontSize: 11, color: '#A67C52', fontWeight: 700 }}>₹{item.price}</div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </form>
 
             <Link to="/" className={`nav-item ${location.pathname === '/' ? 'active' : ''}`} onClick={() => setIsMobileMenuOpen(false)}>
               Home
@@ -180,7 +218,7 @@ export default function Navbar() {
           </nav>
 
           {/* DESKTOP SEARCH BAR */}
-          <div className="nav-search-box desktop-only">
+          <form className="nav-search-box desktop-only" onSubmit={handleSearchSubmit}>
             <Search size={16} className="search-icon-nav" />
             <input
               type="text"
@@ -189,6 +227,9 @@ export default function Navbar() {
               value={searchQuery}
               onChange={handleSearchChange}
             />
+            {searchQuery && (
+              <X size={14} color="#94A3B8" style={{ cursor: 'pointer', marginLeft: 6 }} onClick={() => { setSearchQuery(''); setSearchResults([]); }} />
+            )}
             {searchResults.length > 0 && (
               <div className="search-results-dropdown">
                 {searchResults.map(item => (
@@ -207,7 +248,7 @@ export default function Navbar() {
                 ))}
               </div>
             )}
-          </div>
+          </form>
 
           {/* USER ACCOUNT BADGE & CART BUTTON IN NAVBAR */}
           <div className="nav-actions-right">
