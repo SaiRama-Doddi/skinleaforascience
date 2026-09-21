@@ -195,7 +195,7 @@
 /* 2. MAIN TWO-COLUMN SECTION (FORM + INFO & MAP) */
 /* ───────────────────────────────────────────────────────────── */
 .contact-main-section {
-  padding: 60px 40px 80px 40px;
+  padding: 24px 40px 60px 40px;
   background: #FAF7F2;
 }
 
@@ -739,9 +739,12 @@
 
 @media (max-width: 640px) {
   .contact-hero-section,
-  .contact-main-section,
   .contact-faq-banner {
     padding: 40px 20px;
+  }
+
+  .contact-main-section {
+    padding: 20px 20px 40px 20px;
   }
 
   .contact-hero-title {
