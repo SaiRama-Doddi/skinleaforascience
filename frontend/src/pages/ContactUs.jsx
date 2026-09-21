@@ -2,10 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Mail, Phone, MapPin, Clock, Send, User, MessageSquare, 
-  ChevronRight, CheckCircle2, AlertCircle, Leaf, Heart, PhoneCall,
+  ChevronRight, CheckCircle2, AlertCircle,
   ExternalLink, Sparkles, HelpCircle, X
 } from 'lucide-react';
-import skincareStoryImg from '../assets/skincare_story_showcase.jpg';
 import './ContactUs.css';
 
 export default function ContactUs() {
@@ -52,81 +51,6 @@ export default function ContactUs() {
 
   return (
     <div className="contact-us-page">
-
-      {/* ───────────────────────────────────────────────────────────── */}
-      {/* 1. HERO BANNER ("GET IN TOUCH ———") */}
-      {/* ───────────────────────────────────────────────────────────── */}
-      <section className="contact-hero-section">
-        <div className="contact-hero-container">
-          
-          {/* Left Column Content */}
-          <div className="contact-hero-left">
-            <span className="contact-tag">GET IN TOUCH ———</span>
-
-            <h1 className="contact-hero-title">
-              We’re Here<br />
-              For You
-            </h1>
-
-            <p className="contact-hero-sub">
-              Have questions, need support, or simply want to know more about our products? We’d love to hear from you.
-            </p>
-
-            {/* 3 Pill Feature Items Row */}
-            <div className="contact-hero-features-row">
-              <div className="hero-feature-item">
-                <div className="hero-feature-icon">
-                  <Leaf size={18} color="#9E6E38" />
-                </div>
-                <div className="hero-feature-text">
-                  <strong>Real People</strong>
-                  <span>Real Support</span>
-                </div>
-              </div>
-
-              <div className="hero-feature-item">
-                <div className="hero-feature-icon">
-                  <Heart size={18} color="#9E6E38" />
-                </div>
-                <div className="hero-feature-text">
-                  <strong>Your Skin</strong>
-                  <span>Our Priority</span>
-                </div>
-              </div>
-
-              <div className="hero-feature-item">
-                <div className="hero-feature-icon">
-                  <PhoneCall size={18} color="#9E6E38" />
-                </div>
-                <div className="hero-feature-text">
-                  <strong>We’re Just</strong>
-                  <span>a Message Away</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Right Column Showcase Card Frame */}
-          <div className="contact-hero-right">
-            <div className="contact-hero-img-card">
-              <img src={skincareStoryImg} alt="Let's Connect - LeafOra Skincare" />
-              
-              <div className="hero-connect-overlay">
-                <div className="connect-card-paper">
-                  <span className="paper-title">Let’s</span>
-                  <span className="paper-title-big">Connect ♡</span>
-                </div>
-              </div>
-
-              <div className="contact-hero-cursive-badge">
-                <span>Skincare</span>
-                <small>for a Brighter Tomorrow</small>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </section>
 
       {/* ───────────────────────────────────────────────────────────── */}
       {/* 2. MAIN TWO-COLUMN SECTION (FORM + INFO & MAP) */}
