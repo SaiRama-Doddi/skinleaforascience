@@ -5061,196 +5061,210 @@ export default function AdminDashboard() {
               )}
 
               {/* Master Products Table */}
-              <table className="leafora-table">
-                <thead>
-                  <tr>
-                    <th style={{ width: 40, textAlign: 'center' }}>
-                      <input
-                        type="checkbox"
-                        checked={displayedProducts.length > 0 && displayedProducts.every(p => selectedProductIds.includes(p.id))}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedProductIds(displayedProducts.map(p => p.id));
-                          } else {
-                            setSelectedProductIds([]);
-                          }
-                        }}
-                      />
-                    </th>
-                    <th>ID & SKU</th>
-                    <th>Product Title & Gallery</th>
-                    <th>Category & Brand</th>
-                    <th>Price & Variants</th>
-                    <th>Inventory Stock Status</th>
-                    <th>Status & Badges</th>
-                    <th style={{ textAlign: 'right' }}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pagedProducts.length === 0 ? (
+              <div className="leafora-table-scroll-wrapper">
+                <table className="leafora-table">
+                  <thead>
                     <tr>
-                      <td colSpan="8" style={{ textAlign: 'center', padding: 36, color: '#9CA3AF' }}>
-                        No products found matching filters in {productViewTab === 'trash' ? 'Trash Bin' : 'Catalog'}.
-                      </td>
+                      <th style={{ width: 40, textAlign: 'center' }}>
+                        <input
+                          type="checkbox"
+                          checked={displayedProducts.length > 0 && displayedProducts.every(p => selectedProductIds.includes(p.id))}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedProductIds(displayedProducts.map(p => p.id));
+                            } else {
+                              setSelectedProductIds([]);
+                            }
+                          }}
+                        />
+                      </th>
+                      <th>ID & SKU</th>
+                      <th>Product Title & Gallery</th>
+                      <th>Category & Brand</th>
+                      <th>Price & Variants</th>
+                      <th>Inventory Stock Status</th>
+                      <th>Status & Badges</th>
+                      <th style={{ textAlign: 'right' }}>Actions</th>
                     </tr>
-                  ) : (
-                    pagedProducts.map((prod, i) => {
-                      const prodId = prod.id || i + 1;
-                      const prodImages = Array.isArray(prod.images) && prod.images.length > 0 ? prod.images : [prod.image_url || getProductImage(prod.name, i)];
-                      const primaryImg = prodImages[0] || getProductImage(prod.name, i);
-                      const isSelected = selectedProductIds.includes(prod.id);
-                      const stockVal = prod.stock ?? 0;
-                      const lowThreshold = prod.low_stock_threshold ?? 10;
-                      const isLowStock = stockVal > 0 && stockVal <= lowThreshold;
-                      const isOutOfStock = stockVal === 0;
+                  </thead>
+                  <tbody>
+                    {pagedProducts.length === 0 ? (
+                      <tr>
+                        <td colSpan="8" style={{ textAlign: 'center', padding: 36, color: '#9CA3AF' }}>
+                          No products found matching filters in {productViewTab === 'trash' ? 'Trash Bin' : 'Catalog'}.
+                        </td>
+                      </tr>
+                    ) : (
+                      pagedProducts.map((prod, i) => {
+                        const prodId = prod.id || i + 1;
+                        const prodImages = Array.isArray(prod.images) && prod.images.length > 0 ? prod.images : [prod.image_url || getProductImage(prod.name, i)];
+                        const primaryImg = prodImages[0] || getProductImage(prod.name, i);
+                        const isSelected = selectedProductIds.includes(prod.id);
+                        const stockVal = prod.stock ?? 0;
+                        const lowThreshold = prod.low_stock_threshold ?? 10;
+                        const isLowStock = stockVal > 0 && stockVal <= lowThreshold;
+                        const isOutOfStock = stockVal === 0;
 
-                      return (
-                        <tr key={prod.id || i} className={isSelected ? 'selected-row' : ''}>
-                          <td style={{ textAlign: 'center' }}>
-                            <input
-                              type="checkbox"
-                              checked={isSelected}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setSelectedProductIds(prev => [...prev, prod.id]);
-                                } else {
-                                  setSelectedProductIds(prev => prev.filter(id => id !== prod.id));
-                                }
-                              }}
-                            />
-                          </td>
+                        return (
+                          <tr key={prod.id || i} className={isSelected ? 'selected-row' : ''}>
+                            <td style={{ textAlign: 'center' }}>
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedProductIds(prev => [...prev, prod.id]);
+                                  } else {
+                                    setSelectedProductIds(prev => prev.filter(id => id !== prod.id));
+                                  }
+                                }}
+                              />
+                            </td>
 
-                          <td>
-                            <div style={{ fontWeight: 600, color: '#111827' }}>#{prodId}</div>
-                            <div style={{ fontSize: 11, color: '#6B7280', fontFamily: 'monospace' }}>{prod.sku || `SKU-${prodId}`}</div>
-                          </td>
+                            <td>
+                              <div style={{ fontWeight: 600, color: '#111827' }}>#{prodId}</div>
+                              <div style={{ fontSize: 11, color: '#6B7280', fontFamily: 'monospace' }}>{prod.sku || `SKU-${prodId}`}</div>
+                            </td>
 
-                          <td>
-                            <div className="leafora-product-cell-expanded">
-                              <img src={primaryImg} alt={prod.name} className="leafora-product-img" />
-                              <div>
-                                <div style={{ fontWeight: 700, color: '#111827' }}>{prod.name}</div>
-                                <div className="leafora-gallery-preview-row">
-                                  {prodImages.map((img, idx) => (
-                                    <img key={idx} src={img} alt={`Thumb ${idx+1}`} className="leafora-gallery-mini-thumb" title={`Image ${idx+1}`} />
-                                  ))}
-                                  <span className="leafora-img-count-badge">🖼️ {prodImages.length} {prodImages.length === 1 ? 'image' : 'images'}</span>
+                            <td>
+                              <div className="leafora-product-cell-expanded">
+                                <img src={primaryImg} alt={prod.name} className="leafora-product-img" />
+                                <div>
+                                  <div style={{ fontWeight: 700, color: '#111827' }}>{prod.name}</div>
+                                  <div className="leafora-gallery-preview-row">
+                                    {prodImages.map((img, idx) => (
+                                      <img key={idx} src={img} alt={`Thumb ${idx+1}`} className="leafora-gallery-mini-thumb" title={`Image ${idx+1}`} />
+                                    ))}
+                                    <span className="leafora-img-count-badge">🖼️ {prodImages.length} {prodImages.length === 1 ? 'image' : 'images'}</span>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          </td>
+                            </td>
 
-                          <td>
-                            <div style={{ fontWeight: 600, color: '#374151' }}>{prod.category || 'General'}</div>
-                            <div style={{ fontSize: 11, color: '#9CA3AF' }}>Brand: {prod.brand || 'Leafora'}</div>
-                          </td>
+                            <td>
+                              <div style={{ fontWeight: 600, color: '#374151' }}>{prod.category || 'General'}</div>
+                              <div style={{ fontSize: 11, color: '#9CA3AF' }}>Brand: {prod.brand || 'Leafora'}</div>
+                            </td>
 
-                          <td>
-                            <div style={{ fontWeight: 700, color: '#111827', fontSize: 14 }}>
-                              ₹{parseFloat(prod.price || 0).toFixed(2)}
-                            </div>
-                            {Array.isArray(prod.variants) && prod.variants.length > 0 && (
-                              <span className="leafora-badge" style={{ backgroundColor: '#E0E7FF', color: '#3730A3' }}>
-                                {prod.variants.length} variants
-                              </span>
-                            )}
-                          </td>
-
-                          <td>
-                            {isOutOfStock ? (
-                              <span className="leafora-status-pill cancelled" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                                <XCircle size={12} /> Out of Stock (0)
-                              </span>
-                            ) : isLowStock ? (
-                              <span className="leafora-status-pill processing" style={{ backgroundColor: '#FEF3C7', color: '#D97706', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                                <AlertTriangle size={12} /> Low Stock ({stockVal})
-                              </span>
-                            ) : (
-                              <span className="leafora-status-pill delivered" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                                <CheckCircle2 size={12} /> In Stock ({stockVal})
-                              </span>
-                            )}
-                            <div style={{ fontSize: 10, color: '#9CA3AF', marginTop: 2 }}>
-                              Whse: {prod.warehouse_stock ?? stockVal} | Res: {prod.reserved_stock ?? 0}
-                            </div>
-                          </td>
-
-                          <td>
-                            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', alignItems: 'center' }}>
-                              <span className={`leafora-status-pill ${prod.is_active !== 0 ? 'delivered' : 'cancelled'}`}>
-                                {prod.is_active !== 0 ? 'Active' : 'Inactive'}
-                              </span>
-                              {!!prod.is_featured && <span className="leafora-badge featured">Featured</span>}
-                              {!!prod.is_trending && <span className="leafora-badge trending">Trending</span>}
-                              {!!prod.is_new_arrival && <span className="leafora-badge" style={{ backgroundColor: '#DCFCE7', color: '#166534' }}>New</span>}
-                            </div>
-                          </td>
-
-                          <td style={{ textAlign: 'right' }}>
-                            <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
-                              {productViewTab === 'catalog' ? (
-                                <>
-                                  <button
-                                    type="button"
-                                    style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#3B82F6' }}
-                                    onClick={() => setPreviewProduct(prod)}
-                                    title="Quick Preview Drawer"
-                                  >
-                                    <Eye size={16} />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#6B7280' }}
-                                    onClick={() => handleOpenEditProduct(prod)}
-                                    title="Edit Product & Gallery"
-                                  >
-                                    <Edit size={16} />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#8B5CF6' }}
-                                    onClick={() => handleDuplicateProduct(prod.id)}
-                                    title="Duplicate Product"
-                                  >
-                                    <Copy size={16} />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#EF4444' }}
-                                    onClick={() => handleSoftDeleteProduct(prod.id, prod.name)}
-                                    title="Move to Trash"
-                                  >
-                                    <Trash2 size={16} />
-                                  </button>
-                                </>
-                              ) : (
-                                <>
-                                  <button
-                                    type="button"
-                                    style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#16A34A' }}
-                                    onClick={() => handleRestoreProduct(prod.id, prod.name)}
-                                    title="Restore Product"
-                                  >
-                                    <RotateCcw size={16} />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#DC2626' }}
-                                    onClick={() => handlePermanentDeleteProduct(prod.id, prod.name)}
-                                    title="Permanently Delete"
-                                  >
-                                    <Trash2 size={16} />
-                                  </button>
-                                </>
+                            <td>
+                              <div style={{ fontWeight: 700, color: '#111827', fontSize: 14 }}>
+                                ₹{parseFloat(prod.price || 0).toFixed(2)}
+                              </div>
+                              {Array.isArray(prod.variants) && prod.variants.length > 0 && (
+                                <span className="leafora-badge" style={{ backgroundColor: '#E0E7FF', color: '#3730A3' }}>
+                                  {prod.variants.length} variants
+                                </span>
                               )}
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
+                            </td>
+
+                            <td>
+                              {isOutOfStock ? (
+                                <span className="leafora-status-pill cancelled" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                  <XCircle size={12} /> Out of Stock (0)
+                                </span>
+                              ) : isLowStock ? (
+                                <span className="leafora-status-pill processing" style={{ backgroundColor: '#FEF3C7', color: '#D97706', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                  <AlertTriangle size={12} /> Low Stock ({stockVal})
+                                </span>
+                              ) : (
+                                <span className="leafora-status-pill delivered" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                  <CheckCircle2 size={12} /> In Stock ({stockVal})
+                                </span>
+                              )}
+                              <div style={{ fontSize: 10, color: '#9CA3AF', marginTop: 2 }}>
+                                Whse: {prod.warehouse_stock ?? stockVal} | Res: {prod.reserved_stock ?? 0}
+                              </div>
+                            </td>
+
+                            <td>
+                              <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', alignItems: 'center' }}>
+                                <span className={`leafora-status-pill ${prod.is_active !== 0 ? 'delivered' : 'cancelled'}`}>
+                                  {prod.is_active !== 0 ? 'Active' : 'Inactive'}
+                                </span>
+                                {!!prod.is_featured && <span className="leafora-badge featured">Featured</span>}
+                                {!!prod.is_trending && <span className="leafora-badge trending">Trending</span>}
+                                {!!prod.is_new_arrival && <span className="leafora-badge" style={{ backgroundColor: '#DCFCE7', color: '#166534' }}>New</span>}
+                              </div>
+                            </td>
+
+                            <td style={{ textAlign: 'right' }}>
+                              <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                                {productViewTab === 'catalog' ? (
+                                  <>
+                                    <button
+                                      type="button"
+                                      style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#3B82F6' }}
+                                      onClick={() => setPreviewProduct(prod)}
+                                      title="Quick Preview Drawer"
+                                    >
+                                      <Eye size={16} />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#6B7280' }}
+                                      onClick={() => handleOpenEditProduct(prod)}
+                                      title="Edit Product & Gallery"
+                                    >
+                                      <Edit size={16} />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#8B5CF6' }}
+                                      onClick={() => handleDuplicateProduct(prod.id)}
+                                      title="Duplicate Product"
+                                    >
+                                      <Copy size={16} />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#EF4444' }}
+                                      onClick={() => handleSoftDeleteProduct(prod.id, prod.name)}
+                                      title="Move to Trash"
+                                    >
+                                      <Trash2 size={16} />
+                                    </button>
+                                  </>
+                                ) : (
+                                  <>
+                                    <button
+                                      type="button"
+                                      style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#16A34A' }}
+                                      onClick={() => handleRestoreProduct(prod.id, prod.name)}
+                                      title="Restore Product"
+                                    >
+                                      <RotateCcw size={16} />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#DC2626' }}
+                                      onClick={() => handlePermanentDeleteProduct(prod.id, prod.name)}
+                                      title="Permanently Delete"
+                                    >
+                                      <Trash2 size={16} />
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Product Catalog Scroll & Status Info Bar */}
+              {displayedProducts.length > 0 && (
+                <div className="leafora-pagination-bar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 14 }}>
+                  <span style={{ fontSize: 12.5, color: '#374151', fontWeight: 600 }}>
+                    Showing all {displayedProducts.length} products in {productViewTab === 'trash' ? 'Trash Bin' : 'Active Catalog'}
+                  </span>
+                  <span style={{ fontSize: 11.5, color: '#8C6A3C', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+                    ↕ Scroll inside container to view full products list
+                  </span>
+                </div>
+              )}
 
               {/* Product Preview Side Drawer */}
               {previewProduct && (
