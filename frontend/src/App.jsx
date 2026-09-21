@@ -43,7 +43,7 @@ function Layout() {
   return (
     <div className={isAdminRoute ? "app-container admin-layout" : "app-container"}>
       {!isAdminRoute && <Navbar />}
-      <main className={isAdminRoute ? "main-content admin-main" : "main-content"}>
+      <main key={location.pathname} className={isAdminRoute ? "main-content admin-main" : "main-content"}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/shop" element={<Shop />} />
