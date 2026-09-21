@@ -739,8 +739,9 @@ export default function AdminDashboard() {
   const [curatedProducts, setCuratedProducts] = useState([]);
   const [loadingCms, setLoadingCms] = useState(false);
 
-  // Modals state
+  // Modals & In-Page Panels state
   const [bannerModalData, setBannerModalData] = useState(null);
+  const [isBannerFormOpen, setIsBannerFormOpen] = useState(false);
   const [bannerForm, setBannerForm] = useState({
     id: null,
     banner_type: 'hero',
@@ -917,10 +918,11 @@ export default function AdminDashboard() {
         is_active: true
       });
     }
+    setIsBannerFormOpen(true);
   };
 
   const handleSaveBannerSubmit = async (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     if (!bannerForm.desktop_image_url) {
       showNotification('Desktop banner image URL or uploaded file is required');
       return;
@@ -931,6 +933,7 @@ export default function AdminDashboard() {
         if (res && res.success) {
           showNotification('Homepage banner updated successfully!');
           setBannerModalData(null);
+          setIsBannerFormOpen(false);
           fetchHomepageBanners();
         } else {
           showNotification(res?.message || 'Error updating banner');
@@ -940,6 +943,7 @@ export default function AdminDashboard() {
         if (res && res.success) {
           showNotification('New homepage banner added!');
           setBannerModalData(null);
+          setIsBannerFormOpen(false);
           fetchHomepageBanners();
         } else {
           showNotification(res?.message || 'Error creating banner');
@@ -3334,27 +3338,259 @@ export default function AdminDashboard() {
 
           {/* ─── TAB: HOMEPAGE BANNERS MANAGEMENT SUITE ─── */}
           {activeTab === 'banners' && (
-            <div className="leafora-card" style={{ padding: 24 }}>
-              {/* Header & Filter Controls */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 16 }}>
-                <div>
-                  <h3 className="leafora-card-title" style={{ fontSize: 18, display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <Image size={22} color="#A37F3F" />
-                    Homepage Banner CMS ({homepageBanners.length})
-                  </h3>
-                  <p className="leafora-page-subtitle" style={{ marginTop: 2 }}>
-                    Manage hero sliders, promo offer banners, category cards, and active/inactive status in real-time database
-                  </p>
-                </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+              {/* IN-PAGE EMBEDDED BANNER CREATOR & EDITOR PANEL */}
+              {isBannerFormOpen && (
+                <div className="leafora-inpage-panel">
+                  <div className="leafora-inpage-header">
+                    <h3 className="leafora-inpage-title">
+                      <Sparkles size={20} color="#C5A059" />
+                      {bannerForm.id ? `Edit Homepage Banner (#${bannerForm.id})` : 'Create New Homepage Banner'}
+                    </h3>
+                    <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                      <button
+                        type="button"
+                        className="leafora-btn leafora-btn-secondary"
+                        onClick={() => { setIsBannerFormOpen(false); setBannerModalData(null); }}
+                      >
+                        ← Back to List
+                      </button>
+                      <button
+                        type="button"
+                        className="leafora-btn leafora-btn-primary"
+                        onClick={handleSaveBannerSubmit}
+                      >
+                        <Check size={16} /> {bannerForm.id ? 'Update Banner' : 'Publish Banner'}
+                      </button>
+                    </div>
+                  </div>
 
-                <button 
-                  type="button"
-                  className="leafora-cat-btn-primary"
-                  onClick={() => handleOpenBannerModal(null)}
-                >
-                  <Plus size={16} /> Add New Banner
-                </button>
-              </div>
+                  <div className="leafora-inpage-body">
+                    <form onSubmit={handleSaveBannerSubmit}>
+                      <div className="leafora-banner-form-grid" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 24 }}>
+                        {/* Left Column: Form Controls */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                          <div className="leafora-form-row-2col">
+                            <div>
+                              <label className="leafora-form-label">Banner Placement Type *</label>
+                              <select
+                                className="leafora-select"
+                                value={bannerForm.banner_type}
+                                onChange={(e) => setBannerForm({ ...bannerForm, banner_type: e.target.value })}
+                              >
+                                <option value="hero">Hero Slider</option>
+                                <option value="offer">Special Offer</option>
+                                <option value="category">Category Banner</option>
+                                <option value="flash_sale">Flash Sale</option>
+                              </select>
+                            </div>
+
+                            <div>
+                              <label className="leafora-form-label">Display Order</label>
+                              <input
+                                type="number"
+                                className="leafora-input"
+                                value={bannerForm.display_order}
+                                onChange={(e) => setBannerForm({ ...bannerForm, display_order: e.target.value })}
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="leafora-form-label">Banner Headline / Title *</label>
+                            <input
+                              type="text"
+                              className="leafora-input"
+                              placeholder="e.g. Pharma-Grade Botanical Actives"
+                              value={bannerForm.title}
+                              onChange={(e) => setBannerForm({ ...bannerForm, title: e.target.value })}
+                              required
+                            />
+                          </div>
+
+                          <div>
+                            <label className="leafora-form-label">Subtitle / Sub-headline</label>
+                            <input
+                              type="text"
+                              className="leafora-input"
+                              placeholder="e.g. 100% Pure Organic Extracts Certified by Global Herbal Labs"
+                              value={bannerForm.subtitle}
+                              onChange={(e) => setBannerForm({ ...bannerForm, subtitle: e.target.value })}
+                            />
+                          </div>
+
+                          {/* Desktop Banner Image Slot */}
+                          <div>
+                            <label className="leafora-form-label">Desktop Banner Image URL *</label>
+                            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                              <input
+                                type="text"
+                                className="leafora-input"
+                                placeholder="/assets/hero_banner_1.jpg or image URL"
+                                value={bannerForm.desktop_image_url}
+                                onChange={(e) => setBannerForm({ ...bannerForm, desktop_image_url: e.target.value })}
+                                required
+                                style={{ flex: 1 }}
+                              />
+                              <label
+                                htmlFor="desktop-banner-file-input"
+                                className="leafora-btn leafora-btn-secondary"
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                              >
+                                <Upload size={15} /> Upload
+                              </label>
+                              <input
+                                id="desktop-banner-file-input"
+                                type="file"
+                                accept="image/*"
+                                style={{ display: 'none' }}
+                                onChange={(e) => handleBannerImageUpload(e, 'desktop_image_url')}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Mobile Banner Image Slot */}
+                          <div>
+                            <label className="leafora-form-label">Mobile Banner Image URL (Optional)</label>
+                            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                              <input
+                                type="text"
+                                className="leafora-input"
+                                placeholder="/assets/hero_banner_1_mobile.jpg (Optional)"
+                                value={bannerForm.mobile_image_url}
+                                onChange={(e) => setBannerForm({ ...bannerForm, mobile_image_url: e.target.value })}
+                                style={{ flex: 1 }}
+                              />
+                              <label
+                                htmlFor="mobile-banner-file-input"
+                                className="leafora-btn leafora-btn-secondary"
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                              >
+                                <Upload size={15} /> Upload
+                              </label>
+                              <input
+                                id="mobile-banner-file-input"
+                                type="file"
+                                accept="image/*"
+                                style={{ display: 'none' }}
+                                onChange={(e) => handleBannerImageUpload(e, 'mobile_image_url')}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="leafora-form-row-2col">
+                            <div>
+                              <label className="leafora-form-label">Target Click URL</label>
+                              <input
+                                type="text"
+                                className="leafora-input"
+                                placeholder="/shop or /category/skincare"
+                                value={bannerForm.link_url}
+                                onChange={(e) => setBannerForm({ ...bannerForm, link_url: e.target.value })}
+                              />
+                            </div>
+                            <div>
+                              <label className="leafora-form-label">Button CTA Text</label>
+                              <input
+                                type="text"
+                                className="leafora-input"
+                                placeholder="Shop Now"
+                                value={bannerForm.button_text}
+                                onChange={(e) => setBannerForm({ ...bannerForm, button_text: e.target.value })}
+                              />
+                            </div>
+                          </div>
+
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                            <input
+                              type="checkbox"
+                              id="inpageBannerActive"
+                              checked={bannerForm.is_active}
+                              onChange={(e) => setBannerForm({ ...bannerForm, is_active: e.target.checked })}
+                              style={{ width: 18, height: 18, accentColor: '#16A34A' }}
+                            />
+                            <label htmlFor="inpageBannerActive" style={{ fontSize: 14, fontWeight: 600, color: '#0F172A', cursor: 'pointer' }}>
+                              Active & Published Live on Public Storefront
+                            </label>
+                          </div>
+                        </div>
+
+                        {/* Right Column: Real-Time Live Banner Preview Card */}
+                        <div>
+                          <label className="leafora-form-label" style={{ marginBottom: 10 }}>
+                            Live Storefront Real-Time Banner Preview
+                          </label>
+                          <div className="leafora-banner-preview-card">
+                            {bannerForm.desktop_image_url ? (
+                              <img
+                                src={bannerForm.desktop_image_url}
+                                alt="Live Desktop Banner Preview"
+                                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                              />
+                            ) : (
+                              <div style={{ color: '#94A3B8', fontSize: 13, textAlign: 'center', zIndex: 2 }}>
+                                <Image size={36} style={{ opacity: 0.5, marginBottom: 8 }} />
+                                <div>Upload or enter Image URL to view preview</div>
+                              </div>
+                            )}
+                            <div className="leafora-banner-preview-overlay" />
+                            <div className="leafora-banner-preview-content">
+                              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, color: '#C5A059', textTransform: 'uppercase', marginBottom: 6, display: 'block' }}>
+                                {bannerForm.subtitle || '100% Pure Organic Extracts'}
+                              </span>
+                              <h2 style={{ fontSize: 20, fontWeight: 800, color: '#FFFFFF', margin: '0 0 14px 0', lineHeight: 1.2 }}>
+                                {bannerForm.title || 'Your Banner Title Here'}
+                              </h2>
+                              <button
+                                type="button"
+                                style={{
+                                  backgroundColor: '#C5A059',
+                                  color: '#FFFFFF',
+                                  border: 'none',
+                                  padding: '8px 18px',
+                                  borderRadius: 20,
+                                  fontWeight: 700,
+                                  fontSize: 12,
+                                  cursor: 'default'
+                                }}
+                              >
+                                {bannerForm.button_text || 'Shop Now'} →
+                              </button>
+                            </div>
+                          </div>
+                          <div style={{ marginTop: 12, fontSize: 12, color: '#64748B', display: 'flex', justifyContent: 'space-between', background: '#FAF8F5', padding: '10px 14px', borderRadius: 8, border: '1px solid #E2E8F0' }}>
+                            <span>Placement: <strong style={{ color: '#0F172A' }}>{String(bannerForm.banner_type).toUpperCase()}</strong></span>
+                            <span>Status: <strong style={{ color: bannerForm.is_active ? '#16A34A' : '#DC2626' }}>{bannerForm.is_active ? '✓ LIVE' : '✕ INACTIVE'}</strong></span>
+                          </div>
+                        </div>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
+
+              {/* BANNERS DIRECTORY & LIST CARD */}
+              <div className="leafora-card" style={{ padding: 24 }}>
+                {/* Header & Filter Controls */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 16 }}>
+                  <div>
+                    <h3 className="leafora-card-title" style={{ fontSize: 18, display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <Image size={22} color="#A37F3F" />
+                      Homepage Banner Directory ({homepageBanners.length})
+                    </h3>
+                    <p className="leafora-page-subtitle" style={{ marginTop: 2 }}>
+                      Manage hero sliders, promo offer banners, category cards, and active/inactive status in real-time database
+                    </p>
+                  </div>
+
+                  <button 
+                    type="button"
+                    className="leafora-cat-btn-primary"
+                    onClick={() => handleOpenBannerModal(null)}
+                  >
+                    <Plus size={16} /> {isBannerFormOpen ? 'Create Another Banner' : 'Add New Banner'}
+                  </button>
+                </div>
 
               {/* Filters Bar & Stats */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
@@ -3555,7 +3791,8 @@ export default function AdminDashboard() {
                 </div>
               )}
             </div>
-          )}
+          </div>
+        )}
 
           {/* ─── TAB 2: CATEGORIES MANAGEMENT SUITE ─── */}
           {activeTab === 'categories' && (
@@ -10072,6 +10309,257 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
+              {/* IN-PAGE EMBEDDED REVIEW CREATOR PANEL */}
+              {showAddReviewModal && (
+                <div className="leafora-inpage-panel" style={{ marginBottom: 24 }}>
+                  <div className="leafora-inpage-header">
+                    <h3 className="leafora-inpage-title">
+                      <Star size={20} color="#D97706" fill="#D97706" /> Add Product Review (Admin Studio)
+                    </h3>
+                    <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                      <button
+                        type="button"
+                        className="leafora-btn leafora-btn-secondary"
+                        onClick={() => setShowAddReviewModal(false)}
+                      >
+                        ← Cancel
+                      </button>
+                      <button
+                        type="button"
+                        className="leafora-btn leafora-btn-primary"
+                        onClick={handleSubmitAddReview}
+                        disabled={submittingReview}
+                      >
+                        <Check size={16} /> {submittingReview ? 'Publishing...' : 'Publish Review'}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="leafora-inpage-body">
+                    <form onSubmit={handleSubmitAddReview}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+                        {/* Target Product Selection */}
+                        <div>
+                          <label className="leafora-form-label">
+                            Select Product <span style={{ color: '#DC2626' }}>*</span>
+                          </label>
+                          <select
+                            className="leafora-select"
+                            value={addReviewForm.product_id}
+                            onChange={(e) => setAddReviewForm({ ...addReviewForm, product_id: e.target.value })}
+                            required
+                          >
+                            <option value="">-- Select Product --</option>
+                            {dbProducts.map((prod) => (
+                              <option key={prod.id} value={prod.id}>
+                                {prod.name} (ID: #{prod.id})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Customer Name & Email */}
+                        <div className="leafora-form-row-2col">
+                          <div>
+                            <label className="leafora-form-label">
+                              Customer / Reviewer Name <span style={{ color: '#DC2626' }}>*</span>
+                            </label>
+                            <input
+                              type="text"
+                              className="leafora-input"
+                              placeholder="e.g. Dr. Ramesh Varma"
+                              value={addReviewForm.customer_name}
+                              onChange={(e) => setAddReviewForm({ ...addReviewForm, customer_name: e.target.value })}
+                              required
+                            />
+                          </div>
+                          <div>
+                            <label className="leafora-form-label">
+                              Customer Email (Optional)
+                            </label>
+                            <input
+                              type="email"
+                              className="leafora-input"
+                              placeholder="e.g. ramesh@example.com"
+                              value={addReviewForm.customer_email}
+                              onChange={(e) => setAddReviewForm({ ...addReviewForm, customer_email: e.target.value })}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Rating & Status */}
+                        <div className="leafora-form-row-2col">
+                          <div>
+                            <label className="leafora-form-label">
+                              Star Rating <span style={{ color: '#DC2626' }}>*</span>
+                            </label>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <button
+                                  key={star}
+                                  type="button"
+                                  onClick={() => setAddReviewForm({ ...addReviewForm, rating: star })}
+                                  style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    padding: 2,
+                                    display: 'flex',
+                                    alignItems: 'center'
+                                  }}
+                                >
+                                  <Star
+                                    size={24}
+                                    color={star <= addReviewForm.rating ? '#F59E0B' : '#CBD5E1'}
+                                    fill={star <= addReviewForm.rating ? '#F59E0B' : 'transparent'}
+                                  />
+                                </button>
+                              ))}
+                              <span style={{ fontWeight: 700, fontSize: 14, color: '#D97706', marginLeft: 6 }}>
+                                {addReviewForm.rating} / 5
+                              </span>
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="leafora-form-label">
+                              Publication Status
+                            </label>
+                            <select
+                              className="leafora-select"
+                              value={addReviewForm.status}
+                              onChange={(e) => setAddReviewForm({ ...addReviewForm, status: e.target.value })}
+                            >
+                              <option value="Approved">Approved (Live on Product)</option>
+                              <option value="Pending">Pending Moderation</option>
+                              <option value="Rejected">Rejected</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        {/* Headline / Title */}
+                        <div>
+                          <label className="leafora-form-label">
+                            Review Headline / Title
+                          </label>
+                          <input
+                            type="text"
+                            className="leafora-input"
+                            placeholder="e.g. Outstanding Potency & Purity!"
+                            value={addReviewForm.title}
+                            onChange={(e) => setAddReviewForm({ ...addReviewForm, title: e.target.value })}
+                          />
+                        </div>
+
+                        {/* Review Comment */}
+                        <div>
+                          <label className="leafora-form-label">
+                            Review Content / Feedback <span style={{ color: '#DC2626' }}>*</span>
+                          </label>
+                          <textarea
+                            className="leafora-textarea"
+                            rows="4"
+                            placeholder="Type customer product review description..."
+                            value={addReviewForm.comment}
+                            onChange={(e) => setAddReviewForm({ ...addReviewForm, comment: e.target.value })}
+                            required
+                            style={{ resize: 'vertical' }}
+                          />
+                        </div>
+
+                        {/* Badges & Flags */}
+                        <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', padding: '12px 14px', background: '#F8FAFC', borderRadius: 8, border: '1px solid #E2E8F0' }}>
+                          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#1E293B' }}>
+                            <input
+                              type="checkbox"
+                              checked={addReviewForm.is_verified_buyer === 1}
+                              onChange={(e) => setAddReviewForm({ ...addReviewForm, is_verified_buyer: e.target.checked ? 1 : 0 })}
+                              style={{ width: 16, height: 16, accentColor: '#16A34A' }}
+                            />
+                            <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                              <CheckCircle2 size={15} color="#16A34A" /> Verified Buyer Badge
+                            </span>
+                          </label>
+
+                          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#1E293B' }}>
+                            <input
+                              type="checkbox"
+                              checked={addReviewForm.is_featured === 1}
+                              onChange={(e) => setAddReviewForm({ ...addReviewForm, is_featured: e.target.checked ? 1 : 0 })}
+                              style={{ width: 16, height: 16, accentColor: '#D97706' }}
+                            />
+                            <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                              <Star size={15} color="#D97706" /> Feature Review
+                            </span>
+                          </label>
+                        </div>
+
+                        {/* Image Attachments */}
+                        <div>
+                          <label className="leafora-form-label">
+                            Review Images (Optional)
+                          </label>
+                          <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 10, flexWrap: 'wrap' }}>
+                            <input
+                              type="text"
+                              className="leafora-input"
+                              placeholder="Image URL (e.g. /assets/vitamin_c_serum.jpg or https://...)"
+                              value={reviewImageInput}
+                              onChange={(e) => setReviewImageInput(e.target.value)}
+                              style={{ flex: 1, minWidth: 200 }}
+                            />
+                            <button
+                              type="button"
+                              className="leafora-btn leafora-btn-secondary"
+                              onClick={handleAddReviewImageUrl}
+                              style={{ whiteSpace: 'nowrap' }}
+                            >
+                              + Add URL
+                            </button>
+                            <label className="leafora-btn leafora-btn-secondary" style={{ cursor: 'pointer', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 4 }}>
+                              <Upload size={14} /> Upload
+                              <input type="file" accept="image/*" onChange={handleAddReviewImage} style={{ display: 'none' }} />
+                            </label>
+                          </div>
+
+                          {addReviewForm.images.length > 0 && (
+                            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                              {addReviewForm.images.map((img, idx) => (
+                                <div key={idx} style={{ position: 'relative', width: 64, height: 64, borderRadius: 8, overflow: 'hidden', border: '1px solid #CBD5E1' }}>
+                                  <img src={img} alt="review attachment" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveReviewImage(idx)}
+                                    style={{
+                                      position: 'absolute',
+                                      top: 2,
+                                      right: 2,
+                                      background: 'rgba(0,0,0,0.6)',
+                                      color: '#FFF',
+                                      border: 'none',
+                                      borderRadius: '50%',
+                                      width: 18,
+                                      height: 18,
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      cursor: 'pointer'
+                                    }}
+                                  >
+                                    <X size={12} />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
+
               {/* ANALYTICS SUB TAB */}
               {reviewsSubTab === 'analytics' ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -11739,200 +12227,7 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* BANNER CREATE / EDIT MODAL (GLOBAL LEVEL) */}
-          {bannerModalData && (
-            <div className="leafora-modal-overlay" onClick={() => setBannerModalData(null)}>
-              <div className="leafora-modal" style={{ maxWidth: 650 }} onClick={(e) => e.stopPropagation()}>
-                <div className="leafora-modal-header">
-                  <h3>{bannerForm.id ? 'Edit Banner' : 'Create New Banner'}</h3>
-                  <button className="close-btn" onClick={() => setBannerModalData(null)}><X size={18} /></button>
-                </div>
-                <form onSubmit={handleSaveBannerSubmit}>
-                  <div className="leafora-modal-body" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                    <div style={{ gridColumn: 'span 2' }}>
-                      <label className="leafora-form-label">Banner Placement Type *</label>
-                      <select
-                        className="leafora-input"
-                        value={bannerForm.banner_type}
-                        onChange={(e) => setBannerForm({ ...bannerForm, banner_type: e.target.value })}
-                      >
-                        <option value="hero">Hero Slider</option>
-                        <option value="offer">Special Offer</option>
-                        <option value="category">Category Banner</option>
-                        <option value="flash_sale">Flash Sale</option>
-                      </select>
-                    </div>
 
-                    <div style={{ gridColumn: 'span 2' }}>
-                      <label className="leafora-form-label">Banner Title *</label>
-                      <input
-                        type="text"
-                        className="leafora-input"
-                        placeholder="e.g. Pharma-Grade Botanical Actives"
-                        value={bannerForm.title}
-                        onChange={(e) => setBannerForm({ ...bannerForm, title: e.target.value })}
-                        required
-                      />
-                    </div>
-
-                    <div style={{ gridColumn: 'span 2' }}>
-                      <label className="leafora-form-label">Subtitle / Sub-headline</label>
-                      <input
-                        type="text"
-                        className="leafora-input"
-                        placeholder="e.g. 100% Pure Organic Extracts Certified by Global Herbal Labs"
-                        value={bannerForm.subtitle}
-                        onChange={(e) => setBannerForm({ ...bannerForm, subtitle: e.target.value })}
-                      />
-                    </div>
-
-                    {/* Desktop Image Upload Slot */}
-                    <div style={{ gridColumn: 'span 2' }}>
-                      <label className="leafora-form-label">Desktop Banner Image URL *</label>
-                      {bannerForm.desktop_image_url && (
-                        <div style={{ marginBottom: 10, position: 'relative', width: '100%', maxHeight: 140, borderRadius: 8, overflow: 'hidden', border: '1px solid #CBD5E1', backgroundColor: '#F8FAFC' }}>
-                          <img src={bannerForm.desktop_image_url} alt="Desktop Preview" style={{ width: '100%', height: 140, objectFit: 'cover' }} />
-                          <button
-                            type="button"
-                            onClick={() => setBannerForm(prev => ({ ...prev, desktop_image_url: '' }))}
-                            style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.7)', color: '#fff', border: 'none', borderRadius: '50%', width: 26, height: 26, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                            title="Remove Desktop Image"
-                          >
-                            <X size={14} />
-                          </button>
-                        </div>
-                      )}
-                      <div style={{ display: 'flex', gap: 8 }}>
-                        <input
-                          type="text"
-                          className="leafora-input"
-                          placeholder="/assets/hero_banner_1.jpg or https://... or click Upload"
-                          value={bannerForm.desktop_image_url}
-                          onChange={(e) => setBannerForm({ ...bannerForm, desktop_image_url: e.target.value })}
-                          required
-                        />
-                        <label
-                          htmlFor="desktop-banner-file-input"
-                          className="leafora-btn leafora-btn-secondary"
-                          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer', whiteSpace: 'nowrap', padding: '8px 14px' }}
-                        >
-                          <Upload size={15} /> Upload Image
-                        </label>
-                        <input
-                          id="desktop-banner-file-input"
-                          type="file"
-                          accept="image/*"
-                          style={{ display: 'none' }}
-                          onChange={(e) => handleBannerImageUpload(e, 'desktop_image_url')}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Mobile Image Upload Slot */}
-                    <div style={{ gridColumn: 'span 2' }}>
-                      <label className="leafora-form-label">Mobile Banner Image URL (Mobile Device Optimization)</label>
-                      {bannerForm.mobile_image_url && (
-                        <div style={{ marginBottom: 10, position: 'relative', width: 140, maxHeight: 140, borderRadius: 8, overflow: 'hidden', border: '1px solid #CBD5E1', backgroundColor: '#F8FAFC' }}>
-                          <img src={bannerForm.mobile_image_url} alt="Mobile Preview" style={{ width: 140, height: 140, objectFit: 'cover' }} />
-                          <button
-                            type="button"
-                            onClick={() => setBannerForm(prev => ({ ...prev, mobile_image_url: '' }))}
-                            style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.7)', color: '#fff', border: 'none', borderRadius: '50%', width: 26, height: 26, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                            title="Remove Mobile Image"
-                          >
-                            <X size={14} />
-                          </button>
-                        </div>
-                      )}
-                      <div style={{ display: 'flex', gap: 8 }}>
-                        <input
-                          type="text"
-                          className="leafora-input"
-                          placeholder="/assets/hero_banner_1_mobile.jpg (Optional, defaults to Desktop Image)"
-                          value={bannerForm.mobile_image_url}
-                          onChange={(e) => setBannerForm({ ...bannerForm, mobile_image_url: e.target.value })}
-                        />
-                        <label
-                          htmlFor="mobile-banner-file-input"
-                          className="leafora-btn leafora-btn-secondary"
-                          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer', whiteSpace: 'nowrap', padding: '8px 14px' }}
-                        >
-                          <Upload size={15} /> Upload Image
-                        </label>
-                        <input
-                          id="mobile-banner-file-input"
-                          type="file"
-                          accept="image/*"
-                          style={{ display: 'none' }}
-                          onChange={(e) => handleBannerImageUpload(e, 'mobile_image_url')}
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="leafora-form-label">Target Link URL</label>
-                      <input
-                        type="text"
-                        className="leafora-input"
-                        placeholder="/shop or /category/skincare"
-                        value={bannerForm.link_url}
-                        onChange={(e) => setBannerForm({ ...bannerForm, link_url: e.target.value })}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="leafora-form-label">Button CTA Text</label>
-                      <input
-                        type="text"
-                        className="leafora-input"
-                        placeholder="Shop Now, Explore, Claim Discount"
-                        value={bannerForm.button_text}
-                        onChange={(e) => setBannerForm({ ...bannerForm, button_text: e.target.value })}
-                      />
-                    </div>
-
-                    {bannerForm.banner_type === 'flash_sale' && (
-                      <div style={{ gridColumn: 'span 2' }}>
-                        <label className="leafora-form-label">Flash Sale End Date & Time (Countdown Timer)</label>
-                        <input
-                          type="datetime-local"
-                          className="leafora-input"
-                          value={bannerForm.flash_sale_end_time}
-                          onChange={(e) => setBannerForm({ ...bannerForm, flash_sale_end_time: e.target.value })}
-                        />
-                      </div>
-                    )}
-
-                    <div>
-                      <label className="leafora-form-label">Display Order</label>
-                      <input
-                        type="number"
-                        className="leafora-input"
-                        value={bannerForm.display_order}
-                        onChange={(e) => setBannerForm({ ...bannerForm, display_order: e.target.value })}
-                      />
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 24 }}>
-                      <input
-                        type="checkbox"
-                        id="bannerActive"
-                        checked={bannerForm.is_active}
-                        onChange={(e) => setBannerForm({ ...bannerForm, is_active: e.target.checked })}
-                        style={{ width: 18, height: 18 }}
-                      />
-                      <label htmlFor="bannerActive" style={{ fontSize: 14, fontWeight: 600, color: '#0F172A', cursor: 'pointer' }}>Active on Homepage</label>
-                    </div>
-                  </div>
-
-                  <div className="leafora-modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-                    <button type="button" className="leafora-btn leafora-btn-secondary" onClick={() => setBannerModalData(null)}>Cancel</button>
-                    <button type="submit" className="leafora-btn leafora-btn-primary">Save Banner</button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
 
           {/* EDIT SECTION MODAL (GLOBAL LEVEL) */}
           {editSectionModalData && (
@@ -11999,250 +12294,7 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* ADD REVIEW MODAL FOR ADMIN */}
-          {showAddReviewModal && (
-            <div className="leafora-modal-overlay" onClick={() => setShowAddReviewModal(false)}>
-              <div className="leafora-modal" style={{ maxWidth: 640, width: '92%' }} onClick={(e) => e.stopPropagation()}>
-                <div className="leafora-modal-header">
-                  <h3 className="leafora-modal-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <Star size={20} color="#D97706" fill="#D97706" /> Add Product Review (Admin)
-                  </h3>
-                  <button className="close-btn" onClick={() => setShowAddReviewModal(false)}><X size={18} /></button>
-                </div>
 
-                <form onSubmit={handleSubmitAddReview}>
-                  <div className="leafora-modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 16, maxHeight: '70vh', overflowY: 'auto' }}>
-                    
-                    {/* Target Product Selection */}
-                    <div>
-                      <label className="leafora-form-label">
-                        Select Product <span style={{ color: '#DC2626' }}>*</span>
-                      </label>
-                      <select
-                        className="leafora-select"
-                        value={addReviewForm.product_id}
-                        onChange={(e) => setAddReviewForm({ ...addReviewForm, product_id: e.target.value })}
-                        required
-                      >
-                        <option value="">-- Select Product --</option>
-                        {dbProducts.map((prod) => (
-                          <option key={prod.id} value={prod.id}>
-                            {prod.name} (ID: #{prod.id})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* Customer Name & Email */}
-                    <div className="leafora-form-row-2col">
-                      <div>
-                        <label className="leafora-form-label">
-                          Customer / Reviewer Name <span style={{ color: '#DC2626' }}>*</span>
-                        </label>
-                        <input
-                          type="text"
-                          className="leafora-input"
-                          placeholder="e.g. Dr. Ramesh Varma"
-                          value={addReviewForm.customer_name}
-                          onChange={(e) => setAddReviewForm({ ...addReviewForm, customer_name: e.target.value })}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className="leafora-form-label">
-                          Customer Email (Optional)
-                        </label>
-                        <input
-                          type="email"
-                          className="leafora-input"
-                          placeholder="e.g. ramesh@example.com"
-                          value={addReviewForm.customer_email}
-                          onChange={(e) => setAddReviewForm({ ...addReviewForm, customer_email: e.target.value })}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Rating & Status */}
-                    <div className="leafora-form-row-2col">
-                      <div>
-                        <label className="leafora-form-label">
-                          Star Rating <span style={{ color: '#DC2626' }}>*</span>
-                        </label>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <button
-                              key={star}
-                              type="button"
-                              onClick={() => setAddReviewForm({ ...addReviewForm, rating: star })}
-                              style={{
-                                background: 'none',
-                                border: 'none',
-                                cursor: 'pointer',
-                                padding: 2,
-                                display: 'flex',
-                                alignItems: 'center'
-                              }}
-                            >
-                              <Star
-                                size={24}
-                                color={star <= addReviewForm.rating ? '#F59E0B' : '#CBD5E1'}
-                                fill={star <= addReviewForm.rating ? '#F59E0B' : 'transparent'}
-                              />
-                            </button>
-                          ))}
-                          <span style={{ fontWeight: 700, fontSize: 14, color: '#D97706', marginLeft: 6 }}>
-                            {addReviewForm.rating} / 5
-                          </span>
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="leafora-form-label">
-                          Publication Status
-                        </label>
-                        <select
-                          className="leafora-select"
-                          value={addReviewForm.status}
-                          onChange={(e) => setAddReviewForm({ ...addReviewForm, status: e.target.value })}
-                        >
-                          <option value="Approved">Approved (Live on Product)</option>
-                          <option value="Pending">Pending Moderation</option>
-                          <option value="Rejected">Rejected</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    {/* Headline / Title */}
-                    <div>
-                      <label className="leafora-form-label">
-                        Review Headline / Title
-                      </label>
-                      <input
-                        type="text"
-                        className="leafora-input"
-                        placeholder="e.g. Outstanding Potency & Purity!"
-                        value={addReviewForm.title}
-                        onChange={(e) => setAddReviewForm({ ...addReviewForm, title: e.target.value })}
-                      />
-                    </div>
-
-                    {/* Review Comment */}
-                    <div>
-                      <label className="leafora-form-label">
-                        Review Content / Feedback <span style={{ color: '#DC2626' }}>*</span>
-                      </label>
-                      <textarea
-                        className="leafora-textarea"
-                        rows="4"
-                        placeholder="Type customer product review description..."
-                        value={addReviewForm.comment}
-                        onChange={(e) => setAddReviewForm({ ...addReviewForm, comment: e.target.value })}
-                        required
-                        style={{ resize: 'vertical' }}
-                      />
-                    </div>
-
-                    {/* Badges & Flags */}
-                    <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', padding: '12px 14px', background: '#F8FAFC', borderRadius: 8, border: '1px solid #E2E8F0' }}>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#1E293B' }}>
-                        <input
-                          type="checkbox"
-                          checked={addReviewForm.is_verified_buyer === 1}
-                          onChange={(e) => setAddReviewForm({ ...addReviewForm, is_verified_buyer: e.target.checked ? 1 : 0 })}
-                          style={{ width: 16, height: 16, accentColor: '#16A34A' }}
-                        />
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                          <CheckCircle2 size={15} color="#16A34A" /> Verified Buyer Badge
-                        </span>
-                      </label>
-
-                      <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#1E293B' }}>
-                        <input
-                          type="checkbox"
-                          checked={addReviewForm.is_featured === 1}
-                          onChange={(e) => setAddReviewForm({ ...addReviewForm, is_featured: e.target.checked ? 1 : 0 })}
-                          style={{ width: 16, height: 16, accentColor: '#D97706' }}
-                        />
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                          <Star size={15} color="#D97706" /> Feature Review
-                        </span>
-                      </label>
-                    </div>
-
-                    {/* Image Attachments */}
-                    <div>
-                      <label className="leafora-form-label">
-                        Review Images (Optional)
-                      </label>
-                      <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 10, flexWrap: 'wrap' }}>
-                        <input
-                          type="text"
-                          className="leafora-input"
-                          placeholder="Image URL (e.g. /assets/vitamin_c_serum.jpg or https://...)"
-                          value={reviewImageInput}
-                          onChange={(e) => setReviewImageInput(e.target.value)}
-                          style={{ flex: 1, minWidth: 200 }}
-                        />
-                        <button
-                          type="button"
-                          className="leafora-btn leafora-btn-secondary"
-                          onClick={handleAddReviewImageUrl}
-                          style={{ whiteSpace: 'nowrap' }}
-                        >
-                          + Add URL
-                        </button>
-                        <label className="leafora-btn leafora-btn-secondary" style={{ cursor: 'pointer', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 4 }}>
-                          <Upload size={14} /> Upload
-                          <input type="file" accept="image/*" onChange={handleAddReviewImage} style={{ display: 'none' }} />
-                        </label>
-                      </div>
-
-                      {addReviewForm.images.length > 0 && (
-                        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                          {addReviewForm.images.map((img, idx) => (
-                            <div key={idx} style={{ position: 'relative', width: 64, height: 64, borderRadius: 8, overflow: 'hidden', border: '1px solid #CBD5E1' }}>
-                              <img src={img} alt="review attachment" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveReviewImage(idx)}
-                                style={{
-                                  position: 'absolute',
-                                  top: 2,
-                                  right: 2,
-                                  background: 'rgba(0,0,0,0.6)',
-                                  color: '#FFF',
-                                  border: 'none',
-                                  borderRadius: '50%',
-                                  width: 18,
-                                  height: 18,
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  cursor: 'pointer'
-                                }}
-                              >
-                                <X size={12} />
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                  </div>
-
-                  <div className="leafora-modal-footer">
-                    <button type="button" className="leafora-btn leafora-btn-secondary" onClick={() => setShowAddReviewModal(false)}>
-                      Cancel
-                    </button>
-                    <button type="submit" className="leafora-btn leafora-btn-primary" disabled={submittingReview}>
-                      {submittingReview ? 'Posting Review...' : 'Publish Review'}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
         </div>
       </main>
     </div>
