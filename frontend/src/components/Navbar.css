@@ -478,6 +478,15 @@ a, a:visited, a:hover, a:active {
     display: none !important;
   }
 
+  .mobile-bottom-nav {
+    display: flex !important;
+    z-index: 9999 !important;
+  }
+
+  body {
+    padding-bottom: 70px !important;
+  }
+
   .leafora-main-navbar {
     padding: 10px 16px !important;
     background-color: #FFFFFF !important;
@@ -489,16 +498,8 @@ a, a:visited, a:hover, a:active {
     display: flex !important;
     align-items: center !important;
     justify-content: space-between !important;
-    gap: 8px !important;
-  }
-
-  .mobile-menu-toggle-btn {
-    display: flex !important;
-    align-items: center !important;
-    color: #1F2937 !important;
-    background: none !important;
-    border: none !important;
-    padding: 4px !important;
+    gap: 12px !important;
+    width: 100% !important;
   }
 
   .brand-logo {
@@ -507,6 +508,18 @@ a, a:visited, a:hover, a:active {
     gap: 8px !important;
     text-decoration: none !important;
     margin: 0 !important;
+    margin-right: auto !important;
+  }
+
+  .mobile-menu-toggle-btn {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: #1F2937 !important;
+    background: none !important;
+    border: none !important;
+    padding: 6px !important;
+    margin-left: auto !important;
   }
 
   .brand-logo-img {

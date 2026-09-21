@@ -103,16 +103,7 @@ export default function Navbar() {
       <header className="leafora-main-navbar">
         <div className="navbar-inner">
           
-          {/* Mobile Left: Hamburger Button */}
-          <button 
-            className="mobile-menu-toggle-btn"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            aria-label="Toggle Navigation Menu"
-          >
-            {isMobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
-          </button>
-
-          {/* Center: Brand Logo */}
+          {/* Left: Brand Logo */}
           <Link to="/" className="brand-logo">
             <img 
               src={leaforaLogo} 
@@ -125,6 +116,15 @@ export default function Navbar() {
               <span className="brand-subtitle" style={{ color: '#A67C52' }}>LIFE SCIENCES</span>
             </div>
           </Link>
+
+          {/* Mobile Right: Waffle / Hamburger Button */}
+          <button 
+            className="mobile-menu-toggle-btn"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            aria-label="Toggle Navigation Menu"
+          >
+            {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
 
           {/* MAIN NAV LINKS WITH MEGA MENU HOVER & MOBILE DRAWER */}
           <nav className={`nav-links ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
