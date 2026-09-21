@@ -185,15 +185,15 @@ export default function ContactUs() {
 
               <div className="info-items-list">
                 
-                {/* Call Us */}
+                {/* Call & WhatsApp Us */}
                 <div className="info-item-row">
                   <div className="info-icon-circle">
                     <Phone size={20} color="#C58A2A" />
                   </div>
                   <div className="info-text-box">
-                    <strong>Call Us</strong>
-                    <a href="tel:+12345678900" className="info-main-link">+1 234 567 8900</a>
-                    <span className="info-subtext">Mon – Sat, 9:00 AM – 6:00 PM (EST)</span>
+                    <strong>Call & WhatsApp Us</strong>
+                    <a href="https://wa.me/917984915600" target="_blank" rel="noreferrer" className="info-main-link">+91 79849 15600</a>
+                    <span className="info-subtext">Mon – Sat, 9:00 AM – 7:00 PM (IST)</span>
                   </div>
                 </div>
 
@@ -204,7 +204,7 @@ export default function ContactUs() {
                   </div>
                   <div className="info-text-box">
                     <strong>Email Us</strong>
-                    <a href="mailto:support@leafora.com" className="info-main-link">support@leafora.com</a>
+                    <a href="mailto:care@leaforalifescience.com" className="info-main-link">care@leaforalifescience.com</a>
                     <span className="info-subtext">We reply within 24 hours</span>
                   </div>
                 </div>
@@ -216,8 +216,8 @@ export default function ContactUs() {
                   </div>
                   <div className="info-text-box">
                     <strong>Visit Us</strong>
-                    <span className="info-main-text">123 Wellness Avenue,</span>
-                    <span className="info-subtext">San Francisco, CA 94107, USA</span>
+                    <span className="info-main-text">28 HARIKRISHNA SOCIETY, NEAR PASHWANATH TOWNSHEEP,</span>
+                    <span className="info-subtext">Nikol, Ahmedabad- 382350, Gujarat</span>
                   </div>
                 </div>
 
@@ -228,7 +228,7 @@ export default function ContactUs() {
                   </div>
                   <div className="info-text-box">
                     <strong>Business Hours</strong>
-                    <span className="info-main-text">Monday – Saturday: 9:00 AM – 6:00 PM</span>
+                    <span className="info-main-text">Monday – Saturday: 9:00 AM – 7:00 PM</span>
                     <span className="info-subtext">Sunday: Closed</span>
                   </div>
                 </div>
@@ -247,11 +247,11 @@ export default function ContactUs() {
               <div className="map-card-header">
                 <div>
                   <h2>Find Us Here</h2>
-                  <span className="map-sublabel">Our Location</span>
+                  <span className="map-sublabel">Nikol, Ahmedabad</span>
                 </div>
                 
                 <a 
-                  href="https://maps.google.com/?q=San+Francisco+CA" 
+                  href="https://maps.google.com/?q=28+HARIKRISHNA+SOCIETY+Nikol+Ahmedabad+Gujarat+382350" 
                   target="_blank" 
                   rel="noreferrer" 
                   className="map-view-link"
@@ -263,8 +263,8 @@ export default function ContactUs() {
               {/* STYLED INTERACTIVE GOOGLE MAP FRAME */}
               <div className="map-embed-wrapper">
                 <iframe 
-                  title="LeafOra Life Sciences San Francisco HQ Location"
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3153.086488730906!2d-122.3986064234569!3d37.78168297198305!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8085807c4b0c7979%3A0x6b80d0d9703c1!2sSan%20Francisco%2C%20CA!5e0!3m2!1sen!2sus!4v1700000000000!5m2!1sen!2sus"
+                  title="LeafOra Life Sciences Nikol Ahmedabad HQ Location"
+                  src="https://maps.google.com/maps?q=Nikol,%20Ahmedabad,%20Gujarat%20382350&t=&z=14&ie=UTF8&iwloc=&output=embed"
                   width="100%" 
                   height="180" 
                   style={{ border: 0, borderRadius: 14 }} 

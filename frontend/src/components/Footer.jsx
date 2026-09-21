@@ -155,13 +155,19 @@ export default function Footer() {
             </h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.9)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <Mail size={16} color="#FFFFFF" /> care@leaforalifescience.com
+                <Mail size={16} color="#C58A2A" /> care@leaforalifescience.com
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <Phone size={16} color="#FFFFFF" /> +1 (800) 532-3672
+                <Phone size={16} color="#C58A2A" /> 
+                <a href="https://wa.me/917984915600" target="_blank" rel="noreferrer" style={{ color: '#FFFFFF', textDecoration: 'none' }}>
+                  +91 79849 15600 (WhatsApp)
+                </a>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <MapPin size={16} color="#FFFFFF" /> Leafora Botanical Labs, CA, USA
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                <MapPin size={16} color="#C58A2A" style={{ marginTop: 3, flexShrink: 0 }} /> 
+                <span style={{ lineHeight: 1.5 }}>
+                  28 HARIKRISHNA SOCIETY, NEAR PASHWANATH TOWNSHEEP, Nikol, Ahmedabad- 382350, Gujarat
+                </span>
               </div>
             </div>
           </div>
