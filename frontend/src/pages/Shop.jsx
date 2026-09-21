@@ -2,13 +2,39 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Search, Grid, List, Filter, Heart, ShoppingBag, Star, 
-  ChevronRight, X, RotateCcw, CheckCircle2, ShieldCheck, Leaf, Award, Eye
+  ChevronRight, X, RotateCcw, CheckCircle2, ShieldCheck, Leaf, Award, Eye, Sparkles
 } from 'lucide-react';
 import { getProducts, getCategories } from '../services/api';
 import { addToCart } from '../services/cartService';
 import skincareStoryPhoto from '../assets/skincare_story_showcase.jpg';
 import botanicalProductsPhoto from '../assets/login_botanical_products.jpg';
+import ingAloeImg from '../assets/ing_aloe.jpg';
+import ingNiacinamideImg from '../assets/ing_niacinamide.jpg';
+import ingDropperImg from '../assets/ing_dropper.jpg';
+import ingPowderImg from '../assets/ing_powder.jpg';
+import ingVitEImg from '../assets/ing_vit_e.jpg';
+import ingLicoriceImg from '../assets/ing_licorice.jpg';
 import './Shop.css';
+
+const categoryThumbnails = [
+  ingDropperImg,
+  ingAloeImg,
+  ingPowderImg,
+  ingNiacinamideImg,
+  ingVitEImg,
+  ingLicoriceImg
+];
+
+const getCategoryImg = (name, index = 0, dbImg = null) => {
+  if (dbImg && typeof dbImg === 'string' && dbImg.trim() !== '') return dbImg;
+  const norm = (name || '').toLowerCase();
+  if (norm.includes('all')) return ingDropperImg;
+  if (norm.includes('herbal') || norm.includes('extract')) return ingAloeImg;
+  if (norm.includes('supplement') || norm.includes('formulation')) return ingPowderImg;
+  if (norm.includes('skin') || norm.includes('care')) return ingVitEImg;
+  if (norm.includes('face') || norm.includes('cream')) return ingLicoriceImg;
+  return categoryThumbnails[index % categoryThumbnails.length];
+};
 
 export default function Shop() {
   const navigate = useNavigate();
@@ -84,15 +110,20 @@ export default function Shop() {
   const normStr = (s) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
   const categoryOptions = useMemo(() => {
-    const list = [{ name: 'All Products', count: products.length }];
+    const list = [{ name: 'All Products', count: products.length, image: getCategoryImg('All Products', 0) }];
     if (dbCategories.length > 0) {
-      dbCategories.forEach(cat => {
+      dbCategories.forEach((cat, idx) => {
         const count = products.filter(p => {
           const pCat = normStr(p.category);
           const cName = normStr(cat.name);
           return pCat === cName || pCat.includes(cName) || cName.includes(pCat) || String(p.category_id) === String(cat.id);
         }).length;
-        list.push({ name: cat.name, count, id: cat.id });
+        list.push({ 
+          name: cat.name, 
+          count, 
+          id: cat.id, 
+          image: getCategoryImg(cat.name, idx + 1, cat.image_url || cat.icon_url) 
+        });
       });
     } else {
       const catMap = {};
@@ -101,8 +132,12 @@ export default function Shop() {
           catMap[p.category] = (catMap[p.category] || 0) + 1;
         }
       });
-      Object.keys(catMap).forEach(catName => {
-        list.push({ name: catName, count: catMap[catName] });
+      Object.keys(catMap).forEach((catName, idx) => {
+        list.push({ 
+          name: catName, 
+          count: catMap[catName], 
+          image: getCategoryImg(catName, idx + 1) 
+        });
       });
     }
     return list;
@@ -219,7 +254,10 @@ export default function Shop() {
                   className={`category-item ${selectedCategory === cat.name ? 'active' : ''}`}
                   onClick={() => setSelectedCategory(cat.name)}
                 >
-                  <span>{cat.name}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <img src={cat.image} alt={cat.name} className="sidebar-cat-thumb" />
+                    <span>{cat.name}</span>
+                  </div>
                   <span className="cat-count">({cat.count}) <ChevronRight size={14} className="cat-arrow" /></span>
                 </li>
               ))}
@@ -318,6 +356,25 @@ export default function Shop() {
         {/* PRODUCTS CONTENT AREA */}
         <main className="shop-content-area">
 
+          {/* HORIZONTAL CATEGORY ROW WITH SMALL IMAGES & ICONS */}
+          <div className="horizontal-category-scroll-wrapper">
+            <div className="horizontal-category-scroll">
+              {categoryOptions.map((cat) => (
+                <button
+                  key={cat.name}
+                  className={`category-scroll-chip ${selectedCategory === cat.name ? 'active' : ''}`}
+                  onClick={() => setSelectedCategory(cat.name)}
+                >
+                  <div className="chip-img-box">
+                    <img src={cat.image} alt={cat.name} />
+                  </div>
+                  <span className="chip-label">{cat.name}</span>
+                  <span className="chip-badge">({cat.count})</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* TOOLBAR ROW */}
           <div className="shop-toolbar">
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -371,7 +428,7 @@ export default function Shop() {
                 >
                   <List size={16} />
                 </button>
-              </div>
+                </div>
             </div>
           </div>
 
@@ -518,7 +575,10 @@ export default function Shop() {
                       className={`category-item ${selectedCategory === cat.name ? 'active' : ''}`}
                       onClick={() => { setSelectedCategory(cat.name); }}
                     >
-                      <span>{cat.name}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <img src={cat.image} alt={cat.name} className="sidebar-cat-thumb" />
+                        <span>{cat.name}</span>
+                      </div>
                       <span className="cat-count">({cat.count}) <ChevronRight size={14} className="cat-arrow" /></span>
                     </li>
                   ))}
