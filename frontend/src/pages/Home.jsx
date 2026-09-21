@@ -229,10 +229,6 @@ export default function Home() {
                   <ChevronRight size={16} />
                 </button>
               </div>
-
-              <Link to="/products" className="link-view-all-pixel">
-                View All Categories <ChevronRight size={16} />
-              </Link>
             </div>
           </div>
 

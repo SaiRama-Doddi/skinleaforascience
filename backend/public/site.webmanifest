@@ -1,0 +1,23 @@
+{
+  "name": "LeafOra Life Sciences - Pure Organic Botanical Skincare",
+  "short_name": "LeafOra",
+  "description": "Pure organic botanical skincare, natural extracts, serums, moisturizers & formulations from Nikol, Ahmedabad, Gujarat.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FAF7F2",
+  "theme_color": "#0F3B2E",
+  "icons": [
+    {
+      "src": "/leafora-logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/leafora-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

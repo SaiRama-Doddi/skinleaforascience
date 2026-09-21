@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import SEO from '../components/SEO';
 import {
   Mail, Lock, User, Phone, Eye, EyeOff, ShieldCheck, CheckCircle2,
   AlertCircle, ArrowRight, Sparkles, Check, ChevronLeft, KeyRound,
@@ -222,6 +223,14 @@ export default function AuthPage({ initialMode = 'login', onAuthSuccess, isModal
 
   return (
     <div className={`leafora-auth-page-container ${isModal ? 'is-modal-view' : ''}`}>
+      {!isModal && (
+        <SEO
+          title="Account Sign In & Register | LeafOra Life Sciences"
+          description="Sign in or create an account with LeafOra Life Sciences to manage your orders, track delivery, and explore premium organic skincare solutions."
+          keywords="LeafOra login, register LeafOra, botanical skincare account, user portal"
+          canonicalUrl="https://leaforalifescience.com/login"
+        />
+      )}
 
       {/* ─── MAIN TWO-COLUMN LAYOUT ─── */}
       <div className="auth-hero-grid">

@@ -1,0 +1,17 @@
+# https://leaforalifescience.com/robots.txt
+# LeafOra Life Sciences Search Engine Indexing Instructions
+
+User-agent: *
+Allow: /
+Allow: /products
+Allow: /about
+Allow: /contact
+Allow: /assets/
+Allow: /uploads/
+
+Disallow: /admin
+Disallow: /api/
+Disallow: /dashboard
+
+# Google Search Indexing Sitemap Location
+Sitemap: https://leaforalifescience.com/sitemap.xml
