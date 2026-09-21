@@ -1088,8 +1088,25 @@
 
   .tall-golden-promo-card-pixel {
     grid-column: span 2;
-    height: 200px;
-    padding: 24px 18px;
+    height: auto !important;
+    min-height: 200px !important;
+    padding: 24px 20px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    gap: 16px !important;
+  }
+
+  .promo-title-gold-pixel {
+    font-size: 1.15rem !important;
+    line-height: 1.3 !important;
+    margin-bottom: 12px !important;
+    letter-spacing: 0.3px !important;
+  }
+
+  .btn-gold-white-pixel {
+    padding: 10px 20px !important;
+    font-size: 0.82rem !important;
   }
 
   .value-props-row-pixel {

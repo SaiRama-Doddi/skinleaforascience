@@ -6,6 +6,7 @@ import {
 import { Link, useNavigate } from 'react-router-dom';
 import { getCategories, getProducts, getBanners } from '../services/api';
 import { addToCart } from '../services/cartService';
+import SEO from '../components/SEO';
 import heroImage from '../assets/heroimage.jpeg';
 import skincareStoryImg from '../assets/skincare_story_showcase.jpg';
 import './Home.css';
@@ -102,6 +103,12 @@ export default function Home() {
 
   return (
     <div className="home-page-pixel">
+      <SEO 
+        title="LeafOra Life Sciences | Pure Organic Botanical Skincare & Formulations"
+        description="Discover LeafOra Life Sciences - Premium organic botanical skincare, herbal extracts, natural face serums, moisturizers & creams crafted in Nikol, Ahmedabad, Gujarat."
+        keywords="LeafOra Life Sciences, LeafOra skincare, organic skincare India, natural botanical formulations, herbal extracts, face wash Ahmedabad, moisturizer Gujarat, natural serum, SPF 50 sunscreen"
+        canonicalUrl="https://leaforalifescience.com/"
+      />
 
       {/* Floating Toast Notification */}
       {toastMsg && (

@@ -18,6 +18,7 @@ import ingDropperImg from '../assets/ing_dropper.jpg';
 import ingPowderImg from '../assets/ing_powder.jpg';
 import ingVitEImg from '../assets/ing_vit_e.jpg';
 import ingLicoriceImg from '../assets/ing_licorice.jpg';
+import SEO from '../components/SEO';
 
 import './AboutUs.css';
 
@@ -84,6 +85,12 @@ export default function AboutUs() {
 
   return (
     <div className="about-exact-container">
+      <SEO 
+        title="About Us - Pure Botanical Heritage & Science"
+        description="Learn about LeafOra Life Sciences - Our journey, honest botanical formulations, clean organic ingredients & commitment to radiant, healthy skin in Nikol, Ahmedabad, Gujarat."
+        keywords="About LeafOra Life Sciences, organic skincare heritage, botanical formulations Ahmedabad, clean ingredients India"
+        canonicalUrl="https://leaforalifescience.com/about"
+      />
       
       {/* ─── BREADCRUMBS ─── */}
       <div className="about-breadcrumbs-bar">

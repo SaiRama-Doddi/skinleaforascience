@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { getProductById, getProducts } from '../services/api';
 import { addToCart } from '../services/cartService';
+import SEO from '../components/SEO';
 import './ProductDetails.css';
 
 
@@ -150,6 +151,36 @@ export default function ProductDetails() {
 
   return (
     <div className="details-container">
+      <SEO 
+        title={`${product.name} — Organic Botanical ${product.category || 'Skincare'}`}
+        description={`Buy ${product.name} online at LeafOra Life Sciences. ${product.description || 'Natural botanical skincare formulation crafted with organic ingredients.'} Price: ₹${product.price}`}
+        keywords={`${product.name}, ${product.category}, LeafOra Life Sciences, buy ${product.name} online, organic skincare India`}
+        image={product.image_url}
+        canonicalUrl={`https://leaforalifescience.com/products/${product.id}`}
+        schema={{
+          "@context": "https://schema.org/",
+          "@type": "Product",
+          "name": product.name,
+          "image": [product.image_url],
+          "description": product.description || 'Natural botanical formulation crafted with organic ingredients.',
+          "sku": `LEA-PROD-${product.id}`,
+          "brand": {
+            "@type": "Brand",
+            "name": "LeafOra Life Sciences"
+          },
+          "offers": {
+            "@type": "Offer",
+            "url": `https://leaforalifescience.com/products/${product.id}`,
+            "priceCurrency": "INR",
+            "price": product.price,
+            "availability": product.inStock !== false ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+            "seller": {
+              "@type": "Organization",
+              "name": "LeafOra Life Sciences"
+            }
+          }
+        }}
+      />
 
       {/* Floating Toast Notification */}
       {toastMessage && (

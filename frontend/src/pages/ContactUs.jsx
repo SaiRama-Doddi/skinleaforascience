@@ -5,6 +5,7 @@ import {
   ChevronRight, CheckCircle2, AlertCircle,
   ExternalLink, Sparkles, HelpCircle, X
 } from 'lucide-react';
+import SEO from '../components/SEO';
 import './ContactUs.css';
 
 export default function ContactUs() {
@@ -50,7 +51,13 @@ export default function ContactUs() {
   };
 
   return (
-    <div className="contact-us-page">
+    <div className="contact-page-wrapper">
+      <SEO 
+        title="Contact Us - Nikol, Ahmedabad, Gujarat"
+        description="Contact LeafOra Life Sciences - 28 HARIKRISHNA SOCIETY, NEAR PASHWANATH TOWNSHEEP, Nikol, Ahmedabad - 382350, Gujarat. Phone: +91 79849 15600. Get in touch for botanical skincare inquiries."
+        keywords="Contact LeafOra Life Sciences, LeafOra Ahmedabad address, LeafOra Gujarat phone number, Nikol skincare contact"
+        canonicalUrl="https://leaforalifescience.com/contact"
+      />
 
       {/* ───────────────────────────────────────────────────────────── */}
       {/* 2. MAIN TWO-COLUMN SECTION (FORM + INFO & MAP) */}

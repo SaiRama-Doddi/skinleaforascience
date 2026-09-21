@@ -891,6 +891,12 @@
     padding: 24px 16px;
   }
 
+  .shop-hero-title {
+    font-size: 1.65rem !important;
+    line-height: 1.25 !important;
+    margin-bottom: 10px !important;
+  }
+
   .shop-hero-visual {
     width: 100%;
     height: 160px;

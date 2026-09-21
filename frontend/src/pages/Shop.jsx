@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { getProducts, getCategories } from '../services/api';
 import { addToCart } from '../services/cartService';
+import SEO from '../components/SEO';
 import skincareStoryPhoto from '../assets/skincare_story_showcase.jpg';
 import botanicalProductsPhoto from '../assets/login_botanical_products.jpg';
 import ingAloeImg from '../assets/ing_aloe.jpg';
@@ -234,6 +235,12 @@ export default function Shop() {
 
   return (
     <div className="shop-container">
+      <SEO 
+        title="Organic Botanical Products & Skincare Catalog"
+        description="Explore the complete LeafOra Life Sciences botanical skincare catalog. Premium natural face washes, herbal extracts, moisturizers, serums & organic formulations."
+        keywords="LeafOra products, botanical skincare catalog, buy natural face wash, herbal extracts, organic moisturizers India, LeafOra Life Sciences shop"
+        canonicalUrl="https://leaforalifescience.com/products"
+      />
 
       {/* Floating Toast Notification */}
       {toastMessage && (
