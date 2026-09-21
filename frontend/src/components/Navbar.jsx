@@ -167,11 +167,13 @@ export default function Navbar() {
             <div className="mobile-drawer-footer">
               {!user ? (
                 <Link to="/login" className="btn-mobile-login" onClick={() => setIsMobileMenuOpen(false)}>
-                  Sign In / Create Account
+                  <User size={18} />
+                  <span>Sign In / Create Account</span>
                 </Link>
               ) : (
                 <button onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }} className="btn-mobile-logout">
-                  Sign Out ({user.name})
+                  <LogOut size={18} />
+                  <span>Sign Out ({user.first_name || (user.name ? user.name.split(' ')[0] : 'User')})</span>
                 </button>
               )}
             </div>
@@ -218,18 +220,19 @@ export default function Navbar() {
             </button>
 
             {!user ? (
-              <Link to="/login" className="nav-signin-btn desktop-only">
-                Sign In
+              <Link to="/login" className="nav-signin-btn" title="Sign In / Account">
+                <User size={18} />
+                <span className="desktop-only">Sign In</span>
               </Link>
             ) : (
-              <div className="user-badge-nav desktop-only">
+              <div className="user-badge-nav">
                 <Link to="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none', color: 'inherit' }}>
                   <img 
                     src={user.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.name || 'User')}`} 
                     alt={user.name} 
                     className="user-avatar-img"
                   />
-                  <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#1F2937' }}>
+                  <span className="desktop-only" style={{ fontSize: '0.88rem', fontWeight: 600, color: '#1F2937' }}>
                     {user.first_name || (user.name ? user.name.split(' ')[0] : 'Account')}
                   </span>
                 </Link>

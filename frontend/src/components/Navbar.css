@@ -277,11 +277,19 @@
   display: none;
 }
 
-.nav-signin-btn {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--nav-bronze);
+/* Global Navbar Link Resets */
+a, a:visited, a:hover, a:active {
   text-decoration: none;
+}
+
+.nav-signin-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--nav-bronze) !important;
+  text-decoration: none !important;
   white-space: nowrap;
   padding: 6px 12px;
   border-radius: 20px;
@@ -290,6 +298,8 @@
 
 .nav-signin-btn:hover {
   background-color: #F8F4EE;
+  color: var(--nav-dark-gold) !important;
+  text-decoration: none !important;
 }
 
 .navbar-cart-btn {
@@ -592,24 +602,40 @@
 
   .btn-mobile-login, .btn-mobile-logout {
     width: 100%;
-    padding: 12px;
-    text-align: center;
+    padding: 12px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
     border-radius: 25px;
     font-weight: 600;
     font-size: 0.9rem;
-    text-decoration: none;
+    text-decoration: none !important;
     border: none;
     cursor: pointer;
+    box-shadow: 0 4px 12px rgba(197, 138, 42, 0.2);
+    transition: all 0.2s ease;
   }
 
   .btn-mobile-login {
     background: var(--nav-bronze);
-    color: #FFFFFF;
+    color: #FFFFFF !important;
+  }
+
+  .btn-mobile-login:visited, .btn-mobile-login:hover {
+    color: #FFFFFF !important;
+    text-decoration: none !important;
+    background: var(--nav-dark-gold);
   }
 
   .btn-mobile-logout {
     background: #FEE2E2;
-    color: #DC2626;
+    color: #DC2626 !important;
+  }
+
+  .btn-mobile-logout:visited, .btn-mobile-logout:hover {
+    color: #DC2626 !important;
+    text-decoration: none !important;
   }
 }
 

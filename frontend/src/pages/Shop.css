@@ -229,8 +229,9 @@
   margin-left: 4px;
 }
 
-/* HORIZONTAL SCROLLABLE CATEGORY BAR (ROW WISE MOBILE & DESKTOP) */
+/* HORIZONTAL SCROLLABLE CATEGORY BAR (HIDDEN ON DESKTOP, SHOWN ON MOBILE) */
 .horizontal-category-scroll-wrapper {
+  display: none; /* Hidden on desktop */
   width: 100%;
   margin-bottom: 12px;
   overflow: hidden;
@@ -915,8 +916,13 @@
     display: block !important;
   }
 
+  /* Hide sidebar on mobile & show top horizontal category filters */
   .shop-sidebar {
     display: none !important;
+  }
+
+  .horizontal-category-scroll-wrapper {
+    display: block !important;
   }
 
   /* Show "Filters" button in mobile toolbar */
