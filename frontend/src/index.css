@@ -262,6 +262,23 @@ h1, h2, h3, h4, h5, h6 {
   box-shadow: 0 10px 28px rgba(37, 211, 102, 0.65);
 }
 
+@media (max-width: 992px) {
+  .whatsapp-sticky-btn {
+    bottom: calc(76px + env(safe-area-inset-bottom, 0px)) !important;
+    right: 16px !important;
+    width: 50px !important;
+    height: 50px !important;
+    box-shadow: 0 6px 18px rgba(37, 211, 102, 0.5) !important;
+    z-index: 9990 !important;
+  }
+
+  .toast-banner {
+    bottom: calc(76px + env(safe-area-inset-bottom, 0px)) !important;
+    right: 16px !important;
+    left: 16px !important;
+  }
+}
+
 /* ───────────────────────────────────────────────────────────── */
 /* GLOBAL TEXT TRANSITION & REVEAL ANIMATIONS FOR ALL PAGES */
 /* ───────────────────────────────────────────────────────────── */

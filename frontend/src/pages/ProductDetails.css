@@ -862,63 +862,202 @@
 
   .gallery-wrapper {
     flex-direction: column-reverse;
+    max-height: none;
   }
 
   .gallery-thumbnails-col {
     flex-direction: row;
     width: 100%;
+    max-height: none;
     overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .pdp-trust-delivery-strip {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 14px 16px;
+  }
+
+  .reviews-breakdown-box {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    padding: 16px;
+  }
+
+  .overall-score-col {
+    border-right: none;
+    border-bottom: 1px solid var(--leafora-border);
+    padding-right: 0;
+    padding-bottom: 16px;
   }
 
   .tab-details-grid {
     grid-template-columns: 1fr;
   }
-
-  .benefit-circles-row {
-    grid-template-columns: repeat(3, 1fr);
-  }
 }
 
 @media (max-width: 600px) {
   .details-container {
-    padding: 16px 12px 60px 12px;
+    padding: 14px 12px 90px 12px;
+  }
+
+  .details-breadcrumbs {
+    font-size: 0.78rem;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 16px;
   }
 
   .main-img-container {
-    height: auto;
-    max-height: 340px;
+    height: 320px;
+    max-height: 320px;
+  }
+
+  .main-img-display {
+    padding: 8px;
+  }
+
+  .img-corner-callout {
+    font-size: 1.1rem;
+    bottom: 12px;
+    right: 12px;
+  }
+
+  .natural-seal-badge {
+    width: 52px;
+    height: 52px;
+    font-size: 0.52rem;
+    top: 12px;
+    left: 12px;
+  }
+
+  .pdp-wishlist-btn {
+    top: 12px;
+    right: 12px;
+    width: 34px;
+    height: 34px;
   }
 
   .thumb-item {
-    width: 64px;
-    height: 64px;
-  }
-
-  .pdp-tabs-section {
-    padding: 18px 14px;
-  }
-
-  .tab-headers-row {
-    gap: 18px;
-    margin-bottom: 20px;
-  }
-
-  .related-products-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
+    width: 60px;
+    height: 60px;
   }
 
   .pdp-title {
-    font-size: 1.65rem;
+    font-size: 1.6rem;
+  }
+
+  .pdp-subtitle {
+    font-size: 0.95rem;
   }
 
   .pdp-price-current {
     font-size: 1.6rem;
   }
 
+  .benefit-circles-row {
+    display: flex;
+    overflow-x: auto;
+    gap: 12px;
+    padding: 12px 2px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .benefit-circles-row::-webkit-scrollbar {
+    display: none;
+  }
+
+  .benefit-circle-item {
+    flex: 0 0 76px;
+  }
+
+  .quantity-action-row {
+    gap: 10px;
+  }
+
+  .quantity-stepper {
+    height: 44px;
+  }
+
+  .btn-step {
+    width: 34px;
+  }
+
+  .step-value {
+    width: 36px;
+  }
+
+  .btn-pdp-add-cart {
+    height: 44px;
+    font-size: 0.88rem;
+    padding: 0 12px;
+  }
+
+  .btn-pdp-buy-now {
+    height: 44px;
+    font-size: 0.9rem;
+  }
+
+  .pdp-trust-delivery-strip {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    padding: 12px;
+  }
+
   .trust-badges-bar {
     grid-template-columns: 1fr;
     gap: 12px;
+    padding: 12px 14px;
+  }
+
+  .delivery-checker-box {
+    padding: 12px 14px;
+  }
+
+  .pincode-input-row {
+    width: 100%;
+  }
+
+  .pincode-input-row input {
+    min-width: 0;
+    width: 100%;
+    font-size: 0.82rem;
+  }
+
+  .pdp-tabs-section {
+    padding: 16px 12px;
+    border-radius: 12px;
+  }
+
+  .tab-headers-row {
+    gap: 16px;
+    margin-bottom: 16px;
+    scrollbar-width: none;
+  }
+
+  .tab-headers-row::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tab-header-btn {
+    font-size: 0.88rem;
+    padding-bottom: 8px;
+  }
+
+  .specs-table td {
+    padding: 8px 6px;
+    font-size: 0.82rem;
+  }
+
+  .specs-table tr td:first-child {
+    width: 40%;
+  }
+
+  .related-products-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
   }
 }
 
