@@ -9,7 +9,7 @@ import {
   adminGetOrders, adminGetOrderDetails, adminUpdateOrderDetails, adminUpdateOrderStatus, adminCancelOrder, adminRefundOrder, adminReturnOrder, adminExchangeOrder, adminAddOrderTimeline, adminBulkOrdersAction, adminExportOrdersUrl,
   adminGetCustomers, adminGetCustomerDetails, adminUpdateCustomer, adminUpdateCustomerStatus, adminUpdateCustomerWalletPoints, adminDeleteCustomer, adminRestoreCustomer, adminExportCustomersUrl,
   adminGetPayments, adminGetPaymentGatewaysConfig, adminUpdatePaymentGatewayConfig, adminIssueRefund, adminRetryFailedPayment, adminMarkCodCollected, adminGetPaymentRefundsLog, adminGetPaymentSettlements, adminExportRevenueUrl,
-  adminGetReviews, adminGetReviewDetails, adminUpdateReviewStatus, adminReplyToReview, adminReportAbuseReview, adminRestoreReview, adminDeleteReview, adminGetReviewAnalytics, adminExportReviewsUrl,
+  adminGetReviews, adminCreateReview, adminGetReviewDetails, adminUpdateReviewStatus, adminReplyToReview, adminReportAbuseReview, adminRestoreReview, adminDeleteReview, adminGetReviewAnalytics, adminExportReviewsUrl,
   adminGetReferrals, adminUpdateReferralStatus, adminGetReferralSettings, adminUpdateReferralSettings, adminGetReferralAnalytics, adminExportReferralsUrl, adminGetWalletTransactions, adminManualWalletAdjustment, adminExportWalletTransactionsUrl,
   adminGetCoupons, adminGetCouponDetails, adminCreateCoupon, adminAddCoupon, adminUpdateCoupon, adminUpdateCouponStatus, adminDeleteCoupon, adminRestoreCoupon, adminBulkGenerateCoupons, adminGetCouponAnalytics, adminGetCouponUsageHistory, adminExportCouponsUrl,
   adminGetShiprocketConfig, adminUpdateShiprocketConfig,
@@ -474,6 +474,116 @@ export default function AdminDashboard() {
   const [abuseModalReview, setAbuseModalReview] = useState(null);
   const [abuseReasonText, setAbuseReasonText] = useState('');
   const [zoomImageModalUrl, setZoomImageModalUrl] = useState(null);
+
+  // Add Review Modal State
+  const [showAddReviewModal, setShowAddReviewModal] = useState(false);
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const [addReviewForm, setAddReviewForm] = useState({
+    product_id: '',
+    customer_name: '',
+    customer_email: '',
+    rating: 5,
+    title: '',
+    comment: '',
+    status: 'Approved',
+    is_verified_buyer: 1,
+    is_featured: 0,
+    images: []
+  });
+  const [reviewImageInput, setReviewImageInput] = useState('');
+
+  const handleOpenAddReviewModal = async () => {
+    let prods = dbProducts;
+    if (!prods || prods.length === 0) {
+      try {
+        const res = await adminGetProducts();
+        if (res && res.success) {
+          prods = res.data || [];
+          setDbProducts(prods);
+        }
+      } catch (e) {
+        console.warn('Error loading products for review modal:', e);
+      }
+    }
+    setAddReviewForm({
+      product_id: prods && prods.length > 0 ? prods[0].id : '',
+      customer_name: '',
+      customer_email: '',
+      rating: 5,
+      title: '',
+      comment: '',
+      status: 'Approved',
+      is_verified_buyer: 1,
+      is_featured: 0,
+      images: []
+    });
+    setReviewImageInput('');
+    setShowAddReviewModal(true);
+  };
+
+  const handleAddReviewImage = async (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        try {
+          const res = await adminUploadImage(reader.result);
+          if (res && res.success) {
+            setAddReviewForm(prev => ({ ...prev, images: [...prev.images, res.image_url] }));
+            showNotification('Image uploaded successfully');
+          }
+        } catch (err) {
+          showNotification('Failed to upload image');
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleAddReviewImageUrl = () => {
+    if (reviewImageInput.trim()) {
+      setAddReviewForm(prev => ({ ...prev, images: [...prev.images, reviewImageInput.trim()] }));
+      setReviewImageInput('');
+    }
+  };
+
+  const handleRemoveReviewImage = (index) => {
+    setAddReviewForm(prev => ({ ...prev, images: prev.images.filter((_, i) => i !== index) }));
+  };
+
+  const handleSubmitAddReview = async (e) => {
+    e.preventDefault();
+    if (!addReviewForm.product_id) {
+      showNotification('Please select a product');
+      return;
+    }
+    if (!addReviewForm.customer_name.trim()) {
+      showNotification('Customer name is required');
+      return;
+    }
+    if (!addReviewForm.comment.trim()) {
+      showNotification('Review comment is required');
+      return;
+    }
+    setSubmittingReview(true);
+    try {
+      const res = await adminCreateReview(addReviewForm);
+      if (res && res.success) {
+        showNotification('Product review posted successfully!');
+        setShowAddReviewModal(false);
+        fetchReviews(1);
+        if (reviewsSubTab === 'analytics') {
+          fetchReviewAnalytics();
+        }
+      } else {
+        showNotification(res.message || 'Failed to add review');
+      }
+    } catch (err) {
+      showNotification('Error adding review: ' + (err.message || 'Server error'));
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
 
   const fetchReviews = async (page = 1) => {
     setLoadingReviews(true);
@@ -3027,6 +3137,15 @@ export default function AdminDashboard() {
                   onClick={() => handleOpenBannerModal(null)}
                 >
                   <Plus size={16} /> + Add New Banner
+                </button>
+              )}
+
+              {activeTab === 'reviews' && (
+                <button 
+                  className="leafora-cat-btn-primary"
+                  onClick={handleOpenAddReviewModal}
+                >
+                  <Plus size={16} /> + Add Review
                 </button>
               )}
 
@@ -9943,6 +10062,9 @@ export default function AdminDashboard() {
 
                   {/* Actions */}
                   <div style={{ display: 'flex', gap: 12 }}>
+                    <button className="leafora-cat-btn-primary" onClick={handleOpenAddReviewModal} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <Plus size={15} /> + Add Review
+                    </button>
                     <button className="leafora-btn leafora-btn-secondary" onClick={handleExportReviews}>
                       <Download size={15} style={{ marginRight: 6 }} /> Export CSV
                     </button>
@@ -12055,6 +12177,252 @@ export default function AdminDashboard() {
                   <div className="leafora-modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
                     <button type="button" className="leafora-btn leafora-btn-secondary" onClick={() => setEditSectionModalData(null)}>Cancel</button>
                     <button type="submit" className="leafora-btn leafora-btn-primary">Save Section Settings</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* ADD REVIEW MODAL FOR ADMIN */}
+          {showAddReviewModal && (
+            <div className="leafora-modal-overlay" onClick={() => setShowAddReviewModal(false)}>
+              <div className="leafora-modal" style={{ maxWidth: 640, width: '92%' }} onClick={(e) => e.stopPropagation()}>
+                <div className="leafora-modal-header" style={{ padding: '16px 20px', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Star size={20} color="#D97706" fill="#D97706" /> Add Product Review (Admin)
+                  </h3>
+                  <button className="close-btn" onClick={() => setShowAddReviewModal(false)}><X size={18} /></button>
+                </div>
+
+                <form onSubmit={handleSubmitAddReview}>
+                  <div className="leafora-modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 16, maxHeight: '72vh', overflowY: 'auto', padding: '20px' }}>
+                    
+                    {/* Target Product Selection */}
+                    <div>
+                      <label className="leafora-form-label" style={{ fontWeight: 600, color: '#334155', marginBottom: 6, display: 'block' }}>
+                        Select Product <span style={{ color: '#DC2626' }}>*</span>
+                      </label>
+                      <select
+                        className="leafora-input"
+                        value={addReviewForm.product_id}
+                        onChange={(e) => setAddReviewForm({ ...addReviewForm, product_id: e.target.value })}
+                        required
+                        style={{ width: '100%' }}
+                      >
+                        <option value="">-- Select Product --</option>
+                        {dbProducts.map((prod) => (
+                          <option key={prod.id} value={prod.id}>
+                            {prod.name} (ID: #{prod.id})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Customer Name & Email */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                      <div>
+                        <label className="leafora-form-label" style={{ fontWeight: 600, color: '#334155', marginBottom: 6, display: 'block' }}>
+                          Customer / Reviewer Name <span style={{ color: '#DC2626' }}>*</span>
+                        </label>
+                        <input
+                          type="text"
+                          className="leafora-input"
+                          placeholder="e.g. Dr. Ramesh Varma"
+                          value={addReviewForm.customer_name}
+                          onChange={(e) => setAddReviewForm({ ...addReviewForm, customer_name: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="leafora-form-label" style={{ fontWeight: 600, color: '#334155', marginBottom: 6, display: 'block' }}>
+                          Customer Email (Optional)
+                        </label>
+                        <input
+                          type="email"
+                          className="leafora-input"
+                          placeholder="e.g. ramesh@example.com"
+                          value={addReviewForm.customer_email}
+                          onChange={(e) => setAddReviewForm({ ...addReviewForm, customer_email: e.target.value })}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Rating & Status */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                      <div>
+                        <label className="leafora-form-label" style={{ fontWeight: 600, color: '#334155', marginBottom: 6, display: 'block' }}>
+                          Star Rating <span style={{ color: '#DC2626' }}>*</span>
+                        </label>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <button
+                              key={star}
+                              type="button"
+                              onClick={() => setAddReviewForm({ ...addReviewForm, rating: star })}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                cursor: 'pointer',
+                                padding: 2,
+                                display: 'flex',
+                                alignItems: 'center'
+                              }}
+                            >
+                              <Star
+                                size={24}
+                                color={star <= addReviewForm.rating ? '#F59E0B' : '#CBD5E1'}
+                                fill={star <= addReviewForm.rating ? '#F59E0B' : 'transparent'}
+                              />
+                            </button>
+                          ))}
+                          <span style={{ fontWeight: 700, fontSize: 14, color: '#D97706', marginLeft: 6 }}>
+                            {addReviewForm.rating} / 5
+                          </span>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="leafora-form-label" style={{ fontWeight: 600, color: '#334155', marginBottom: 6, display: 'block' }}>
+                          Publication Status
+                        </label>
+                        <select
+                          className="leafora-input"
+                          value={addReviewForm.status}
+                          onChange={(e) => setAddReviewForm({ ...addReviewForm, status: e.target.value })}
+                        >
+                          <option value="Approved">Approved (Live on Product)</option>
+                          <option value="Pending">Pending Moderation</option>
+                          <option value="Rejected">Rejected</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Headline / Title */}
+                    <div>
+                      <label className="leafora-form-label" style={{ fontWeight: 600, color: '#334155', marginBottom: 6, display: 'block' }}>
+                        Review Headline / Title
+                      </label>
+                      <input
+                        type="text"
+                        className="leafora-input"
+                        placeholder="e.g. Outstanding Potency & Purity!"
+                        value={addReviewForm.title}
+                        onChange={(e) => setAddReviewForm({ ...addReviewForm, title: e.target.value })}
+                      />
+                    </div>
+
+                    {/* Review Comment */}
+                    <div>
+                      <label className="leafora-form-label" style={{ fontWeight: 600, color: '#334155', marginBottom: 6, display: 'block' }}>
+                        Review Content / Feedback <span style={{ color: '#DC2626' }}>*</span>
+                      </label>
+                      <textarea
+                        className="leafora-input"
+                        rows="4"
+                        placeholder="Type customer product review description..."
+                        value={addReviewForm.comment}
+                        onChange={(e) => setAddReviewForm({ ...addReviewForm, comment: e.target.value })}
+                        required
+                        style={{ resize: 'vertical' }}
+                      />
+                    </div>
+
+                    {/* Badges & Flags */}
+                    <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', padding: '12px 14px', background: '#F8FAFC', borderRadius: 8, border: '1px solid #E2E8F0' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#1E293B' }}>
+                        <input
+                          type="checkbox"
+                          checked={addReviewForm.is_verified_buyer === 1}
+                          onChange={(e) => setAddReviewForm({ ...addReviewForm, is_verified_buyer: e.target.checked ? 1 : 0 })}
+                          style={{ width: 16, height: 16, accentColor: '#16A34A' }}
+                        />
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <CheckCircle2 size={15} color="#16A34A" /> Verified Buyer Badge
+                        </span>
+                      </label>
+
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#1E293B' }}>
+                        <input
+                          type="checkbox"
+                          checked={addReviewForm.is_featured === 1}
+                          onChange={(e) => setAddReviewForm({ ...addReviewForm, is_featured: e.target.checked ? 1 : 0 })}
+                          style={{ width: 16, height: 16, accentColor: '#D97706' }}
+                        />
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <Star size={15} color="#D97706" /> Feature Review
+                        </span>
+                      </label>
+                    </div>
+
+                    {/* Image Attachments */}
+                    <div>
+                      <label className="leafora-form-label" style={{ fontWeight: 600, color: '#334155', marginBottom: 6, display: 'block' }}>
+                        Review Images (Optional)
+                      </label>
+                      <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 10 }}>
+                        <input
+                          type="text"
+                          className="leafora-input"
+                          placeholder="Image URL (e.g. /assets/vitamin_c_serum.jpg or https://...)"
+                          value={reviewImageInput}
+                          onChange={(e) => setReviewImageInput(e.target.value)}
+                          style={{ flex: 1 }}
+                        />
+                        <button
+                          type="button"
+                          className="leafora-btn leafora-btn-secondary"
+                          onClick={handleAddReviewImageUrl}
+                          style={{ whiteSpace: 'nowrap' }}
+                        >
+                          + Add URL
+                        </button>
+                        <label className="leafora-btn leafora-btn-secondary" style={{ cursor: 'pointer', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <Upload size={14} /> Upload
+                          <input type="file" accept="image/*" onChange={handleAddReviewImage} style={{ display: 'none' }} />
+                        </label>
+                      </div>
+
+                      {addReviewForm.images.length > 0 && (
+                        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                          {addReviewForm.images.map((img, idx) => (
+                            <div key={idx} style={{ position: 'relative', width: 64, height: 64, borderRadius: 8, overflow: 'hidden', border: '1px solid #CBD5E1' }}>
+                              <img src={img} alt="review attachment" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveReviewImage(idx)}
+                                style={{
+                                  position: 'absolute',
+                                  top: 2,
+                                  right: 2,
+                                  background: 'rgba(0,0,0,0.6)',
+                                  color: '#FFF',
+                                  border: 'none',
+                                  borderRadius: '50%',
+                                  width: 18,
+                                  height: 18,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                <X size={12} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                  </div>
+
+                  <div className="leafora-modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, padding: '14px 20px', borderTop: '1px solid #E2E8F0' }}>
+                    <button type="button" className="leafora-btn leafora-btn-secondary" onClick={() => setShowAddReviewModal(false)}>
+                      Cancel
+                    </button>
+                    <button type="submit" className="leafora-cat-btn-primary" disabled={submittingReview}>
+                      {submittingReview ? 'Posting Review...' : 'Publish Review'}
+                    </button>
                   </div>
                 </form>
               </div>

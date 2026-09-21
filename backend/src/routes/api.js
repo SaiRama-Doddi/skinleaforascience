@@ -16,6 +16,8 @@ router.get('/health', getHealthStatus);
 router.get('/products', getAllProducts);
 router.get('/products/:id', getProductById);
 router.get('/categories', adminController.getCategories);
+router.get('/banners', adminController.getHomepageBanners);
+router.get('/homepage/banners', adminController.getHomepageBanners);
 
 // ─── USER AUTHENTICATION ENDPOINTS ───
 router.post('/auth/register', authController.registerUser);
@@ -108,6 +110,7 @@ router.get('/admin/revenue/export', adminController.exportRevenueReport);
 router.get('/admin/reviews/analytics', adminController.getReviewAnalytics);
 router.get('/admin/reviews/export', adminController.exportReviewsCsv);
 router.get('/admin/reviews', adminController.getReviews);
+router.post('/admin/reviews', adminController.createReview);
 router.get('/admin/reviews/:id', adminController.getReviewDetails);
 router.put('/admin/reviews/:id', adminController.updateReviewStatus);
 router.post('/admin/reviews/:id/reply', adminController.replyToReview);

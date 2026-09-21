@@ -2046,6 +2046,70 @@ const restoreReview = async (req, res) => {
   }
 };
 
+const createReview = async (req, res) => {
+  try {
+    const {
+      product_id,
+      customer_name,
+      customer_email,
+      rating,
+      title,
+      comment,
+      status = 'Approved',
+      is_featured = 0,
+      is_verified_buyer = 1,
+      images = []
+    } = req.body;
+
+    if (!product_id || !customer_name || !rating || !comment) {
+      return res.status(400).json({ success: false, message: 'Product ID, customer name, rating, and comment are required.' });
+    }
+
+    // Fetch product details if available
+    let product_name = 'Product #' + product_id;
+    let product_image = null;
+    try {
+      const [pRows] = await pool.query('SELECT name, image FROM products WHERE id = ?', [product_id]);
+      if (pRows && pRows.length > 0) {
+        product_name = pRows[0].name;
+        product_image = pRows[0].image;
+      }
+    } catch (e) {
+      console.warn('Could not fetch product details for review creation:', e);
+    }
+
+    const imagesJson = typeof images === 'string' ? images : JSON.stringify(Array.isArray(images) ? images : []);
+
+    const [result] = await pool.query(
+      `INSERT INTO reviews (product_id, product_name, product_image, customer_name, customer_email, rating, title, comment, status, is_featured, is_verified_buyer, images) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        product_id,
+        product_name,
+        product_image,
+        customer_name,
+        customer_email || null,
+        parseInt(rating) || 5,
+        title || null,
+        comment,
+        status || 'Approved',
+        is_featured ? 1 : 0,
+        is_verified_buyer ? 1 : 0,
+        imagesJson
+      ]
+    );
+
+    return res.status(201).json({
+      success: true,
+      message: 'Review posted successfully!',
+      reviewId: result.insertId
+    });
+  } catch (error) {
+    console.error('createReview error:', error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 const getReviewAnalytics = async (req, res) => {
   try {
     const [counts] = await pool.query(`
@@ -2144,12 +2208,19 @@ const exportReviewsCsv = async (req, res) => {
 
 const getHomepageBanners = async (req, res) => {
   try {
-    const { type } = req.query;
+    const { type, active_only } = req.query;
     let query = 'SELECT * FROM homepage_banners';
+    const conditions = [];
     const params = [];
     if (type && type !== 'all') {
-      query += ' WHERE banner_type = ?';
+      conditions.push('banner_type = ?');
       params.push(type);
+    }
+    if (active_only === 'true' || active_only === '1') {
+      conditions.push('is_active = 1');
+    }
+    if (conditions.length > 0) {
+      query += ' WHERE ' + conditions.join(' AND ');
     }
     query += ' ORDER BY display_order ASC, id DESC';
     const [rows] = await pool.query(query, params);
@@ -3898,6 +3969,7 @@ module.exports = {
   getPaymentSettlements,
   exportRevenueReport,
   getReviews,
+  createReview,
   getReviewDetails,
   updateReviewStatus,
   replyToReview,

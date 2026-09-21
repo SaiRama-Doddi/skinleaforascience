@@ -4,7 +4,7 @@ import {
   ChevronRight, ChevronLeft, Sparkles, Globe, Share2, MessageCircle, CheckCircle2, Loader2
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { getCategories, getProducts } from '../services/api';
+import { getCategories, getProducts, getBanners } from '../services/api';
 import { addToCart } from '../services/cartService';
 import heroImage from '../assets/heroimage.jpeg';
 import skincareStoryImg from '../assets/skincare_story_showcase.jpg';
@@ -15,6 +15,8 @@ export default function Home() {
   const [toastMsg, setToastMsg] = useState(null);
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
+  const [banners, setBanners] = useState([]);
+  const [activeBannerIdx, setActiveBannerIdx] = useState(0);
   const [loadingCats, setLoadingCats] = useState(true);
   const [loadingProds, setLoadingProds] = useState(true);
   const [showAllCategories, setShowAllCategories] = useState(false);
@@ -65,7 +67,27 @@ export default function Home() {
       })
       .catch(() => {})
       .finally(() => setLoadingProds(false));
+
+    // Fetch active banners dynamically from database table homepage_banners
+    getBanners({ active_only: 'true' })
+      .then((res) => {
+        if (res && res.data && res.data.length > 0) {
+          setBanners(res.data);
+        }
+      })
+      .catch(() => {});
   }, []);
+
+  // Auto rotate hero slider if multiple active hero banners exist
+  useEffect(() => {
+    const heroBanners = banners.filter(b => b.banner_type === 'hero');
+    if (heroBanners.length > 1) {
+      const timer = setInterval(() => {
+        setActiveBannerIdx((prev) => (prev + 1) % heroBanners.length);
+      }, 5000);
+      return () => clearInterval(timer);
+    }
+  }, [banners]);
 
   const showToast = (msg) => {
     setToastMsg(msg);
@@ -74,6 +96,9 @@ export default function Home() {
 
   const allCategories = categories;
   const visibleCategories = (isMobile && !showAllCategories) ? allCategories.slice(0, 3) : allCategories;
+
+  const heroBanners = banners.filter(b => b.banner_type === 'hero');
+  const activeHeroBanner = heroBanners.length > 0 ? heroBanners[activeBannerIdx % heroBanners.length] : null;
 
   return (
     <div className="home-page-pixel">
@@ -86,17 +111,92 @@ export default function Home() {
         </div>
       )}
 
-      {/* 1. HERO BANNER SECTION (FEATURING HEROIMAGE.JPEG) */}
-      <div className="hero-banner-container-pixel">
-        <Link to="/products" className="hero-banner-link-pixel" aria-label="Shop LeafOra Skincare Range">
-          <div className="hero-banner-image-box">
-            <img 
-              src={heroImage} 
-              alt="LeafOra Life Sciences - Glow Naturally Live Beautifully" 
-              className="hero-banner-img" 
-            />
+      {/* 1. HERO BANNER SECTION (DYNAMIC FROM MYSQL TABLE homepage_banners) */}
+      <div className="hero-banner-container-pixel" style={{ position: 'relative' }}>
+        {activeHeroBanner ? (
+          <Link to={activeHeroBanner.link_url || "/products"} className="hero-banner-link-pixel" aria-label={activeHeroBanner.title}>
+            <div className="hero-banner-image-box" style={{ position: 'relative' }}>
+              <img 
+                src={isMobile && activeHeroBanner.mobile_image_url ? activeHeroBanner.mobile_image_url : activeHeroBanner.desktop_image_url} 
+                alt={activeHeroBanner.title || "LeafOra Life Sciences Banner"} 
+                className="hero-banner-img" 
+              />
+              {activeHeroBanner.title && (
+                <div 
+                  className="hero-banner-overlay-text"
+                  style={{
+                    position: 'absolute',
+                    bottom: '10%',
+                    left: '6%',
+                    color: '#FFF',
+                    textShadow: '0 2px 8px rgba(0,0,0,0.6)',
+                    maxWidth: '80%',
+                    zIndex: 2
+                  }}
+                >
+                  <h2 style={{ fontSize: isMobile ? '1.4rem' : '2.2rem', fontFamily: 'Playfair Display, serif', fontWeight: 700, margin: '0 0 6px 0' }}>
+                    {activeHeroBanner.title}
+                  </h2>
+                  {activeHeroBanner.subtitle && (
+                    <p style={{ fontSize: isMobile ? '0.85rem' : '1.05rem', margin: '0 0 14px 0', opacity: 0.95 }}>
+                      {activeHeroBanner.subtitle}
+                    </p>
+                  )}
+                  {activeHeroBanner.button_text && (
+                    <span 
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        background: '#9E7B3B',
+                        color: '#FFF',
+                        padding: '8px 20px',
+                        borderRadius: 24,
+                        fontSize: '0.9rem',
+                        fontWeight: 600,
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+                      }}
+                    >
+                      {activeHeroBanner.button_text} <ArrowRight size={15} />
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          </Link>
+        ) : (
+          <Link to="/products" className="hero-banner-link-pixel" aria-label="Shop LeafOra Skincare Range">
+            <div className="hero-banner-image-box">
+              <img 
+                src={heroImage} 
+                alt="LeafOra Life Sciences - Glow Naturally Live Beautifully" 
+                className="hero-banner-img" 
+              />
+            </div>
+          </Link>
+        )}
+
+        {/* Carousel indicator dots if multiple hero banners exist */}
+        {heroBanners.length > 1 && (
+          <div style={{ position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 8, zIndex: 3 }}>
+            {heroBanners.map((_, idx) => (
+              <button
+                key={idx}
+                onClick={() => setActiveBannerIdx(idx)}
+                style={{
+                  width: idx === (activeBannerIdx % heroBanners.length) ? 24 : 8,
+                  height: 8,
+                  borderRadius: 4,
+                  background: idx === (activeBannerIdx % heroBanners.length) ? '#9E7B3B' : 'rgba(255,255,255,0.6)',
+                  border: 'none',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease'
+                }}
+                aria-label={`Go to slide ${idx + 1}`}
+              />
+            ))}
           </div>
-        </Link>
+        )}
       </div>
 
       {/* 2. SHOP BY CATEGORY (HORIZONTALLY SCROLLABLE WITH RIGHT-SIDE ARROWS & VIEW ALL) */}

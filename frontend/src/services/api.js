@@ -111,6 +111,7 @@ export const adminExportRevenueUrl = '/api/admin/revenue/export';
 
 // Reviews Controls
 export const adminGetReviews = (params) => api.get('/admin/reviews', { params });
+export const adminCreateReview = (data) => api.post('/admin/reviews', data);
 export const adminGetReviewDetails = (id) => api.get(`/admin/reviews/${id}`);
 export const adminUpdateReviewStatus = (id, data) => api.put(`/admin/reviews/${id}`, data);
 export const adminReplyToReview = (id, data) => api.post(`/admin/reviews/${id}/reply`, data);
@@ -121,6 +122,7 @@ export const adminGetReviewAnalytics = () => api.get('/admin/reviews/analytics')
 export const adminExportReviewsUrl = `${API_BASE_URL}/admin/reviews/export`;
 
 // Homepage CMS Controls
+export const getBanners = (params) => api.get('/homepage/banners', { params });
 export const adminGetHomepageBanners = (params) => api.get('/admin/homepage/banners', { params });
 export const adminCreateHomepageBanner = (data) => api.post('/admin/homepage/banners', data);
 export const adminUpdateHomepageBanner = (id, data) => api.put(`/admin/homepage/banners/${id}`, data);
