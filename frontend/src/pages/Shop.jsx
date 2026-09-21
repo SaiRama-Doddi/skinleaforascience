@@ -495,32 +495,44 @@ export default function Shop() {
         <div className="mobile-filter-overlay" onClick={() => setIsMobileFilterOpen(false)}>
           <div className="mobile-filter-drawer" onClick={e => e.stopPropagation()}>
             <div className="mobile-drawer-header">
-              <h3>Filter Products</h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Filter size={18} color="var(--leafora-bronze)" />
+                <h3 style={{ margin: 0, fontFamily: 'Playfair Display, serif', fontSize: '1.25rem', color: 'var(--leafora-text-dark)' }}>
+                  Filter Products
+                </h3>
+              </div>
               <button className="btn-drawer-close" onClick={() => setIsMobileFilterOpen(false)}>
                 <X size={20} />
               </button>
             </div>
 
             {/* Drawer Content */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <div className="mobile-drawer-body">
+              {/* Category Filter */}
               <div>
-                <h4 style={{ fontWeight: 600, marginBottom: 10 }}>Categories</h4>
+                <h4 className="mobile-filter-heading">Categories</h4>
                 <ul className="category-filter-list">
-                  {categoryOptions.map(c => (
+                  {categoryOptions.map(cat => (
                     <li 
-                      key={c.name} 
-                      className={`category-item ${selectedCategory === c.name ? 'active' : ''}`}
-                      onClick={() => { setSelectedCategory(c.name); setIsMobileFilterOpen(false); }}
+                      key={cat.name} 
+                      className={`category-item ${selectedCategory === cat.name ? 'active' : ''}`}
+                      onClick={() => { setSelectedCategory(cat.name); }}
                     >
-                      <span>{c.name}</span>
-                      <span className="cat-count">({c.count})</span>
+                      <span>{cat.name}</span>
+                      <span className="cat-count">({cat.count}) <ChevronRight size={14} className="cat-arrow" /></span>
                     </li>
                   ))}
                 </ul>
               </div>
 
-              <div>
-                <h4 style={{ fontWeight: 600, marginBottom: 10 }}>Price Limit: ₹{priceMax}</h4>
+              <hr style={{ border: 'none', borderTop: '1px solid var(--leafora-border)', margin: '12px 0' }} />
+
+              {/* Price Range Slider */}
+              <div className="price-slider-box">
+                <div className="price-range-inputs">
+                  <span>Price Limit</span>
+                  <span>₹0 — ₹{priceMax}</span>
+                </div>
                 <input 
                   type="range" 
                   min="10" 
@@ -532,8 +544,90 @@ export default function Shop() {
                 />
               </div>
 
-              <button className="btn-card-add-cart" onClick={() => setIsMobileFilterOpen(false)}>
-                Apply Filters
+              <hr style={{ border: 'none', borderTop: '1px solid var(--leafora-border)', margin: '12px 0' }} />
+
+              {/* Skin Type Filter */}
+              <div>
+                <h4 className="mobile-filter-heading">Skin Type</h4>
+                <div className="checkbox-filter-list">
+                  {[
+                    { name: 'Normal', count: 28 },
+                    { name: 'Dry', count: 24 },
+                    { name: 'Oily', count: 20 },
+                    { name: 'Combination', count: 22 },
+                    { name: 'Sensitive', count: 18 }
+                  ].map(st => (
+                    <label key={st.name} className="checkbox-item">
+                      <input 
+                        type="checkbox" 
+                        checked={selectedSkinTypes.includes(st.name)}
+                        onChange={() => handleSkinTypeToggle(st.name)}
+                      />
+                      <span className="checkbox-label-text">{st.name}</span>
+                      <span className="item-count">({st.count})</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <hr style={{ border: 'none', borderTop: '1px solid var(--leafora-border)', margin: '12px 0' }} />
+
+              {/* Concerns Filter */}
+              <div>
+                <h4 className="mobile-filter-heading">Concerns</h4>
+                <div className="checkbox-filter-list">
+                  {[
+                    { name: 'Acne', count: 12 },
+                    { name: 'Anti-Aging', count: 16 },
+                    { name: 'Brightening', count: 14 },
+                    { name: 'Hydration', count: 20 },
+                    { name: 'Dark Spots', count: 10 }
+                  ].map(c => (
+                    <label key={c.name} className="checkbox-item">
+                      <input 
+                        type="checkbox" 
+                        checked={selectedConcerns.includes(c.name)}
+                        onChange={() => handleConcernToggle(c.name)}
+                      />
+                      <span className="checkbox-label-text">{c.name}</span>
+                      <span className="item-count">({c.count})</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <hr style={{ border: 'none', borderTop: '1px solid var(--leafora-border)', margin: '12px 0' }} />
+
+              {/* Availability Filter */}
+              <div>
+                <h4 className="mobile-filter-heading">Availability</h4>
+                <label className="checkbox-item">
+                  <input 
+                    type="checkbox" 
+                    checked={inStockOnly}
+                    onChange={(e) => setInStockOnly(e.target.checked)}
+                  />
+                  <span className="checkbox-label-text">In Stock Only</span>
+                  <span className="item-count">(32)</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Drawer Footer Actions */}
+            <div className="mobile-drawer-footer">
+              <button 
+                className="btn-clear-filters" 
+                style={{ flex: 1 }} 
+                onClick={() => { handleClearFilters(); setIsMobileFilterOpen(false); }}
+              >
+                <RotateCcw size={14} /> Reset
+              </button>
+              <button 
+                className="btn-card-add-cart" 
+                style={{ flex: 1 }} 
+                onClick={() => setIsMobileFilterOpen(false)}
+              >
+                Apply Filters ({filteredProducts.length})
               </button>
             </div>
           </div>
