@@ -924,6 +924,7 @@ export default function AdminDashboard() {
       });
     }
     setIsBannerFormOpen(true);
+    scrollToTop();
   };
 
   const applyBannerPresetTemplate = (template) => {
@@ -943,11 +944,11 @@ export default function AdminDashboard() {
   const handleSaveBannerSubmit = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
     if (!bannerForm.title || !String(bannerForm.title).trim()) {
-      showNotification('Banner headline / title is required');
+      showNotification('Banner title is required');
       return;
     }
     if (!bannerForm.desktop_image_url || !String(bannerForm.desktop_image_url).trim()) {
-      showNotification('Desktop banner image URL or uploaded file is required');
+      showNotification('Desktop banner image is required');
       return;
     }
 
@@ -956,6 +957,7 @@ export default function AdminDashboard() {
       if (bannerForm.id) {
         const res = await adminUpdateHomepageBanner(bannerForm.id, bannerForm);
         if (res && res.success) {
+          setHomepageBanners(prev => prev.map(b => b.id === bannerForm.id ? { ...b, ...bannerForm } : b));
           showNotification('Homepage banner updated successfully!');
           setBannerModalData(null);
           setIsBannerFormOpen(false);
@@ -966,6 +968,8 @@ export default function AdminDashboard() {
       } else {
         const res = await adminCreateHomepageBanner(bannerForm);
         if (res && res.success) {
+          const created = res.banner || { ...bannerForm, id: res.banner_id || Date.now() };
+          setHomepageBanners(prev => [created, ...prev]);
           showNotification('New homepage banner published successfully!');
           setBannerModalData(null);
           setIsBannerFormOpen(false);
@@ -976,7 +980,7 @@ export default function AdminDashboard() {
       }
     } catch (e) {
       console.error('Error saving banner:', e);
-      showNotification('Error saving banner: ' + (e.response?.data?.message || e.message || 'Server error'));
+      showNotification('Error saving banner: ' + (e?.message || 'Server error'));
     } finally {
       setIsSavingBanner(false);
     }
@@ -3490,17 +3494,14 @@ export default function AdminDashboard() {
               {/* IN-PAGE EMBEDDED BANNER CREATOR & EDITOR STUDIO */}
               {isBannerFormOpen && (
                 <div className="leafora-card" style={{ padding: 24, border: '1px solid #DFD7C8', boxShadow: '0 10px 30px rgba(0,0,0,0.04)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #EFECE6', paddingBottom: 18, marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #EFECE6', paddingBottom: 16, marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
                     <div>
-                      <h3 style={{ margin: 0, fontSize: 19, fontWeight: 800, color: '#111827', display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <span style={{ width: 34, height: 34, borderRadius: 10, background: '#FAF5EB', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#9E7B3B', border: '1px solid #E7DAC1' }}>
-                          <Sparkles size={18} />
+                      <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#111827', display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <span style={{ width: 32, height: 32, borderRadius: 8, background: '#FAF5EB', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#9E7B3B', border: '1px solid #E7DAC1' }}>
+                          <Sparkles size={16} />
                         </span>
-                        {bannerForm.id ? `Edit Homepage Banner (#${bannerForm.id})` : 'Create New Storefront Banner'}
+                        {bannerForm.id ? `Edit Homepage Banner (#${bannerForm.id})` : 'Add New Homepage Banner'}
                       </h3>
-                      <p style={{ margin: '4px 0 0 44px', fontSize: 13, color: '#6B7280' }}>
-                        Design and publish high-converting hero sliders, offer callouts, and limited-time sales.
-                      </p>
                     </div>
 
                     <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
@@ -3509,77 +3510,17 @@ export default function AdminDashboard() {
                         className="leafora-btn leafora-btn-secondary"
                         onClick={() => { setIsBannerFormOpen(false); setBannerModalData(null); }}
                       >
-                        ← Back to List
+                        Cancel
                       </button>
                       <button
                         type="button"
                         className="leafora-btn leafora-btn-primary"
                         onClick={handleSaveBannerSubmit}
                         disabled={isSavingBanner}
-                        style={{ minWidth: 150 }}
+                        style={{ minWidth: 140 }}
                       >
-                        {isSavingBanner ? 'Publishing...' : (bannerForm.id ? '✓ Update Banner' : '✓ Publish Banner')}
+                        {isSavingBanner ? 'Saving...' : (bannerForm.id ? '✓ Update Banner' : '✓ Publish Banner')}
                       </button>
-                    </div>
-                  </div>
-
-                  {/* 1-Click Inspiration Preset Templates */}
-                  <div>
-                    <div style={{ fontSize: 11.5, fontWeight: 700, color: '#8C6A3C', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <Sparkles size={13} /> 1-Click Luxury Botanical Presets (Click to Auto-Fill):
-                    </div>
-                    <div className="leafora-banner-presets-wrap">
-                      {[
-                        {
-                          label: '🌟 Hero: Botanical Actives',
-                          banner_type: 'hero',
-                          title: 'Pharma-Grade Botanical Actives',
-                          subtitle: '100% Pure Organic Extracts Certified by Global Herbal Labs',
-                          desktop_image_url: '/assets/heroimage.jpeg',
-                          mobile_image_url: '/assets/heroimage.jpeg',
-                          link_url: '/products',
-                          button_text: 'Explore Catalog'
-                        },
-                        {
-                          label: '✨ Hero: Clinical Radiance',
-                          banner_type: 'hero',
-                          title: 'Clinical Skin Radiance & Hydration',
-                          subtitle: 'Formulated with Vitamin C & Hyaluronic Acid Hybrids',
-                          desktop_image_url: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=1600&auto=format&fit=crop&q=80',
-                          mobile_image_url: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=800&auto=format&fit=crop&q=80',
-                          link_url: '/products',
-                          button_text: 'Discover Skincare'
-                        },
-                        {
-                          label: '🏷️ Promo: 20% OFF Summer Sale',
-                          banner_type: 'offer',
-                          title: 'FLAT 20% OFF Summer Festival Sale',
-                          subtitle: 'Use Promo Code SUMMER2026 at Checkout on Orders Above $99',
-                          desktop_image_url: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=1600&auto=format&fit=crop&q=80',
-                          mobile_image_url: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=800&auto=format&fit=crop&q=80',
-                          link_url: '/products',
-                          button_text: 'Claim Discount'
-                        },
-                        {
-                          label: '⚡ Flash: 50% Weekend Deals',
-                          banner_type: 'flash_sale',
-                          title: 'Mega Flash Sale - Up to 50% OFF',
-                          subtitle: 'Limited Stock Available! Certified Dermatologist Formulations',
-                          desktop_image_url: 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=1600&auto=format&fit=crop&q=80',
-                          mobile_image_url: 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=800&auto=format&fit=crop&q=80',
-                          link_url: '/products',
-                          button_text: 'Grab Deals Now'
-                        }
-                      ].map((preset, idx) => (
-                        <button
-                          key={idx}
-                          type="button"
-                          className="leafora-banner-preset-pill"
-                          onClick={() => applyBannerPresetTemplate(preset)}
-                        >
-                          {preset.label}
-                        </button>
-                      ))}
                     </div>
                   </div>
 
@@ -3961,6 +3902,26 @@ export default function AdminDashboard() {
                             <span className="leafora-ios-slider" />
                           </label>
                         </div>
+
+                        {/* Bottom Action Buttons */}
+                        <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
+                          <button
+                            type="submit"
+                            className="leafora-btn leafora-btn-primary"
+                            disabled={isSavingBanner}
+                            style={{ flex: 1, padding: '12px 20px', fontSize: 14, fontWeight: 700 }}
+                          >
+                            {isSavingBanner ? 'Saving Banner...' : (bannerForm.id ? '✓ Update Banner' : '✓ Publish Banner')}
+                          </button>
+                          <button
+                            type="button"
+                            className="leafora-btn leafora-btn-secondary"
+                            onClick={() => { setIsBannerFormOpen(false); setBannerModalData(null); }}
+                            style={{ padding: '12px 20px', fontSize: 14 }}
+                          >
+                            Cancel
+                          </button>
+                        </div>
                       </div>
 
                       {/* Right Column: Real-Time Live Preview Studio */}
@@ -4057,29 +4018,16 @@ export default function AdminDashboard() {
 
               {/* BANNERS DIRECTORY & MANAGEMENT LIST */}
               <div className="leafora-card" style={{ padding: 24 }}>
-                {/* Header & Main Actions */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 16 }}>
-                  <div>
-                    <h3 className="leafora-card-title" style={{ fontSize: 18, display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <Image size={22} color="#A37F3F" />
-                      Homepage Banner Directory ({homepageBanners.length})
-                    </h3>
-                    <p className="leafora-page-subtitle" style={{ marginTop: 2 }}>
-                      Manage hero sliders, promo offer banners, category cards, and active/inactive status in real-time database
-                    </p>
-                  </div>
-
-                  <button 
-                    type="button"
-                    className="leafora-cat-btn-primary"
-                    onClick={() => handleOpenBannerModal(null)}
-                  >
-                    <Plus size={16} /> {isBannerFormOpen ? 'Create Another Banner' : 'Add New Banner'}
-                  </button>
+                {/* Header */}
+                <div style={{ marginBottom: 18 }}>
+                  <h3 className="leafora-card-title" style={{ fontSize: 17, display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <Image size={20} color="#A37F3F" />
+                    Homepage Banner Directory ({homepageBanners.length})
+                  </h3>
                 </div>
 
                 {/* Filters Bar & Search */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, marginBottom: 20, flexWrap: 'wrap' }}>
                   <div style={{ display: 'flex', gap: 12, flex: 1, maxWidth: 680 }}>
                     <div className="leafora-cat-search-box" style={{ flex: 1 }}>
                       <Search className="leafora-search-icon" size={16} />
@@ -4114,15 +4062,6 @@ export default function AdminDashboard() {
                       <option value="active">Active Only</option>
                       <option value="inactive">Inactive Only</option>
                     </select>
-                  </div>
-
-                  <div style={{ display: 'flex', gap: 10 }}>
-                    <span className="leafora-badge" style={{ backgroundColor: '#ECFDF5', color: '#047857', border: '1px solid #A7F3D0', padding: '6px 12px', fontSize: 12 }}>
-                      Active: <strong>{homepageBanners.filter(b => b.is_active === 1 || b.is_active === true).length}</strong>
-                    </span>
-                    <span className="leafora-badge" style={{ backgroundColor: '#FEF2F2', color: '#B91C1C', border: '1px solid #FCA5A5', padding: '6px 12px', fontSize: 12 }}>
-                      Inactive: <strong>{homepageBanners.filter(b => !(b.is_active === 1 || b.is_active === true)).length}</strong>
-                    </span>
                   </div>
                 </div>
 
