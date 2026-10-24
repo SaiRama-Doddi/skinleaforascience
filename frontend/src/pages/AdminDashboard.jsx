@@ -4026,42 +4026,16 @@ export default function AdminDashboard() {
                   </h3>
                 </div>
 
-                {/* Filters Bar & Search */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, marginBottom: 20, flexWrap: 'wrap' }}>
-                  <div style={{ display: 'flex', gap: 12, flex: 1, maxWidth: 680 }}>
-                    <div className="leafora-cat-search-box" style={{ flex: 1 }}>
-                      <Search className="leafora-search-icon" size={16} />
-                      <input
-                        type="text"
-                        placeholder="Search banner title or subtitle..."
-                        value={bannerSearchQuery}
-                        onChange={(e) => setBannerSearchQuery(e.target.value)}
-                      />
-                    </div>
-
-                    <select
-                      className="leafora-cat-select"
-                      value={cmsBannerTypeTab}
-                      onChange={(e) => setCmsBannerTypeTab(e.target.value)}
-                      style={{ minWidth: 160 }}
-                    >
-                      <option value="all">All Placement Types</option>
-                      <option value="hero">Hero Sliders</option>
-                      <option value="offer">Special Offers</option>
-                      <option value="category">Category Banners</option>
-                      <option value="flash_sale">Flash Sales</option>
-                    </select>
-
-                    <select
-                      className="leafora-cat-select"
-                      value={bannerStatusFilter}
-                      onChange={(e) => setBannerStatusFilter(e.target.value)}
-                      style={{ minWidth: 130 }}
-                    >
-                      <option value="all">All Status</option>
-                      <option value="active">Active Only</option>
-                      <option value="inactive">Inactive Only</option>
-                    </select>
+                {/* Search Bar */}
+                <div style={{ marginBottom: 20 }}>
+                  <div className="leafora-cat-search-box" style={{ maxWidth: 420 }}>
+                    <Search className="leafora-search-icon" size={16} />
+                    <input
+                      type="text"
+                      placeholder="Search banner title or subtitle..."
+                      value={bannerSearchQuery}
+                      onChange={(e) => setBannerSearchQuery(e.target.value)}
+                    />
                   </div>
                 </div>
 
@@ -4074,19 +4048,13 @@ export default function AdminDashboard() {
                       const matchSub = (b.subtitle || '').toLowerCase().includes(q);
                       if (!matchTitle && !matchSub) return false;
                     }
-                    if (bannerStatusFilter === 'active') {
-                      return b.is_active === 1 || b.is_active === true;
-                    }
-                    if (bannerStatusFilter === 'inactive') {
-                      return !(b.is_active === 1 || b.is_active === true);
-                    }
                     return true;
                   }).length === 0 ? (
                   <div style={{ textAlign: 'center', padding: '56px 24px', backgroundColor: '#FAF9F6', borderRadius: 16, border: '1px dashed #E2DACB' }}>
                     <Image size={46} color="#A37F3F" style={{ opacity: 0.5, marginBottom: 14 }} />
                     <h4 style={{ fontSize: 17, fontWeight: 700, color: '#1F2937', margin: '0 0 6px 0' }}>No Banners Found</h4>
                     <p style={{ fontSize: 13, color: '#6B7280', marginBottom: 18 }}>
-                      No banners match your active filters or your database has no banners configured yet.
+                      No banners match your search or your database has no banners configured yet.
                     </p>
                     <button type="button" className="leafora-cat-btn-primary" onClick={() => handleOpenBannerModal(null)}>
                       <Plus size={16} /> Create First Banner
@@ -4101,12 +4069,6 @@ export default function AdminDashboard() {
                           const matchTitle = (b.title || '').toLowerCase().includes(q);
                           const matchSub = (b.subtitle || '').toLowerCase().includes(q);
                           if (!matchTitle && !matchSub) return false;
-                        }
-                        if (bannerStatusFilter === 'active') {
-                          return b.is_active === 1 || b.is_active === true;
-                        }
-                        if (bannerStatusFilter === 'inactive') {
-                          return !(b.is_active === 1 || b.is_active === true);
                         }
                         return true;
                       })
