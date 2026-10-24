@@ -1123,8 +1123,8 @@ const initDb = async () => {
         banner_type ENUM('hero', 'offer', 'category', 'flash_sale') NOT NULL DEFAULT 'hero',
         title VARCHAR(255) NOT NULL,
         subtitle VARCHAR(255) NULL,
-        desktop_image_url VARCHAR(500) NOT NULL,
-        mobile_image_url VARCHAR(500) NULL,
+        desktop_image_url LONGTEXT NOT NULL,
+        mobile_image_url LONGTEXT NULL,
         link_url VARCHAR(500) NULL,
         button_text VARCHAR(100) DEFAULT 'Shop Now',
         category_id INT NULL,
@@ -1135,6 +1135,12 @@ const initDb = async () => {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
       );
     `);
+
+    // Ensure columns are LONGTEXT even on existing databases
+    try {
+      await pool.query('ALTER TABLE homepage_banners MODIFY COLUMN desktop_image_url LONGTEXT');
+      await pool.query('ALTER TABLE homepage_banners MODIFY COLUMN mobile_image_url LONGTEXT');
+    } catch (_) {}
 
     await pool.query(`
       CREATE TABLE IF NOT EXISTS homepage_sections (

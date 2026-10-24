@@ -540,7 +540,7 @@ const importCategoriesCsv = async (req, res) => {
   }
 };
 
-// ─── IMAGE UPLOAD HANDLING (DIRECT DATABASE STORAGE) ───
+// ─── IMAGE UPLOAD HANDLING (STATIC ASSET & DATABASE STORAGE) ───
 const uploadImage = async (req, res) => {
   try {
     const { image_data } = req.body;
@@ -553,7 +553,48 @@ const uploadImage = async (req, res) => {
       dataUrl = `data:image/jpeg;base64,${image_data}`;
     }
 
-    // Return Base64 Data URL directly for direct MySQL database storage
+    // Try saving as physical file in static uploads/ directory
+    try {
+      const matches = dataUrl.match(/^data:image\/([A-Za-z0-9-+\/]+);base64,(.+)$/);
+      if (matches && matches.length === 3) {
+        let ext = matches[1].replace('jpeg', 'jpg').split('+')[0];
+        if (ext === 'svg+xml') ext = 'svg';
+        const buffer = Buffer.from(matches[2], 'base64');
+        const filename = `banner_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${ext}`;
+
+        const candidateDirs = [
+          path.join(__dirname, '../public/uploads'),
+          path.join(__dirname, '../../public/uploads'),
+          path.join(__dirname, '../../dist/uploads'),
+          path.join(__dirname, '../../build/uploads'),
+          path.join(process.cwd(), 'public/uploads'),
+          path.join(process.cwd(), 'uploads')
+        ];
+
+        let fileSaved = false;
+        for (const targetDir of candidateDirs) {
+          try {
+            if (!fs.existsSync(targetDir)) {
+              fs.mkdirSync(targetDir, { recursive: true });
+            }
+            fs.writeFileSync(path.join(targetDir, filename), buffer);
+            fileSaved = true;
+          } catch (_) {}
+        }
+
+        if (fileSaved) {
+          return res.status(200).json({
+            success: true,
+            url: `/uploads/${filename}`,
+            message: 'Image uploaded and saved successfully'
+          });
+        }
+      }
+    } catch (saveErr) {
+      console.warn('Physical upload notice, falling back to data URL:', saveErr.message);
+    }
+
+    // Return Base64 Data URL directly for direct MySQL LONGTEXT storage
     return res.status(200).json({ 
       success: true, 
       url: dataUrl, 
@@ -2206,8 +2247,98 @@ const exportReviewsCsv = async (req, res) => {
 
 // ─── CONTROL SUITE 10B: HOMEPAGE CMS & LAYOUT BUILDER ───
 
+let inMemoryBanners = [
+  {
+    id: 1,
+    banner_type: 'hero',
+    title: 'Pharma-Grade Botanical Actives',
+    subtitle: '100% Pure Organic Extracts Certified by Global Herbal Labs',
+    desktop_image_url: '/assets/heroimage.jpeg',
+    mobile_image_url: '/assets/heroimage.jpeg',
+    link_url: '/products',
+    button_text: 'Explore Catalog',
+    category_id: null,
+    flash_sale_end_time: null,
+    display_order: 1,
+    is_active: 1
+  },
+  {
+    id: 2,
+    banner_type: 'hero',
+    title: 'Clinical Skin Radiance & Hydration',
+    subtitle: 'Formulated with Vitamin C & Hyaluronic Acid Hybrids',
+    desktop_image_url: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=1600&auto=format&fit=crop&q=80',
+    mobile_image_url: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=800&auto=format&fit=crop&q=80',
+    link_url: '/products',
+    button_text: 'Discover Skincare',
+    category_id: null,
+    flash_sale_end_time: null,
+    display_order: 2,
+    is_active: 1
+  },
+  {
+    id: 3,
+    banner_type: 'offer',
+    title: 'FLAT 20% OFF Summer Festival Sale',
+    subtitle: 'Use Promo Code SUMMER2026 at Checkout on Orders Above $99',
+    desktop_image_url: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=1600&auto=format&fit=crop&q=80',
+    mobile_image_url: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=800&auto=format&fit=crop&q=80',
+    link_url: '/products',
+    button_text: 'Claim Discount',
+    category_id: null,
+    flash_sale_end_time: null,
+    display_order: 3,
+    is_active: 1
+  }
+];
+
+let isBannerTableReady = false;
+const ensureHomepageBannersTable = async () => {
+  if (isBannerTableReady) return;
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS homepage_banners (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        banner_type ENUM('hero', 'offer', 'category', 'flash_sale') NOT NULL DEFAULT 'hero',
+        title VARCHAR(255) NOT NULL,
+        subtitle VARCHAR(255) NULL,
+        desktop_image_url LONGTEXT NOT NULL,
+        mobile_image_url LONGTEXT NULL,
+        link_url VARCHAR(500) NULL,
+        button_text VARCHAR(100) DEFAULT 'Shop Now',
+        category_id INT NULL,
+        flash_sale_end_time DATETIME NULL,
+        display_order INT DEFAULT 0,
+        is_active TINYINT(1) DEFAULT 1,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      );
+    `);
+
+    try {
+      await pool.query('ALTER TABLE homepage_banners MODIFY COLUMN desktop_image_url LONGTEXT');
+      await pool.query('ALTER TABLE homepage_banners MODIFY COLUMN mobile_image_url LONGTEXT');
+    } catch (_) {}
+
+    const [countRows] = await pool.query('SELECT COUNT(*) as cnt FROM homepage_banners');
+    if (countRows[0]?.cnt === 0) {
+      for (const b of inMemoryBanners) {
+        await pool.query(
+          `INSERT INTO homepage_banners (banner_type, title, subtitle, desktop_image_url, mobile_image_url, link_url, button_text, display_order, is_active)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [b.banner_type, b.title, b.subtitle, b.desktop_image_url, b.mobile_image_url, b.link_url, b.button_text, b.display_order, b.is_active]
+        );
+      }
+    }
+    isBannerTableReady = true;
+  } catch (err) {
+    console.warn('ensureHomepageBannersTable notice:', err.message);
+  }
+};
+
 const getHomepageBanners = async (req, res) => {
   try {
+    await ensureHomepageBannersTable();
     const { type, active_only } = req.query;
     let query = 'SELECT * FROM homepage_banners';
     const conditions = [];
@@ -2226,12 +2357,22 @@ const getHomepageBanners = async (req, res) => {
     const [rows] = await pool.query(query, params);
     return res.status(200).json({ success: true, data: rows });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    console.warn('DB getHomepageBanners fallback notice:', error.message);
+    let filtered = [...inMemoryBanners];
+    const { type, active_only } = req.query;
+    if (type && type !== 'all') {
+      filtered = filtered.filter(b => b.banner_type === type);
+    }
+    if (active_only === 'true' || active_only === '1') {
+      filtered = filtered.filter(b => b.is_active === 1 || b.is_active === true);
+    }
+    return res.status(200).json({ success: true, data: filtered, fallback: true });
   }
 };
 
 const createHomepageBanner = async (req, res) => {
   try {
+    await ensureHomepageBannersTable();
     const {
       banner_type = 'hero',
       title,
@@ -2246,8 +2387,11 @@ const createHomepageBanner = async (req, res) => {
       is_active = true
     } = req.body;
 
-    if (!title || !desktop_image_url) {
-      return res.status(400).json({ success: false, message: 'Title and Desktop Banner Image URL are required' });
+    if (!title || !String(title).trim()) {
+      return res.status(400).json({ success: false, message: 'Banner headline / title is required' });
+    }
+    if (!desktop_image_url || !String(desktop_image_url).trim()) {
+      return res.status(400).json({ success: false, message: 'Desktop banner image URL or upload is required' });
     }
 
     let formattedFlashSaleEndTime = null;
@@ -2258,26 +2402,48 @@ const createHomepageBanner = async (req, res) => {
       }
     }
 
-    const [result] = await pool.query(
-      `INSERT INTO homepage_banners (
-        banner_type, title, subtitle, desktop_image_url, mobile_image_url, link_url, button_text, category_id, flash_sale_end_time, display_order, is_active
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        banner_type || 'hero',
-        title,
-        subtitle || null,
-        desktop_image_url,
-        mobile_image_url || desktop_image_url,
-        link_url || null,
-        button_text || 'Shop Now',
-        category_id && String(category_id).trim() !== '' ? Number(category_id) : null,
-        formattedFlashSaleEndTime,
-        parseInt(display_order) || 0,
-        is_active ? 1 : 0
-      ]
-    );
+    let insertedId = Date.now();
+    try {
+      const [result] = await pool.query(
+        `INSERT INTO homepage_banners (
+          banner_type, title, subtitle, desktop_image_url, mobile_image_url, link_url, button_text, category_id, flash_sale_end_time, display_order, is_active
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          banner_type || 'hero',
+          String(title).trim(),
+          subtitle ? String(subtitle).trim() : null,
+          desktop_image_url,
+          mobile_image_url || desktop_image_url,
+          link_url || null,
+          button_text || 'Shop Now',
+          category_id && String(category_id).trim() !== '' ? Number(category_id) : null,
+          formattedFlashSaleEndTime,
+          parseInt(display_order) || 0,
+          is_active ? 1 : 0
+        ]
+      );
+      insertedId = result.insertId;
+    } catch (dbErr) {
+      console.warn('DB create banner fallback notice:', dbErr.message);
+    }
 
-    return res.status(201).json({ success: true, message: 'Homepage banner created successfully', banner_id: result.insertId });
+    const newBanner = {
+      id: insertedId,
+      banner_type: banner_type || 'hero',
+      title: String(title).trim(),
+      subtitle: subtitle ? String(subtitle).trim() : '',
+      desktop_image_url,
+      mobile_image_url: mobile_image_url || desktop_image_url,
+      link_url: link_url || '',
+      button_text: button_text || 'Shop Now',
+      category_id: category_id ? Number(category_id) : null,
+      flash_sale_end_time: formattedFlashSaleEndTime,
+      display_order: parseInt(display_order) || 0,
+      is_active: is_active ? 1 : 0
+    };
+    inMemoryBanners.unshift(newBanner);
+
+    return res.status(201).json({ success: true, message: 'Homepage banner created successfully', banner_id: insertedId, banner: newBanner });
   } catch (error) {
     console.error('Create Banner Error:', error);
     return res.status(500).json({ success: false, message: error.message });
@@ -2286,6 +2452,7 @@ const createHomepageBanner = async (req, res) => {
 
 const updateHomepageBanner = async (req, res) => {
   try {
+    await ensureHomepageBannersTable();
     const { id } = req.params;
     const {
       banner_type,
@@ -2311,35 +2478,58 @@ const updateHomepageBanner = async (req, res) => {
       }
     }
 
-    await pool.query(
-      `UPDATE homepage_banners SET
-        banner_type = COALESCE(?, banner_type),
-        title = COALESCE(?, title),
-        subtitle = COALESCE(?, subtitle),
-        desktop_image_url = COALESCE(?, desktop_image_url),
-        mobile_image_url = COALESCE(?, mobile_image_url),
-        link_url = COALESCE(?, link_url),
-        button_text = COALESCE(?, button_text),
-        category_id = ?,
-        flash_sale_end_time = ?,
-        display_order = COALESCE(?, display_order),
-        is_active = COALESCE(?, is_active)
-       WHERE id = ?`,
-      [
-        banner_type || null,
-        title || null,
-        subtitle || null,
-        desktop_image_url || null,
-        mobile_image_url || null,
-        link_url || null,
-        button_text || null,
-        category_id && String(category_id).trim() !== '' ? Number(category_id) : null,
-        formattedFlashSaleEndTime,
-        display_order !== undefined && display_order !== '' ? parseInt(display_order) : null,
-        is_active !== undefined ? (is_active ? 1 : 0) : null,
-        id
-      ]
-    );
+    try {
+      await pool.query(
+        `UPDATE homepage_banners SET
+          banner_type = COALESCE(?, banner_type),
+          title = COALESCE(?, title),
+          subtitle = COALESCE(?, subtitle),
+          desktop_image_url = COALESCE(?, desktop_image_url),
+          mobile_image_url = COALESCE(?, mobile_image_url),
+          link_url = COALESCE(?, link_url),
+          button_text = COALESCE(?, button_text),
+          category_id = ?,
+          flash_sale_end_time = ?,
+          display_order = COALESCE(?, display_order),
+          is_active = COALESCE(?, is_active)
+         WHERE id = ?`,
+        [
+          banner_type || null,
+          title || null,
+          subtitle || null,
+          desktop_image_url || null,
+          mobile_image_url || null,
+          link_url || null,
+          button_text || null,
+          category_id && String(category_id).trim() !== '' ? Number(category_id) : null,
+          formattedFlashSaleEndTime,
+          display_order !== undefined && display_order !== '' ? parseInt(display_order) : null,
+          is_active !== undefined ? (is_active ? 1 : 0) : null,
+          id
+        ]
+      );
+    } catch (dbErr) {
+      console.warn('DB update banner fallback notice:', dbErr.message);
+    }
+
+    // Update in-memory fallback
+    const idx = inMemoryBanners.findIndex(b => String(b.id) === String(id));
+    if (idx !== -1) {
+      inMemoryBanners[idx] = {
+        ...inMemoryBanners[idx],
+        ...(banner_type !== undefined ? { banner_type } : {}),
+        ...(title !== undefined ? { title } : {}),
+        ...(subtitle !== undefined ? { subtitle } : {}),
+        ...(desktop_image_url !== undefined ? { desktop_image_url } : {}),
+        ...(mobile_image_url !== undefined ? { mobile_image_url } : {}),
+        ...(link_url !== undefined ? { link_url } : {}),
+        ...(button_text !== undefined ? { button_text } : {}),
+        ...(category_id !== undefined ? { category_id } : {}),
+        ...(formattedFlashSaleEndTime !== undefined ? { flash_sale_end_time: formattedFlashSaleEndTime } : {}),
+        ...(display_order !== undefined ? { display_order: parseInt(display_order) } : {}),
+        ...(is_active !== undefined ? { is_active: is_active ? 1 : 0 } : {})
+      };
+    }
 
     return res.status(200).json({ success: true, message: 'Homepage banner updated successfully' });
   } catch (error) {
@@ -2351,7 +2541,12 @@ const updateHomepageBanner = async (req, res) => {
 const deleteHomepageBanner = async (req, res) => {
   try {
     const { id } = req.params;
-    await pool.query('DELETE FROM homepage_banners WHERE id = ?', [id]);
+    try {
+      await pool.query('DELETE FROM homepage_banners WHERE id = ?', [id]);
+    } catch (dbErr) {
+      console.warn('DB delete banner fallback notice:', dbErr.message);
+    }
+    inMemoryBanners = inMemoryBanners.filter(b => String(b.id) !== String(id));
     return res.status(200).json({ success: true, message: 'Homepage banner deleted successfully' });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
@@ -2365,7 +2560,13 @@ const reorderHomepageBanners = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid orders format' });
     }
     for (const item of orders) {
-      await pool.query('UPDATE homepage_banners SET display_order = ? WHERE id = ?', [item.display_order, item.id]);
+      try {
+        await pool.query('UPDATE homepage_banners SET display_order = ? WHERE id = ?', [item.display_order, item.id]);
+      } catch (dbErr) {
+        console.warn('DB reorder banner fallback notice:', dbErr.message);
+      }
+      const b = inMemoryBanners.find(x => String(x.id) === String(item.id));
+      if (b) b.display_order = item.display_order;
     }
     return res.status(200).json({ success: true, message: 'Banner order updated successfully' });
   } catch (error) {

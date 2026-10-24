@@ -742,6 +742,9 @@ export default function AdminDashboard() {
   // Modals & In-Page Panels state
   const [bannerModalData, setBannerModalData] = useState(null);
   const [isBannerFormOpen, setIsBannerFormOpen] = useState(false);
+  const [bannerPreviewDevice, setBannerPreviewDevice] = useState('desktop');
+  const [isSavingBanner, setIsSavingBanner] = useState(false);
+  const [bannerStatusFilter, setBannerStatusFilter] = useState('all');
   const [bannerForm, setBannerForm] = useState({
     id: null,
     banner_type: 'hero',
@@ -921,12 +924,32 @@ export default function AdminDashboard() {
     setIsBannerFormOpen(true);
   };
 
+  const applyBannerPresetTemplate = (template) => {
+    setBannerForm(prev => ({
+      ...prev,
+      banner_type: template.banner_type,
+      title: template.title,
+      subtitle: template.subtitle,
+      desktop_image_url: template.desktop_image_url,
+      mobile_image_url: template.mobile_image_url || template.desktop_image_url,
+      link_url: template.link_url,
+      button_text: template.button_text
+    }));
+    showNotification(`Applied template: "${template.title}"`);
+  };
+
   const handleSaveBannerSubmit = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
-    if (!bannerForm.desktop_image_url) {
+    if (!bannerForm.title || !String(bannerForm.title).trim()) {
+      showNotification('Banner headline / title is required');
+      return;
+    }
+    if (!bannerForm.desktop_image_url || !String(bannerForm.desktop_image_url).trim()) {
       showNotification('Desktop banner image URL or uploaded file is required');
       return;
     }
+
+    setIsSavingBanner(true);
     try {
       if (bannerForm.id) {
         const res = await adminUpdateHomepageBanner(bannerForm.id, bannerForm);
@@ -941,7 +964,7 @@ export default function AdminDashboard() {
       } else {
         const res = await adminCreateHomepageBanner(bannerForm);
         if (res && res.success) {
-          showNotification('New homepage banner added!');
+          showNotification('New homepage banner published successfully!');
           setBannerModalData(null);
           setIsBannerFormOpen(false);
           fetchHomepageBanners();
@@ -952,6 +975,61 @@ export default function AdminDashboard() {
     } catch (e) {
       console.error('Error saving banner:', e);
       showNotification('Error saving banner: ' + (e.response?.data?.message || e.message || 'Server error'));
+    } finally {
+      setIsSavingBanner(false);
+    }
+  };
+
+  const handleDuplicateBannerItem = async (banner) => {
+    try {
+      const duplicated = {
+        banner_type: banner.banner_type || 'hero',
+        title: `${banner.title} (Copy)`,
+        subtitle: banner.subtitle || '',
+        desktop_image_url: banner.desktop_image_url,
+        mobile_image_url: banner.mobile_image_url || banner.desktop_image_url,
+        link_url: banner.link_url || '/products',
+        button_text: banner.button_text || 'Shop Now',
+        category_id: banner.category_id || null,
+        flash_sale_end_time: banner.flash_sale_end_time || null,
+        display_order: (banner.display_order || 0) + 1,
+        is_active: false
+      };
+      const res = await adminCreateHomepageBanner(duplicated);
+      if (res && res.success) {
+        showNotification('Banner duplicated as draft!');
+        fetchHomepageBanners();
+      } else {
+        showNotification('Failed to duplicate banner');
+      }
+    } catch (e) {
+      showNotification('Error duplicating banner');
+    }
+  };
+
+  const handleMoveBannerItem = async (bannerId, direction) => {
+    const list = [...homepageBanners];
+    const idx = list.findIndex(b => b.id === bannerId);
+    if (idx === -1) return;
+    const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if (targetIdx < 0 || targetIdx >= list.length) return;
+
+    const temp = list[idx];
+    list[idx] = list[targetIdx];
+    list[targetIdx] = temp;
+
+    const reordered = list.map((b, i) => ({
+      id: b.id,
+      display_order: i + 1
+    }));
+
+    setHomepageBanners(list.map((b, i) => ({ ...b, display_order: i + 1 })));
+
+    try {
+      await adminReorderHomepageBanners(reordered);
+      showNotification('Banner display order updated live!');
+    } catch (e) {
+      fetchHomepageBanners();
     }
   };
 
@@ -3136,12 +3214,30 @@ export default function AdminDashboard() {
               )}
 
               {activeTab === 'banners' && (
-                <button 
-                  className="leafora-cat-btn-primary"
-                  onClick={() => handleOpenBannerModal(null)}
-                >
-                  <Plus size={16} /> Add New Banner
-                </button>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <a
+                    href="/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="leafora-cat-btn-secondary"
+                    style={{ display: 'flex', alignItems: 'center', gap: 6, textDecoration: 'none' }}
+                  >
+                    <ExternalLink size={15} /> Storefront
+                  </a>
+                  <button 
+                    className="leafora-cat-btn-primary"
+                    onClick={() => {
+                      if (isBannerFormOpen) {
+                        setIsBannerFormOpen(false);
+                        setBannerModalData(null);
+                      } else {
+                        handleOpenBannerModal(null);
+                      }
+                    }}
+                  >
+                    {isBannerFormOpen ? '← View All Banners' : <><Plus size={16} /> Add New Banner</>}
+                  </button>
+                </div>
               )}
 
               {activeTab === 'reviews' && (
@@ -3339,14 +3435,79 @@ export default function AdminDashboard() {
           {/* ─── TAB: HOMEPAGE BANNERS MANAGEMENT SUITE ─── */}
           {activeTab === 'banners' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-              {/* IN-PAGE EMBEDDED BANNER CREATOR & EDITOR PANEL */}
+              {/* Top KPI Metrics Bar */}
+              <div className="leafora-banner-kpi-grid">
+                <div className="leafora-banner-kpi-card">
+                  <div className="leafora-banner-kpi-icon">
+                    <Layers size={22} />
+                  </div>
+                  <div>
+                    <div className="leafora-banner-kpi-val">{homepageBanners.length}</div>
+                    <div className="leafora-banner-kpi-lbl">Total Storefront Banners</div>
+                  </div>
+                </div>
+
+                <div className="leafora-banner-kpi-card">
+                  <div className="leafora-banner-kpi-icon" style={{ color: '#2563EB', background: '#EFF6FF', borderColor: 'rgba(37,99,235,0.2)' }}>
+                    <Sparkles size={22} />
+                  </div>
+                  <div>
+                    <div className="leafora-banner-kpi-val" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      {homepageBanners.filter(b => b.banner_type === 'hero' && (b.is_active === 1 || b.is_active === true)).length}
+                      <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#10B981', boxShadow: '0 0 8px #10B981' }} title="Rotating Live on Homepage" />
+                    </div>
+                    <div className="leafora-banner-kpi-lbl">Active Hero Sliders</div>
+                  </div>
+                </div>
+
+                <div className="leafora-banner-kpi-card">
+                  <div className="leafora-banner-kpi-icon" style={{ color: '#D97706', background: '#FFFBEB', borderColor: 'rgba(217,119,6,0.2)' }}>
+                    <Tag size={22} />
+                  </div>
+                  <div>
+                    <div className="leafora-banner-kpi-val">
+                      {homepageBanners.filter(b => (b.banner_type === 'offer' || b.banner_type === 'flash_sale') && (b.is_active === 1 || b.is_active === true)).length}
+                    </div>
+                    <div className="leafora-banner-kpi-lbl">Promos & Flash Sales</div>
+                  </div>
+                </div>
+
+                <div className="leafora-banner-kpi-card">
+                  <div className="leafora-banner-kpi-icon" style={{ color: '#059669', background: '#ECFDF5', borderColor: 'rgba(5,150,105,0.2)' }}>
+                    <Globe size={22} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#059669', display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <CheckCircle2 size={16} /> Live & Synced
+                    </div>
+                    <a
+                      href="/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ fontSize: 12, color: '#9E7B3B', fontWeight: 600, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 4 }}
+                    >
+                      View Live Store <ExternalLink size={12} />
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              {/* IN-PAGE EMBEDDED BANNER CREATOR & EDITOR STUDIO */}
               {isBannerFormOpen && (
-                <div className="leafora-inpage-panel">
-                  <div className="leafora-inpage-header">
-                    <h3 className="leafora-inpage-title">
-                      <Sparkles size={20} color="#C5A059" />
-                      {bannerForm.id ? `Edit Homepage Banner (#${bannerForm.id})` : 'Create New Homepage Banner'}
-                    </h3>
+                <div className="leafora-card" style={{ padding: 24, border: '1px solid #DFD7C8', boxShadow: '0 10px 30px rgba(0,0,0,0.04)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #EFECE6', paddingBottom: 18, marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
+                    <div>
+                      <h3 style={{ margin: 0, fontSize: 19, fontWeight: 800, color: '#111827', display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <span style={{ width: 34, height: 34, borderRadius: 10, background: '#FAF5EB', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#9E7B3B', border: '1px solid #E7DAC1' }}>
+                          <Sparkles size={18} />
+                        </span>
+                        {bannerForm.id ? `Edit Homepage Banner (#${bannerForm.id})` : 'Create New Storefront Banner'}
+                      </h3>
+                      <p style={{ margin: '4px 0 0 44px', fontSize: 13, color: '#6B7280' }}>
+                        Design and publish high-converting hero sliders, offer callouts, and limited-time sales.
+                      </p>
+                    </div>
+
                     <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                       <button
                         type="button"
@@ -3359,45 +3520,109 @@ export default function AdminDashboard() {
                         type="button"
                         className="leafora-btn leafora-btn-primary"
                         onClick={handleSaveBannerSubmit}
+                        disabled={isSavingBanner}
+                        style={{ minWidth: 150 }}
                       >
-                        <Check size={16} /> {bannerForm.id ? 'Update Banner' : 'Publish Banner'}
+                        {isSavingBanner ? 'Publishing...' : (bannerForm.id ? '✓ Update Banner' : '✓ Publish Banner')}
                       </button>
                     </div>
                   </div>
 
-                  <div className="leafora-inpage-body">
-                    <form onSubmit={handleSaveBannerSubmit}>
-                      <div className="leafora-banner-form-grid" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 24 }}>
-                        {/* Left Column: Form Controls */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                          <div className="leafora-form-row-2col">
-                            <div>
-                              <label className="leafora-form-label">Banner Placement Type *</label>
-                              <select
-                                className="leafora-select"
-                                value={bannerForm.banner_type}
-                                onChange={(e) => setBannerForm({ ...bannerForm, banner_type: e.target.value })}
+                  {/* 1-Click Inspiration Preset Templates */}
+                  <div>
+                    <div style={{ fontSize: 11.5, fontWeight: 700, color: '#8C6A3C', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <Sparkles size={13} /> 1-Click Luxury Botanical Presets (Click to Auto-Fill):
+                    </div>
+                    <div className="leafora-banner-presets-wrap">
+                      {[
+                        {
+                          label: '🌟 Hero: Botanical Actives',
+                          banner_type: 'hero',
+                          title: 'Pharma-Grade Botanical Actives',
+                          subtitle: '100% Pure Organic Extracts Certified by Global Herbal Labs',
+                          desktop_image_url: '/assets/heroimage.jpeg',
+                          mobile_image_url: '/assets/heroimage.jpeg',
+                          link_url: '/products',
+                          button_text: 'Explore Catalog'
+                        },
+                        {
+                          label: '✨ Hero: Clinical Radiance',
+                          banner_type: 'hero',
+                          title: 'Clinical Skin Radiance & Hydration',
+                          subtitle: 'Formulated with Vitamin C & Hyaluronic Acid Hybrids',
+                          desktop_image_url: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=1600&auto=format&fit=crop&q=80',
+                          mobile_image_url: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=800&auto=format&fit=crop&q=80',
+                          link_url: '/products',
+                          button_text: 'Discover Skincare'
+                        },
+                        {
+                          label: '🏷️ Promo: 20% OFF Summer Sale',
+                          banner_type: 'offer',
+                          title: 'FLAT 20% OFF Summer Festival Sale',
+                          subtitle: 'Use Promo Code SUMMER2026 at Checkout on Orders Above $99',
+                          desktop_image_url: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=1600&auto=format&fit=crop&q=80',
+                          mobile_image_url: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=800&auto=format&fit=crop&q=80',
+                          link_url: '/products',
+                          button_text: 'Claim Discount'
+                        },
+                        {
+                          label: '⚡ Flash: 50% Weekend Deals',
+                          banner_type: 'flash_sale',
+                          title: 'Mega Flash Sale - Up to 50% OFF',
+                          subtitle: 'Limited Stock Available! Certified Dermatologist Formulations',
+                          desktop_image_url: 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=1600&auto=format&fit=crop&q=80',
+                          mobile_image_url: 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=800&auto=format&fit=crop&q=80',
+                          link_url: '/products',
+                          button_text: 'Grab Deals Now'
+                        }
+                      ].map((preset, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          className="leafora-banner-preset-pill"
+                          onClick={() => applyBannerPresetTemplate(preset)}
+                        >
+                          {preset.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <form onSubmit={handleSaveBannerSubmit}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 28, alignItems: 'start' }}>
+                      {/* Left Column: Form Controls */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+                        {/* Placement Selector */}
+                        <div>
+                          <label className="leafora-form-label" style={{ marginBottom: 8, display: 'block' }}>
+                            Banner Placement Type *
+                          </label>
+                          <div className="leafora-type-card-grid">
+                            {[
+                              { id: 'hero', name: 'Hero Slider', desc: 'Top rotating public banner' },
+                              { id: 'offer', name: 'Special Offer', desc: 'Promos & seasonal deals' },
+                              { id: 'category', name: 'Category Callout', desc: 'Spotlight collection' },
+                              { id: 'flash_sale', name: 'Flash Sale', desc: 'Urgent countdown deal' }
+                            ].map((type) => (
+                              <div
+                                key={type.id}
+                                className={`leafora-type-card ${bannerForm.banner_type === type.id ? 'active' : ''}`}
+                                onClick={() => setBannerForm({ ...bannerForm, banner_type: type.id })}
                               >
-                                <option value="hero">Hero Slider</option>
-                                <option value="offer">Special Offer</option>
-                                <option value="category">Category Banner</option>
-                                <option value="flash_sale">Flash Sale</option>
-                              </select>
-                            </div>
-
-                            <div>
-                              <label className="leafora-form-label">Display Order</label>
-                              <input
-                                type="number"
-                                className="leafora-input"
-                                value={bannerForm.display_order}
-                                onChange={(e) => setBannerForm({ ...bannerForm, display_order: e.target.value })}
-                              />
-                            </div>
+                                <div className="leafora-type-card-head">
+                                  <span className="leafora-type-card-title">{type.name}</span>
+                                  {bannerForm.banner_type === type.id && <Check size={14} color="#9E7B3B" />}
+                                </div>
+                                <span className="leafora-type-card-desc">{type.desc}</span>
+                              </div>
+                            ))}
                           </div>
+                        </div>
 
+                        {/* Title & Subtitle */}
+                        <div className="leafora-form-row-2col">
                           <div>
-                            <label className="leafora-form-label">Banner Headline / Title *</label>
+                            <label className="leafora-form-label">Banner Headline / Main Title *</label>
                             <input
                               type="text"
                               className="leafora-input"
@@ -3409,169 +3634,303 @@ export default function AdminDashboard() {
                           </div>
 
                           <div>
-                            <label className="leafora-form-label">Subtitle / Sub-headline</label>
+                            <label className="leafora-form-label">Display Order</label>
+                            <input
+                              type="number"
+                              className="leafora-input"
+                              value={bannerForm.display_order}
+                              onChange={(e) => setBannerForm({ ...bannerForm, display_order: e.target.value })}
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="leafora-form-label">Subtitle / Botanical Tagline</label>
+                          <input
+                            type="text"
+                            className="leafora-input"
+                            placeholder="e.g. 100% Pure Organic Extracts Certified by Global Herbal Labs"
+                            value={bannerForm.subtitle}
+                            onChange={(e) => setBannerForm({ ...bannerForm, subtitle: e.target.value })}
+                          />
+                        </div>
+
+                        {/* Target Link & Button Text */}
+                        <div className="leafora-form-row-2col">
+                          <div>
+                            <label className="leafora-form-label">Target Click URL</label>
+                            <div style={{ display: 'flex', gap: 6 }}>
+                              <input
+                                type="text"
+                                className="leafora-input"
+                                placeholder="/products or /products?category=skincare"
+                                value={bannerForm.link_url}
+                                onChange={(e) => setBannerForm({ ...bannerForm, link_url: e.target.value })}
+                                style={{ flex: 1 }}
+                              />
+                              {categories && categories.length > 0 && (
+                                <select
+                                  className="leafora-select"
+                                  style={{ width: 130, fontSize: 12 }}
+                                  onChange={(e) => {
+                                    if (e.target.value) {
+                                      setBannerForm({ ...bannerForm, link_url: `/products?category=${encodeURIComponent(e.target.value)}` });
+                                    }
+                                  }}
+                                  defaultValue=""
+                                >
+                                  <option value="" disabled>Link Category</option>
+                                  <option value="/products">All Products</option>
+                                  {categories.map(c => (
+                                    <option key={c.id} value={c.slug || c.name}>{c.name}</option>
+                                  ))}
+                                </select>
+                              )}
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="leafora-form-label">Button CTA Text</label>
                             <input
                               type="text"
                               className="leafora-input"
-                              placeholder="e.g. 100% Pure Organic Extracts Certified by Global Herbal Labs"
-                              value={bannerForm.subtitle}
-                              onChange={(e) => setBannerForm({ ...bannerForm, subtitle: e.target.value })}
+                              placeholder="Shop Now"
+                              value={bannerForm.button_text}
+                              onChange={(e) => setBannerForm({ ...bannerForm, button_text: e.target.value })}
                             />
-                          </div>
-
-                          {/* Desktop Banner Image Slot */}
-                          <div>
-                            <label className="leafora-form-label">Desktop Banner Image URL *</label>
-                            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                              <input
-                                type="text"
-                                className="leafora-input"
-                                placeholder="/assets/hero_banner_1.jpg or image URL"
-                                value={bannerForm.desktop_image_url}
-                                onChange={(e) => setBannerForm({ ...bannerForm, desktop_image_url: e.target.value })}
-                                required
-                                style={{ flex: 1 }}
-                              />
-                              <label
-                                htmlFor="desktop-banner-file-input"
-                                className="leafora-btn leafora-btn-secondary"
-                                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer', whiteSpace: 'nowrap' }}
-                              >
-                                <Upload size={15} /> Upload
-                              </label>
-                              <input
-                                id="desktop-banner-file-input"
-                                type="file"
-                                accept="image/*"
-                                style={{ display: 'none' }}
-                                onChange={(e) => handleBannerImageUpload(e, 'desktop_image_url')}
-                              />
-                            </div>
-                          </div>
-
-                          {/* Mobile Banner Image Slot */}
-                          <div>
-                            <label className="leafora-form-label">Mobile Banner Image URL (Optional)</label>
-                            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                              <input
-                                type="text"
-                                className="leafora-input"
-                                placeholder="/assets/hero_banner_1_mobile.jpg (Optional)"
-                                value={bannerForm.mobile_image_url}
-                                onChange={(e) => setBannerForm({ ...bannerForm, mobile_image_url: e.target.value })}
-                                style={{ flex: 1 }}
-                              />
-                              <label
-                                htmlFor="mobile-banner-file-input"
-                                className="leafora-btn leafora-btn-secondary"
-                                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer', whiteSpace: 'nowrap' }}
-                              >
-                                <Upload size={15} /> Upload
-                              </label>
-                              <input
-                                id="mobile-banner-file-input"
-                                type="file"
-                                accept="image/*"
-                                style={{ display: 'none' }}
-                                onChange={(e) => handleBannerImageUpload(e, 'mobile_image_url')}
-                              />
-                            </div>
-                          </div>
-
-                          <div className="leafora-form-row-2col">
-                            <div>
-                              <label className="leafora-form-label">Target Click URL</label>
-                              <input
-                                type="text"
-                                className="leafora-input"
-                                placeholder="/shop or /category/skincare"
-                                value={bannerForm.link_url}
-                                onChange={(e) => setBannerForm({ ...bannerForm, link_url: e.target.value })}
-                              />
-                            </div>
-                            <div>
-                              <label className="leafora-form-label">Button CTA Text</label>
-                              <input
-                                type="text"
-                                className="leafora-input"
-                                placeholder="Shop Now"
-                                value={bannerForm.button_text}
-                                onChange={(e) => setBannerForm({ ...bannerForm, button_text: e.target.value })}
-                              />
-                            </div>
-                          </div>
-
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
-                            <input
-                              type="checkbox"
-                              id="inpageBannerActive"
-                              checked={bannerForm.is_active}
-                              onChange={(e) => setBannerForm({ ...bannerForm, is_active: e.target.checked })}
-                              style={{ width: 18, height: 18, accentColor: '#16A34A' }}
-                            />
-                            <label htmlFor="inpageBannerActive" style={{ fontSize: 14, fontWeight: 600, color: '#0F172A', cursor: 'pointer' }}>
-                              Active & Published Live on Public Storefront
-                            </label>
                           </div>
                         </div>
 
-                        {/* Right Column: Real-Time Live Banner Preview Card */}
+                        {/* Desktop Image URL & File Upload */}
                         <div>
-                          <label className="leafora-form-label" style={{ marginBottom: 10 }}>
-                            Live Storefront Real-Time Banner Preview
-                          </label>
-                          <div className="leafora-banner-preview-card">
-                            {bannerForm.desktop_image_url ? (
-                              <img
-                                src={bannerForm.desktop_image_url}
-                                alt="Live Desktop Banner Preview"
-                                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
-                              />
-                            ) : (
-                              <div style={{ color: '#94A3B8', fontSize: 13, textAlign: 'center', zIndex: 2 }}>
-                                <Image size={36} style={{ opacity: 0.5, marginBottom: 8 }} />
-                                <div>Upload or enter Image URL to view preview</div>
-                              </div>
-                            )}
-                            <div className="leafora-banner-preview-overlay" />
-                            <div className="leafora-banner-preview-content">
-                              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, color: '#C5A059', textTransform: 'uppercase', marginBottom: 6, display: 'block' }}>
-                                {bannerForm.subtitle || '100% Pure Organic Extracts'}
-                              </span>
-                              <h2 style={{ fontSize: 20, fontWeight: 800, color: '#FFFFFF', margin: '0 0 14px 0', lineHeight: 1.2 }}>
-                                {bannerForm.title || 'Your Banner Title Here'}
-                              </h2>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                            <label className="leafora-form-label" style={{ margin: 0 }}>
+                              Desktop Banner Image * <span style={{ fontSize: 11, fontWeight: 500, color: '#9CA3AF' }}>(1920×650px Recommended)</span>
+                            </label>
+                            {bannerForm.desktop_image_url && (
                               <button
                                 type="button"
-                                style={{
-                                  backgroundColor: '#C5A059',
-                                  color: '#FFFFFF',
-                                  border: 'none',
-                                  padding: '8px 18px',
-                                  borderRadius: 20,
-                                  fontWeight: 700,
-                                  fontSize: 12,
-                                  cursor: 'default'
-                                }}
+                                onClick={() => setBannerForm({ ...bannerForm, desktop_image_url: '' })}
+                                style={{ background: 'none', border: 'none', color: '#DC2626', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
                               >
-                                {bannerForm.button_text || 'Shop Now'} →
+                                Clear Image
                               </button>
+                            )}
+                          </div>
+                          
+                          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                            <input
+                              type="text"
+                              className="leafora-input"
+                              placeholder="/assets/heroimage.jpeg or https://..."
+                              value={bannerForm.desktop_image_url}
+                              onChange={(e) => setBannerForm({ ...bannerForm, desktop_image_url: e.target.value })}
+                              required
+                              style={{ flex: 1 }}
+                            />
+                            <label
+                              htmlFor="desktop-banner-file-input"
+                              className="leafora-btn leafora-btn-secondary"
+                              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                            >
+                              <Upload size={15} /> Upload File
+                            </label>
+                            <input
+                              id="desktop-banner-file-input"
+                              type="file"
+                              accept="image/*"
+                              style={{ display: 'none' }}
+                              onChange={(e) => handleBannerImageUpload(e, 'desktop_image_url')}
+                            />
+                          </div>
+
+                          {/* Quick Botanical Library Presets */}
+                          <div style={{ marginTop: 8 }}>
+                            <div style={{ fontSize: 11, color: '#6B7280', fontWeight: 600 }}>
+                              Or pick from curated LeafOra botanical photo library:
+                            </div>
+                            <div className="leafora-asset-preset-grid">
+                              {[
+                                { label: 'Hero Botanical', url: '/assets/heroimage.jpeg' },
+                                { label: 'Golden Serum', url: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=1600&auto=format&fit=crop&q=80' },
+                                { label: 'Herbal Wellness', url: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=1600&auto=format&fit=crop&q=80' },
+                                { label: 'Pure Hydration', url: 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=1600&auto=format&fit=crop&q=80' },
+                                { label: 'Bio Extracts', url: 'https://images.unsplash.com/photo-1608248597359-59750058e3ea?w=1600&auto=format&fit=crop&q=80' },
+                                { label: 'Luxury Cream', url: 'https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?w=1600&auto=format&fit=crop&q=80' }
+                              ].map((asset, aIdx) => (
+                                <div
+                                  key={aIdx}
+                                  className={`leafora-asset-preset-thumb ${bannerForm.desktop_image_url === asset.url ? 'active' : ''}`}
+                                  title={asset.label}
+                                  onClick={() => setBannerForm({ ...bannerForm, desktop_image_url: asset.url })}
+                                >
+                                  <img src={asset.url} alt={asset.label} />
+                                </div>
+                              ))}
                             </div>
                           </div>
-                          <div style={{ marginTop: 12, fontSize: 12, color: '#64748B', display: 'flex', justifyContent: 'space-between', background: '#FAF8F5', padding: '10px 14px', borderRadius: 8, border: '1px solid #E2E8F0' }}>
-                            <span>Placement: <strong style={{ color: '#0F172A' }}>{String(bannerForm.banner_type).toUpperCase()}</strong></span>
-                            <span>Status: <strong style={{ color: bannerForm.is_active ? '#16A34A' : '#DC2626' }}>{bannerForm.is_active ? '✓ LIVE' : '✕ INACTIVE'}</strong></span>
+                        </div>
+
+                        {/* Mobile Image (Optional) */}
+                        <div>
+                          <label className="leafora-form-label">
+                            Mobile Banner Image (Optional) <span style={{ fontSize: 11, fontWeight: 500, color: '#9CA3AF' }}>(800×800px Portrait)</span>
+                          </label>
+                          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                            <input
+                              type="text"
+                              className="leafora-input"
+                              placeholder="/assets/heroimage.jpeg (leave blank to use desktop image)"
+                              value={bannerForm.mobile_image_url}
+                              onChange={(e) => setBannerForm({ ...bannerForm, mobile_image_url: e.target.value })}
+                              style={{ flex: 1 }}
+                            />
+                            <label
+                              htmlFor="mobile-banner-file-input"
+                              className="leafora-btn leafora-btn-secondary"
+                              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                            >
+                              <Upload size={15} /> Upload
+                            </label>
+                            <input
+                              id="mobile-banner-file-input"
+                              type="file"
+                              accept="image/*"
+                              style={{ display: 'none' }}
+                              onChange={(e) => handleBannerImageUpload(e, 'mobile_image_url')}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Flash Sale Countdown (If selected) */}
+                        {bannerForm.banner_type === 'flash_sale' && (
+                          <div>
+                            <label className="leafora-form-label">Flash Sale End Date & Time</label>
+                            <input
+                              type="datetime-local"
+                              className="leafora-input"
+                              value={bannerForm.flash_sale_end_time}
+                              onChange={(e) => setBannerForm({ ...bannerForm, flash_sale_end_time: e.target.value })}
+                            />
+                          </div>
+                        )}
+
+                        {/* Live Publishing Switch */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#F8FAF5', border: '1px solid #DDF0D5', padding: '14px 18px', borderRadius: 12 }}>
+                          <div>
+                            <div style={{ fontSize: 14, fontWeight: 700, color: '#166534' }}>
+                              Active & Published Live on Public Storefront
+                            </div>
+                            <div style={{ fontSize: 12, color: '#4B5563', marginTop: 2 }}>
+                              When enabled, this banner immediately displays on the homepage.
+                            </div>
+                          </div>
+                          <label className="leafora-ios-toggle">
+                            <input
+                              type="checkbox"
+                              checked={bannerForm.is_active}
+                              onChange={(e) => setBannerForm({ ...bannerForm, is_active: e.target.checked })}
+                            />
+                            <span className="leafora-ios-slider" />
+                          </label>
+                        </div>
+                      </div>
+
+                      {/* Right Column: Real-Time Live Preview Studio */}
+                      <div>
+                        {/* Device Viewport Switcher */}
+                        <div className="leafora-device-switch-bar">
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: '#111827' }}>
+                              Real-Time Storefront Preview
+                            </span>
+                            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10B981', display: 'inline-block' }} />
+                          </div>
+                          <div className="leafora-device-toggle-group">
+                            <button
+                              type="button"
+                              className={`leafora-device-btn ${bannerPreviewDevice === 'desktop' ? 'active' : ''}`}
+                              onClick={() => setBannerPreviewDevice('desktop')}
+                            >
+                              🖥️ Desktop
+                            </button>
+                            <button
+                              type="button"
+                              className={`leafora-device-btn ${bannerPreviewDevice === 'mobile' ? 'active' : ''}`}
+                              onClick={() => setBannerPreviewDevice('mobile')}
+                            >
+                              📱 Mobile
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Preview Showcase Box */}
+                        <div className="leafora-studio-preview-box">
+                          {bannerPreviewDevice === 'desktop' ? (
+                            <div className="leafora-preview-stage-desktop">
+                              {bannerForm.desktop_image_url ? (
+                                <img
+                                  src={bannerForm.desktop_image_url}
+                                  alt="Live Desktop Banner Preview"
+                                  style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                                />
+                              ) : (
+                                <div style={{ color: '#94A3B8', fontSize: 13, textAlign: 'center', zIndex: 2, margin: 'auto' }}>
+                                  <Image size={36} style={{ opacity: 0.4, marginBottom: 8 }} />
+                                  <div>Upload an image or pick a preset to view live preview</div>
+                                </div>
+                              )}
+                              <div className="leafora-preview-scrim" />
+                              <div className="leafora-preview-content-overlay">
+                                <span className="leafora-preview-subtitle">
+                                  {bannerForm.subtitle || '100% PURE ORGANIC BOTANICALS'}
+                                </span>
+                                <h2 className="leafora-preview-title">
+                                  {bannerForm.title || 'Your Storefront Banner Headline'}
+                                </h2>
+                                <button type="button" className="leafora-preview-cta-btn">
+                                  {bannerForm.button_text || 'Shop Now'} →
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="leafora-preview-stage-mobile">
+                              <img
+                                src={bannerForm.mobile_image_url || bannerForm.desktop_image_url || '/assets/heroimage.jpeg'}
+                                alt="Live Mobile Banner Preview"
+                                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                              />
+                              <div className="leafora-preview-scrim" style={{ background: 'linear-gradient(180deg, rgba(11,15,25,0.1) 0%, rgba(11,15,25,0.85) 60%, rgba(11,15,25,0.98) 100%)' }} />
+                              <div className="leafora-preview-content-overlay">
+                                <span className="leafora-preview-subtitle" style={{ fontSize: 9.5 }}>
+                                  {bannerForm.subtitle || '100% PURE ORGANIC BOTANICALS'}
+                                </span>
+                                <h2 className="leafora-preview-title">
+                                  {bannerForm.title || 'Your Storefront Banner Headline'}
+                                </h2>
+                                <button type="button" className="leafora-preview-cta-btn" style={{ padding: '6px 14px', fontSize: 11 }}>
+                                  {bannerForm.button_text || 'Shop Now'} →
+                                </button>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Preview Details Bar */}
+                          <div style={{ marginTop: 14, width: '100%', fontSize: 12, color: '#94A3B8', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span>Placement: <strong style={{ color: '#E2E8F0' }}>{String(bannerForm.banner_type).toUpperCase()}</strong></span>
+                            <span>Order: <strong style={{ color: '#E2E8F0' }}>#{bannerForm.display_order || 1}</strong></span>
+                            <span>Status: <strong style={{ color: bannerForm.is_active ? '#10B981' : '#EF4444' }}>{bannerForm.is_active ? '● LIVE' : '○ INACTIVE'}</strong></span>
                           </div>
                         </div>
                       </div>
-                    </form>
-                  </div>
+                    </div>
+                  </form>
                 </div>
               )}
 
-              {/* BANNERS DIRECTORY & LIST CARD */}
+              {/* BANNERS DIRECTORY & MANAGEMENT LIST */}
               <div className="leafora-card" style={{ padding: 24 }}>
-                {/* Header & Filter Controls */}
+                {/* Header & Main Actions */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 16 }}>
                   <div>
                     <h3 className="leafora-card-title" style={{ fontSize: 18, display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -3592,207 +3951,212 @@ export default function AdminDashboard() {
                   </button>
                 </div>
 
-              {/* Filters Bar & Stats */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
-                <div style={{ display: 'flex', gap: 12, flex: 1, maxWidth: 640 }}>
-                  <div className="leafora-cat-search-box" style={{ flex: 1 }}>
-                    <Search className="leafora-search-icon" size={16} />
-                    <input
-                      type="text"
-                      placeholder="Search banner title or subtitle..."
-                      value={bannerSearchQuery}
-                      onChange={(e) => setBannerSearchQuery(e.target.value)}
-                    />
+                {/* Filters Bar & Search */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', gap: 12, flex: 1, maxWidth: 680 }}>
+                    <div className="leafora-cat-search-box" style={{ flex: 1 }}>
+                      <Search className="leafora-search-icon" size={16} />
+                      <input
+                        type="text"
+                        placeholder="Search banner title or subtitle..."
+                        value={bannerSearchQuery}
+                        onChange={(e) => setBannerSearchQuery(e.target.value)}
+                      />
+                    </div>
+
+                    <select
+                      className="leafora-cat-select"
+                      value={cmsBannerTypeTab}
+                      onChange={(e) => setCmsBannerTypeTab(e.target.value)}
+                      style={{ minWidth: 160 }}
+                    >
+                      <option value="all">All Placement Types</option>
+                      <option value="hero">Hero Sliders</option>
+                      <option value="offer">Special Offers</option>
+                      <option value="category">Category Banners</option>
+                      <option value="flash_sale">Flash Sales</option>
+                    </select>
+
+                    <select
+                      className="leafora-cat-select"
+                      value={bannerStatusFilter}
+                      onChange={(e) => setBannerStatusFilter(e.target.value)}
+                      style={{ minWidth: 130 }}
+                    >
+                      <option value="all">All Status</option>
+                      <option value="active">Active Only</option>
+                      <option value="inactive">Inactive Only</option>
+                    </select>
                   </div>
 
-                  <select
-                    className="leafora-cat-select"
-                    value={cmsBannerTypeTab}
-                    onChange={(e) => setCmsBannerTypeTab(e.target.value)}
-                    style={{ minWidth: 160 }}
-                  >
-                    <option value="all">All Placement Types</option>
-                    <option value="hero">Hero Slider</option>
-                    <option value="offer">Special Offer</option>
-                    <option value="category">Category Banner</option>
-                    <option value="flash_sale">Flash Sale</option>
-                  </select>
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    <span className="leafora-badge" style={{ backgroundColor: '#ECFDF5', color: '#047857', border: '1px solid #A7F3D0', padding: '6px 12px', fontSize: 12 }}>
+                      Active: <strong>{homepageBanners.filter(b => b.is_active === 1 || b.is_active === true).length}</strong>
+                    </span>
+                    <span className="leafora-badge" style={{ backgroundColor: '#FEF2F2', color: '#B91C1C', border: '1px solid #FCA5A5', padding: '6px 12px', fontSize: 12 }}>
+                      Inactive: <strong>{homepageBanners.filter(b => !(b.is_active === 1 || b.is_active === true)).length}</strong>
+                    </span>
+                  </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: 12 }}>
-                  <span className="leafora-badge" style={{ backgroundColor: '#ECFDF5', color: '#047857', border: '1px solid #A7F3D0', padding: '6px 12px', fontSize: 12 }}>
-                    Active Banners: <strong>{homepageBanners.filter(b => b.is_active === 1 || b.is_active === true).length}</strong>
-                  </span>
-                  <span className="leafora-badge" style={{ backgroundColor: '#FEF2F2', color: '#B91C1C', border: '1px solid #FCA5A5', padding: '6px 12px', fontSize: 12 }}>
-                    Inactive: <strong>{homepageBanners.filter(b => !(b.is_active === 1 || b.is_active === true)).length}</strong>
-                  </span>
-                </div>
+                {/* Banners Grid View */}
+                {homepageBanners
+                  .filter(b => {
+                    if (bannerSearchQuery.trim()) {
+                      const q = bannerSearchQuery.toLowerCase();
+                      const matchTitle = (b.title || '').toLowerCase().includes(q);
+                      const matchSub = (b.subtitle || '').toLowerCase().includes(q);
+                      if (!matchTitle && !matchSub) return false;
+                    }
+                    if (bannerStatusFilter === 'active') {
+                      return b.is_active === 1 || b.is_active === true;
+                    }
+                    if (bannerStatusFilter === 'inactive') {
+                      return !(b.is_active === 1 || b.is_active === true);
+                    }
+                    return true;
+                  }).length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '56px 24px', backgroundColor: '#FAF9F6', borderRadius: 16, border: '1px dashed #E2DACB' }}>
+                    <Image size={46} color="#A37F3F" style={{ opacity: 0.5, marginBottom: 14 }} />
+                    <h4 style={{ fontSize: 17, fontWeight: 700, color: '#1F2937', margin: '0 0 6px 0' }}>No Banners Found</h4>
+                    <p style={{ fontSize: 13, color: '#6B7280', marginBottom: 18 }}>
+                      No banners match your active filters or your database has no banners configured yet.
+                    </p>
+                    <button type="button" className="leafora-cat-btn-primary" onClick={() => handleOpenBannerModal(null)}>
+                      <Plus size={16} /> Create First Banner
+                    </button>
+                  </div>
+                ) : (
+                  <div className="leafora-banner-grid">
+                    {homepageBanners
+                      .filter(b => {
+                        if (bannerSearchQuery.trim()) {
+                          const q = bannerSearchQuery.toLowerCase();
+                          const matchTitle = (b.title || '').toLowerCase().includes(q);
+                          const matchSub = (b.subtitle || '').toLowerCase().includes(q);
+                          if (!matchTitle && !matchSub) return false;
+                        }
+                        if (bannerStatusFilter === 'active') {
+                          return b.is_active === 1 || b.is_active === true;
+                        }
+                        if (bannerStatusFilter === 'inactive') {
+                          return !(b.is_active === 1 || b.is_active === true);
+                        }
+                        return true;
+                      })
+                      .map((bn, bIdx) => {
+                        const isActive = bn.is_active === 1 || bn.is_active === true;
+                        return (
+                          <div key={bn.id} className="leafora-banner-studio-card">
+                            {/* Card Image Container */}
+                            <div className="leafora-banner-card-img-wrap">
+                              <img
+                                src={bn.desktop_image_url || '/assets/heroimage.jpeg'}
+                                alt={bn.title}
+                              />
+
+                              {/* Placement Tag Badge */}
+                              <span className={`leafora-pill-tag ${bn.banner_type}`} style={{ position: 'absolute', top: 12, left: 12, zIndex: 2 }}>
+                                {bn.banner_type === 'flash_sale' ? '⚡ Flash Sale' : bn.banner_type}
+                              </span>
+
+                              {/* Display Order Pill & Reorder Arrows */}
+                              <div className="leafora-order-pill" style={{ position: 'absolute', top: 12, right: 12, zIndex: 2, background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(4px)' }}>
+                                <span>#{bn.display_order || (bIdx + 1)}</span>
+                                <button
+                                  type="button"
+                                  className="leafora-order-arrow-btn"
+                                  title="Move Up"
+                                  onClick={() => handleMoveBannerItem(bn.id, 'up')}
+                                >
+                                  <ArrowUp size={12} />
+                                </button>
+                                <button
+                                  type="button"
+                                  className="leafora-order-arrow-btn"
+                                  title="Move Down"
+                                  onClick={() => handleMoveBannerItem(bn.id, 'down')}
+                                >
+                                  <ArrowDown size={12} />
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Card Body */}
+                            <div style={{ padding: 18, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                              <div>
+                                <h4 style={{ margin: '0 0 4px 0', fontSize: 16, fontWeight: 700, color: '#111827', lineHeight: 1.3 }}>
+                                  {bn.title}
+                                </h4>
+                                {bn.subtitle && (
+                                  <p style={{ margin: '0 0 10px 0', fontSize: 12.5, color: '#6B7280', lineHeight: 1.4 }}>
+                                    {bn.subtitle}
+                                  </p>
+                                )}
+
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, fontSize: 11.5, color: '#6B7280', marginBottom: 14 }}>
+                                  <span style={{ background: '#F3F4F6', padding: '2px 8px', borderRadius: 4 }}>
+                                    CTA: <strong style={{ color: '#111827' }}>{bn.button_text || 'Shop Now'}</strong>
+                                  </span>
+                                  <span style={{ background: '#F3F4F6', padding: '2px 8px', borderRadius: 4 }}>
+                                    Link: <strong style={{ color: '#111827' }}>{bn.link_url || '/'}</strong>
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Bottom Action Toolbar */}
+                              <div style={{ borderTop: '1px solid #F3F4F6', paddingTop: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                {/* 1-Click Live Switch */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                  <label className="leafora-ios-toggle">
+                                    <input
+                                      type="checkbox"
+                                      checked={isActive}
+                                      onChange={() => handleToggleBannerActive(bn)}
+                                    />
+                                    <span className="leafora-ios-slider" />
+                                  </label>
+                                  <span style={{ fontSize: 12, fontWeight: 600, color: isActive ? '#059669' : '#6B7280' }}>
+                                    {isActive ? 'Active' : 'Disabled'}
+                                  </span>
+                                </div>
+
+                                <div style={{ display: 'flex', gap: 6 }}>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDuplicateBannerItem(bn)}
+                                    title="Duplicate Banner as Draft"
+                                    style={{ padding: '6px 8px', borderRadius: 6, border: '1px solid #E5E7EB', backgroundColor: '#FFFFFF', cursor: 'pointer', color: '#4B5563', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11.5 }}
+                                  >
+                                    <Copy size={13} /> Copy
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenBannerModal(bn)}
+                                    title="Edit Banner"
+                                    style={{ padding: '6px 8px', borderRadius: 6, border: '1px solid #E5E7EB', backgroundColor: '#FFFFFF', cursor: 'pointer', color: '#9E7B3B', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11.5 }}
+                                  >
+                                    <Edit size={13} /> Edit
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteBannerItem(bn.id)}
+                                    title="Delete Banner"
+                                    style={{ padding: '6px 8px', borderRadius: 6, border: '1px solid #FCA5A5', backgroundColor: '#FEF2F2', cursor: 'pointer', color: '#DC2626' }}
+                                  >
+                                    <Trash2 size={13} />
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                )}
               </div>
-
-              {/* Banners Grid View */}
-              {homepageBanners.filter(b => {
-                if (bannerSearchQuery.trim()) {
-                  const q = bannerSearchQuery.toLowerCase();
-                  const matchTitle = (b.title || '').toLowerCase().includes(q);
-                  const matchSub = (b.subtitle || '').toLowerCase().includes(q);
-                  if (!matchTitle && !matchSub) return false;
-                }
-                return true;
-              }).length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '48px 24px', backgroundColor: '#FAF9F6', borderRadius: 14, border: '1px stroke #EFECE6' }}>
-                  <Image size={42} color="#9CA3AF" style={{ marginBottom: 12 }} />
-                  <h4 style={{ fontSize: 16, fontWeight: 700, color: '#374151', margin: '0 0 6px 0' }}>No Banners Found</h4>
-                  <p style={{ fontSize: 13, color: '#6B7280', marginBottom: 16 }}>No homepage banners match your criteria or database is empty.</p>
-                  <button type="button" className="leafora-cat-btn-primary" onClick={() => handleOpenBannerModal(null)}>
-                    <Plus size={16} /> Add First Banner
-                  </button>
-                </div>
-              ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 20 }}>
-                  {homepageBanners
-                    .filter(b => {
-                      if (bannerSearchQuery.trim()) {
-                        const q = bannerSearchQuery.toLowerCase();
-                        const matchTitle = (b.title || '').toLowerCase().includes(q);
-                        const matchSub = (b.subtitle || '').toLowerCase().includes(q);
-                        if (!matchTitle && !matchSub) return false;
-                      }
-                      return true;
-                    })
-                    .map((bn) => {
-                      const isActive = bn.is_active === 1 || bn.is_active === true;
-                      return (
-                        <div 
-                          key={bn.id}
-                          style={{
-                            backgroundColor: '#FFFFFF',
-                            borderRadius: 14,
-                            border: '1px solid #EFECE6',
-                            overflow: 'hidden',
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            transition: 'all 0.2s ease'
-                          }}
-                        >
-                          {/* Banner Image Preview Container */}
-                          <div style={{ position: 'relative', width: '100%', height: 160, backgroundColor: '#F3F4F6' }}>
-                            <img
-                              src={bn.desktop_image_url || 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=800&auto=format&fit=crop&q=80'}
-                              alt={bn.title}
-                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                            />
-
-                            {/* Banner Type Badge */}
-                            <span 
-                              style={{
-                                position: 'absolute',
-                                top: 10,
-                                left: 10,
-                                padding: '4px 10px',
-                                borderRadius: 20,
-                                fontSize: 11,
-                                fontWeight: 700,
-                                backgroundColor: bn.banner_type === 'hero' ? '#3B82F6' : bn.banner_type === 'offer' ? '#EAB308' : bn.banner_type === 'flash_sale' ? '#EF4444' : '#8B5CF6',
-                                color: '#FFFFFF',
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.5px'
-                              }}
-                            >
-                              {bn.banner_type}
-                            </span>
-
-                            {/* Active / Inactive Badge */}
-                            <span 
-                              style={{
-                                position: 'absolute',
-                                top: 10,
-                                right: 10,
-                                padding: '4px 10px',
-                                borderRadius: 20,
-                                fontSize: 11,
-                                fontWeight: 700,
-                                backgroundColor: isActive ? '#10B981' : '#6B7280',
-                                color: '#FFFFFF'
-                              }}
-                            >
-                              {isActive ? '● Active' : '○ Inactive'}
-                            </span>
-                          </div>
-
-                          {/* Banner Content Body */}
-                          <div style={{ padding: 16, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                            <div>
-                              <h4 style={{ margin: '0 0 4px 0', fontSize: 15, fontWeight: 700, color: '#111827' }}>
-                                {bn.title}
-                              </h4>
-                              {bn.subtitle && (
-                                <p style={{ margin: '0 0 10px 0', fontSize: 12, color: '#6B7280', lineHeight: 1.4 }}>
-                                  {bn.subtitle}
-                                </p>
-                              )}
-
-                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, fontSize: 11, color: '#9CA3AF', marginBottom: 12 }}>
-                                <span>Link: <strong style={{ color: '#4B5563' }}>{bn.link_url || '/'}</strong></span>
-                                <span>Button: <strong style={{ color: '#4B5563' }}>{bn.button_text || 'Shop Now'}</strong></span>
-                                <span>Order: <strong style={{ color: '#4B5563' }}>#{bn.display_order || 0}</strong></span>
-                              </div>
-                            </div>
-
-                            {/* Card Bottom Actions */}
-                            <div style={{ borderTop: '1px solid #F3F4F6', paddingTop: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              {/* Toggle Active Switch Button */}
-                              <button
-                                type="button"
-                                onClick={() => handleToggleBannerActive(bn)}
-                                style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: 6,
-                                  padding: '6px 12px',
-                                  borderRadius: 8,
-                                  fontSize: 12,
-                                  fontWeight: 600,
-                                  border: 'none',
-                                  cursor: 'pointer',
-                                  backgroundColor: isActive ? '#FEF2F2' : '#ECFDF5',
-                                  color: isActive ? '#DC2626' : '#059669'
-                                }}
-                              >
-                                {isActive ? <XCircle size={14} /> : <CheckCircle2 size={14} />}
-                                {isActive ? 'Mark Inactive' : 'Mark Active'}
-                              </button>
-
-                              <div style={{ display: 'flex', gap: 8 }}>
-                                <button
-                                  type="button"
-                                  className="leafora-action-icon-btn"
-                                  onClick={() => handleOpenBannerModal(bn)}
-                                  title="Edit Banner"
-                                  style={{ padding: 6, borderRadius: 6, border: '1px solid #E5E7EB', backgroundColor: '#FFFFFF', cursor: 'pointer', color: '#4B5563' }}
-                                >
-                                  <Edit size={14} />
-                                </button>
-                                <button
-                                  type="button"
-                                  className="leafora-action-icon-btn"
-                                  onClick={() => handleDeleteBannerItem(bn.id)}
-                                  title="Delete Banner"
-                                  style={{ padding: 6, borderRadius: 6, border: '1px solid #FCA5A5', backgroundColor: '#FEF2F2', cursor: 'pointer', color: '#DC2626' }}
-                                >
-                                  <Trash2 size={14} />
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                </div>
-              )}
             </div>
-          </div>
-        )}
+          )}
 
           {/* ─── TAB 2: CATEGORIES MANAGEMENT SUITE ─── */}
           {activeTab === 'categories' && (

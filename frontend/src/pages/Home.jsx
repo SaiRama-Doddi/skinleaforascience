@@ -259,6 +259,50 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Dynamic Offer / Flash Sale Banner if configured in Admin */}
+      {(() => {
+        const promoBanners = banners.filter(b => b.banner_type === 'offer' || b.banner_type === 'flash_sale');
+        if (promoBanners.length === 0) return null;
+        const promo = promoBanners[0];
+        return (
+          <section style={{ maxWidth: 1280, margin: '0 auto 36px auto', padding: '0 20px' }}>
+            <Link
+              to={promo.link_url || '/products'}
+              style={{
+                textDecoration: 'none',
+                display: 'block',
+                borderRadius: 16,
+                overflow: 'hidden',
+                position: 'relative',
+                minHeight: 180,
+                boxShadow: '0 8px 24px rgba(166,124,82,0.15)',
+                border: '1px solid #E5D5C0'
+              }}
+            >
+              <img
+                src={isMobile && promo.mobile_image_url ? promo.mobile_image_url : promo.desktop_image_url}
+                alt={promo.title}
+                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, rgba(20,20,20,0.85) 0%, rgba(20,20,20,0.5) 60%, rgba(20,20,20,0.1) 100%)' }} />
+              <div style={{ position: 'relative', zIndex: 2, padding: isMobile ? '24px 20px' : '36px 40px', maxWidth: isMobile ? '100%' : '65%', color: '#FFF' }}>
+                {promo.subtitle && (
+                  <span style={{ fontSize: '0.8rem', letterSpacing: 1.5, color: '#C5A059', fontWeight: 700, textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>
+                    {promo.subtitle}
+                  </span>
+                )}
+                <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: isMobile ? '1.3rem' : '1.9rem', fontWeight: 700, margin: '0 0 12px 0', textShadow: '0 2px 6px rgba(0,0,0,0.5)' }}>
+                  {promo.title}
+                </h3>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#9E7B3B', color: '#FFF', padding: '8px 20px', borderRadius: 24, fontSize: '0.85rem', fontWeight: 600 }}>
+                  {promo.button_text || 'Claim Offer'} <ArrowRight size={14} />
+                </span>
+              </div>
+            </Link>
+          </section>
+        );
+      })()}
+
       {/* 3. BESTSELLERS GRID (DYNAMICALLY LOADED FROM DATABASE) */}
       <section className="bestsellers-section-pixel">
         <div className="bestsellers-container-pixel">
