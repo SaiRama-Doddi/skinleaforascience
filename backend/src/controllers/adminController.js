@@ -2423,8 +2423,54 @@ const createHomepageBanner = async (req, res) => {
         ]
       );
       insertedId = result.insertId;
+      console.log('✅ Banner saved to MySQL database table homepage_banners with id:', insertedId);
     } catch (dbErr) {
-      console.warn('DB create banner fallback notice:', dbErr.message);
+      console.error('⚠️ DB insert error on homepage_banners:', dbErr.message);
+      // Ensure table and columns exist in MySQL and retry
+      try {
+        await pool.query(`
+          CREATE TABLE IF NOT EXISTS homepage_banners (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            banner_type ENUM('hero', 'offer', 'category', 'flash_sale') NOT NULL DEFAULT 'hero',
+            title VARCHAR(255) NOT NULL,
+            subtitle VARCHAR(255) NULL,
+            desktop_image_url LONGTEXT NOT NULL,
+            mobile_image_url LONGTEXT NULL,
+            link_url VARCHAR(500) NULL,
+            button_text VARCHAR(100) DEFAULT 'Shop Now',
+            category_id INT NULL,
+            flash_sale_end_time DATETIME NULL,
+            display_order INT DEFAULT 0,
+            is_active TINYINT(1) DEFAULT 1,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+          )
+        `);
+        await pool.query('ALTER TABLE homepage_banners MODIFY COLUMN desktop_image_url LONGTEXT');
+        await pool.query('ALTER TABLE homepage_banners MODIFY COLUMN mobile_image_url LONGTEXT');
+        const [retryRes] = await pool.query(
+          `INSERT INTO homepage_banners (
+            banner_type, title, subtitle, desktop_image_url, mobile_image_url, link_url, button_text, category_id, flash_sale_end_time, display_order, is_active
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            banner_type || 'hero',
+            String(title).trim(),
+            subtitle ? String(subtitle).trim() : null,
+            desktop_image_url,
+            mobile_image_url || desktop_image_url,
+            link_url || null,
+            button_text || 'Shop Now',
+            category_id && String(category_id).trim() !== '' ? Number(category_id) : null,
+            formattedFlashSaleEndTime,
+            parseInt(display_order) || 0,
+            is_active ? 1 : 0
+          ]
+        );
+        insertedId = retryRes.insertId;
+        console.log('✅ Banner successfully saved to MySQL on retry with id:', insertedId);
+      } catch (retryErr) {
+        console.error('❌ Retry insert into MySQL failed:', retryErr.message);
+      }
     }
 
     const newBanner = {

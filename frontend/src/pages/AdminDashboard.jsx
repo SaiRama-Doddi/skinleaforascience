@@ -34,7 +34,8 @@ import {
   Sparkles, TrendingUp, Image, FolderTree, Globe, FileText, ChevronRight, SlidersHorizontal,
   AlertTriangle, XCircle, Warehouse, Boxes, Clock, Filter, DollarSign, Percent,
   Wallet, Award, MapPin, Gift, Heart, Lock, Unlock, Ban, UserCheck, UserX, ShieldCheck, Mail, Phone,
-  Printer, QrCode, Truck, PackageCheck, FileCheck, BadgeAlert, HelpCircle, Check, Calculator, ExternalLink
+  Printer, QrCode, Truck, PackageCheck, FileCheck, BadgeAlert, HelpCircle, Check, Calculator, ExternalLink,
+  Monitor, Smartphone
 } from 'lucide-react';
 
 export default function AdminDashboard() {
@@ -888,6 +889,7 @@ export default function AdminDashboard() {
   };
 
   const handleOpenBannerModal = (banner = null) => {
+    setActiveTab('banners');
     if (banner) {
       setBannerModalData(banner);
       setBannerForm({
@@ -2910,21 +2912,14 @@ export default function AdminDashboard() {
 
   // Product Image Mapping Helper
   const getProductImage = (prodName, index) => {
-    const lower = String(prodName).toLowerCase();
-    if (lower.includes('vitamin') || lower.includes('serum')) return 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiB2aWV3Qm94PSIwIDAgMjAwIDIwMCI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNGM0Y0RjYiLz48cGF0aCBkPSJNMTAwIDYwIEM3MCA2MCA1MCA4MCA1MCAxMTAgQzUwIDE0MCA3MCAxNTAgMTAwIDE1MCBDMTMwIDE1MCAxNTAgMTQwIDE1MCAxMTAgQzE1MCA4MCAxMzAgNjAgMTAwIDYwIFoiIGZpbGw9IiNBNjdDNTIiIG9wYWNpdHk9IjAuNCIvPjx0ZXh0IHg9IjEwMCIgeT0iMTgwIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMiIgZmlsbD0iIzlDQTNBRiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+TGVhZm9yYTwvdGV4dD48L3N2Zz4=';
-    if (lower.includes('moisturizer') || lower.includes('glow')) return '/assets/hydra_glow_moisturizer.jpg';
-    if (lower.includes('wash') || lower.includes('cleanser')) return '/assets/face_wash.jpg';
-    if (lower.includes('sunscreen') || lower.includes('spf')) return '/assets/sunscreen_spf50.jpg';
-    if (lower.includes('night') || lower.includes('cream')) return '/assets/night_cream.jpg';
-    
     const fallbackImgs = [
-      'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiB2aWV3Qm94PSIwIDAgMjAwIDIwMCI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNGM0Y0RjYiLz48cGF0aCBkPSJNMTAwIDYwIEM3MCA2MCA1MCA4MCA1MCAxMTAgQzUwIDE0MCA3MCAxNTAgMTAwIDE1MCBDMTMwIDE1MCAxNTAgMTQwIDE1MCAxMTAgQzE1MCA4MCAxMzAgNjAgMTAwIDYwIFoiIGZpbGw9IiNBNjdDNTIiIG9wYWNpdHk9IjAuNCIvPjx0ZXh0IHg9IjEwMCIgeT0iMTgwIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMiIgZmlsbD0iIzlDQTNBRiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+TGVhZm9yYTwvdGV4dD48L3N2Zz4=',
-      '/assets/hydra_glow_moisturizer.jpg',
-      '/assets/face_wash.jpg',
-      '/assets/sunscreen_spf50.jpg',
-      '/assets/night_cream.jpg'
+      'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=400&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1608248597359-59750058e3ea?w=400&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?w=400&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=400&auto=format&fit=crop&q=80'
     ];
-    return fallbackImgs[index % fallbackImgs.length];
+    return fallbackImgs[Math.abs(Number(index) || 0) % fallbackImgs.length];
   };
 
   // Avatar Image Helper
@@ -3668,7 +3663,7 @@ export default function AdminDashboard() {
                                 onChange={(e) => setBannerForm({ ...bannerForm, link_url: e.target.value })}
                                 style={{ flex: 1 }}
                               />
-                              {categories && categories.length > 0 && (
+                              {dbCategories && dbCategories.length > 0 && (
                                 <select
                                   className="leafora-select"
                                   style={{ width: 130, fontSize: 12 }}
@@ -3681,7 +3676,7 @@ export default function AdminDashboard() {
                                 >
                                   <option value="" disabled>Link Category</option>
                                   <option value="/products">All Products</option>
-                                  {categories.map(c => (
+                                  {dbCategories.map(c => (
                                     <option key={c.id} value={c.slug || c.name}>{c.name}</option>
                                   ))}
                                 </select>
@@ -3701,53 +3696,212 @@ export default function AdminDashboard() {
                           </div>
                         </div>
 
-                        {/* Desktop Image URL & File Upload */}
-                        <div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                            <label className="leafora-form-label" style={{ margin: 0 }}>
-                              Desktop Banner Image * <span style={{ fontSize: 11, fontWeight: 500, color: '#9CA3AF' }}>(1920×650px Recommended)</span>
-                            </label>
-                            {bannerForm.desktop_image_url && (
-                              <button
-                                type="button"
-                                onClick={() => setBannerForm({ ...bannerForm, desktop_image_url: '' })}
-                                style={{ background: 'none', border: 'none', color: '#DC2626', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
-                              >
-                                Clear Image
-                              </button>
-                            )}
+                        {/* ─── DEDICATED DESKTOP & MOBILE RESPONSIVE HERO IMAGE UPLOAD STUDIO ─── */}
+                        <div style={{ background: '#FAF9F6', border: '1px solid #EAE4D7', borderRadius: 14, padding: 18 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                            <div>
+                              <div style={{ fontSize: 14, fontWeight: 700, color: '#1F2937', display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <Image size={17} color="#9E7B3B" />
+                                <span>Hero Carousel Responsive Creative Assets</span>
+                              </div>
+                              <div style={{ fontSize: 12, color: '#6B7280', marginTop: 2 }}>
+                                Upload dedicated high-resolution banners for Desktop displays and Mobile smartphone viewports.
+                              </div>
+                            </div>
+                            <span style={{ fontSize: 11, background: '#F0ECE1', color: '#8C6A3C', padding: '3px 9px', borderRadius: 20, fontWeight: 700 }}>
+                              Auto-Saved to Database
+                            </span>
                           </div>
-                          
-                          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                            <input
-                              type="text"
-                              className="leafora-input"
-                              placeholder="/assets/heroimage.jpeg or https://..."
-                              value={bannerForm.desktop_image_url}
-                              onChange={(e) => setBannerForm({ ...bannerForm, desktop_image_url: e.target.value })}
-                              required
-                              style={{ flex: 1 }}
-                            />
-                            <label
-                              htmlFor="desktop-banner-file-input"
-                              className="leafora-btn leafora-btn-secondary"
-                              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer', whiteSpace: 'nowrap' }}
-                            >
-                              <Upload size={15} /> Upload File
-                            </label>
-                            <input
-                              id="desktop-banner-file-input"
-                              type="file"
-                              accept="image/*"
-                              style={{ display: 'none' }}
-                              onChange={(e) => handleBannerImageUpload(e, 'desktop_image_url')}
-                            />
+
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
+                            {/* Desktop Image Upload Panel */}
+                            <div style={{ background: '#FFFFFF', border: '1.5px solid #E7DAC1', borderRadius: 12, padding: 16, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                              <div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                    <Monitor size={16} color="#9E7B3B" />
+                                    <span style={{ fontSize: 13, fontWeight: 700, color: '#111827' }}>Desktop Banner *</span>
+                                  </div>
+                                  <span style={{ fontSize: 10.5, fontWeight: 700, background: '#FAF5EB', color: '#9E7B3B', border: '1px solid #E7DAC1', padding: '2px 8px', borderRadius: 12 }}>
+                                    1920 × 650px Wide
+                                  </span>
+                                </div>
+                                <div style={{ fontSize: 11.5, color: '#6B7280', marginBottom: 12 }}>
+                                  Main wide carousel image displayed on laptops, desktops, and wide monitors.
+                                </div>
+
+                                {/* Preview Thumbnail or Dropzone */}
+                                {bannerForm.desktop_image_url ? (
+                                  <div style={{ position: 'relative', borderRadius: 8, overflow: 'hidden', border: '1px solid #E5E7EB', marginBottom: 12, background: '#F9FAFB' }}>
+                                    <img
+                                      src={bannerForm.desktop_image_url}
+                                      alt="Desktop Preview"
+                                      style={{ width: '100%', height: 115, objectFit: 'cover', display: 'block' }}
+                                    />
+                                    <div style={{ position: 'absolute', bottom: 6, right: 6, display: 'flex', gap: 6 }}>
+                                      <label
+                                        htmlFor="desktop-banner-file-input"
+                                        style={{ background: 'rgba(17,24,39,0.85)', color: '#FFFFFF', fontSize: 11, fontWeight: 600, padding: '4px 10px', borderRadius: 6, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, backdropFilter: 'blur(4px)' }}
+                                      >
+                                        <Upload size={12} /> Replace
+                                      </label>
+                                      <button
+                                        type="button"
+                                        onClick={() => setBannerForm({ ...bannerForm, desktop_image_url: '' })}
+                                        style={{ background: 'rgba(220,38,38,0.85)', color: '#FFFFFF', border: 'none', fontSize: 11, fontWeight: 600, padding: '4px 8px', borderRadius: 6, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, backdropFilter: 'blur(4px)' }}
+                                      >
+                                        <Trash2 size={12} /> Clear
+                                      </button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <label
+                                    htmlFor="desktop-banner-file-input"
+                                    style={{
+                                      display: 'flex',
+                                      flexDirection: 'column',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      border: '2px dashed #C5A059',
+                                      borderRadius: 10,
+                                      background: '#FFFDF9',
+                                      padding: '24px 14px',
+                                      cursor: 'pointer',
+                                      marginBottom: 12,
+                                      transition: 'all 0.2s ease',
+                                      textAlign: 'center'
+                                    }}
+                                  >
+                                    <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#FAF5EB', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9E7B3B', marginBottom: 8 }}>
+                                      <Upload size={18} />
+                                    </div>
+                                    <span style={{ fontSize: 13, fontWeight: 700, color: '#111827' }}>Click to Upload Desktop Image</span>
+                                    <span style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>PNG, JPG, WebP up to 10MB</span>
+                                  </label>
+                                )}
+
+                                <input
+                                  id="desktop-banner-file-input"
+                                  type="file"
+                                  accept="image/*"
+                                  style={{ display: 'none' }}
+                                  onChange={(e) => handleBannerImageUpload(e, 'desktop_image_url')}
+                                />
+
+                                {/* URL Input Fallback */}
+                                <div>
+                                  <label style={{ fontSize: 11, fontWeight: 600, color: '#4B5563', display: 'block', marginBottom: 4 }}>
+                                    Or Enter Direct Desktop Image URL / Asset Path:
+                                  </label>
+                                  <input
+                                    type="text"
+                                    className="leafora-input"
+                                    placeholder="/assets/heroimage.jpeg or https://..."
+                                    value={bannerForm.desktop_image_url}
+                                    onChange={(e) => setBannerForm({ ...bannerForm, desktop_image_url: e.target.value })}
+                                    required
+                                    style={{ fontSize: 12 }}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Mobile Image Upload Panel */}
+                            <div style={{ background: '#FFFFFF', border: '1.5px solid #BBF7D0', borderRadius: 12, padding: 16, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                              <div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                    <Smartphone size={16} color="#15803D" />
+                                    <span style={{ fontSize: 13, fontWeight: 700, color: '#111827' }}>Mobile Banner</span>
+                                  </div>
+                                  <span style={{ fontSize: 10.5, fontWeight: 700, background: '#F0FDF4', color: '#15803D', border: '1px solid #BBF7D0', padding: '2px 8px', borderRadius: 12 }}>
+                                    800 × 800px Portrait
+                                  </span>
+                                </div>
+                                <div style={{ fontSize: 11.5, color: '#6B7280', marginBottom: 12 }}>
+                                  Tailored vertical image for smartphone screens to prevent horizontal cropping.
+                                </div>
+
+                                {/* Preview Thumbnail or Dropzone */}
+                                {bannerForm.mobile_image_url ? (
+                                  <div style={{ position: 'relative', borderRadius: 8, overflow: 'hidden', border: '1px solid #E5E7EB', marginBottom: 12, background: '#F9FAFB' }}>
+                                    <img
+                                      src={bannerForm.mobile_image_url}
+                                      alt="Mobile Preview"
+                                      style={{ width: '100%', height: 115, objectFit: 'contain', background: '#F3F4F6', display: 'block' }}
+                                    />
+                                    <div style={{ position: 'absolute', bottom: 6, right: 6, display: 'flex', gap: 6 }}>
+                                      <label
+                                        htmlFor="mobile-banner-file-input"
+                                        style={{ background: 'rgba(17,24,39,0.85)', color: '#FFFFFF', fontSize: 11, fontWeight: 600, padding: '4px 10px', borderRadius: 6, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, backdropFilter: 'blur(4px)' }}
+                                      >
+                                        <Upload size={12} /> Replace
+                                      </label>
+                                      <button
+                                        type="button"
+                                        onClick={() => setBannerForm({ ...bannerForm, mobile_image_url: '' })}
+                                        style={{ background: 'rgba(220,38,38,0.85)', color: '#FFFFFF', border: 'none', fontSize: 11, fontWeight: 600, padding: '4px 8px', borderRadius: 6, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, backdropFilter: 'blur(4px)' }}
+                                      >
+                                        <Trash2 size={12} /> Clear
+                                      </button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <label
+                                    htmlFor="mobile-banner-file-input"
+                                    style={{
+                                      display: 'flex',
+                                      flexDirection: 'column',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      border: '2px dashed #86EFAC',
+                                      borderRadius: 10,
+                                      background: '#F0FDF4',
+                                      padding: '24px 14px',
+                                      cursor: 'pointer',
+                                      marginBottom: 12,
+                                      transition: 'all 0.2s ease',
+                                      textAlign: 'center'
+                                    }}
+                                  >
+                                    <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#DCFCE7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#16A34A', marginBottom: 8 }}>
+                                      <Smartphone size={18} />
+                                    </div>
+                                    <span style={{ fontSize: 13, fontWeight: 700, color: '#111827' }}>Click to Upload Mobile Image</span>
+                                    <span style={{ fontSize: 11, color: '#6B7280', marginTop: 2 }}>Optional (Auto-scales desktop if blank)</span>
+                                  </label>
+                                )}
+
+                                <input
+                                  id="mobile-banner-file-input"
+                                  type="file"
+                                  accept="image/*"
+                                  style={{ display: 'none' }}
+                                  onChange={(e) => handleBannerImageUpload(e, 'mobile_image_url')}
+                                />
+
+                                {/* URL Input Fallback */}
+                                <div>
+                                  <label style={{ fontSize: 11, fontWeight: 600, color: '#4B5563', display: 'block', marginBottom: 4 }}>
+                                    Or Enter Direct Mobile Image URL (Optional):
+                                  </label>
+                                  <input
+                                    type="text"
+                                    className="leafora-input"
+                                    placeholder="Leave blank to use desktop banner"
+                                    value={bannerForm.mobile_image_url}
+                                    onChange={(e) => setBannerForm({ ...bannerForm, mobile_image_url: e.target.value })}
+                                    style={{ fontSize: 12 }}
+                                  />
+                                </div>
+                              </div>
+                            </div>
                           </div>
 
                           {/* Quick Botanical Library Presets */}
-                          <div style={{ marginTop: 8 }}>
-                            <div style={{ fontSize: 11, color: '#6B7280', fontWeight: 600 }}>
-                              Or pick from curated LeafOra botanical photo library:
+                          <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid #EAE4D7' }}>
+                            <div style={{ fontSize: 11.5, color: '#6B7280', fontWeight: 600, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <Sparkles size={13} color="#9E7B3B" /> Quick Pick from LeafOra Botanical Curated Image Assets:
                             </div>
                             <div className="leafora-asset-preset-grid">
                               {[
@@ -3761,44 +3915,17 @@ export default function AdminDashboard() {
                                 <div
                                   key={aIdx}
                                   className={`leafora-asset-preset-thumb ${bannerForm.desktop_image_url === asset.url ? 'active' : ''}`}
-                                  title={asset.label}
-                                  onClick={() => setBannerForm({ ...bannerForm, desktop_image_url: asset.url })}
+                                  title={`${asset.label} (Click to select for Desktop)`}
+                                  onClick={() => setBannerForm({
+                                    ...bannerForm,
+                                    desktop_image_url: asset.url,
+                                    mobile_image_url: bannerForm.mobile_image_url || asset.url
+                                  })}
                                 >
                                   <img src={asset.url} alt={asset.label} />
                                 </div>
                               ))}
                             </div>
-                          </div>
-                        </div>
-
-                        {/* Mobile Image (Optional) */}
-                        <div>
-                          <label className="leafora-form-label">
-                            Mobile Banner Image (Optional) <span style={{ fontSize: 11, fontWeight: 500, color: '#9CA3AF' }}>(800×800px Portrait)</span>
-                          </label>
-                          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                            <input
-                              type="text"
-                              className="leafora-input"
-                              placeholder="/assets/heroimage.jpeg (leave blank to use desktop image)"
-                              value={bannerForm.mobile_image_url}
-                              onChange={(e) => setBannerForm({ ...bannerForm, mobile_image_url: e.target.value })}
-                              style={{ flex: 1 }}
-                            />
-                            <label
-                              htmlFor="mobile-banner-file-input"
-                              className="leafora-btn leafora-btn-secondary"
-                              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer', whiteSpace: 'nowrap' }}
-                            >
-                              <Upload size={15} /> Upload
-                            </label>
-                            <input
-                              id="mobile-banner-file-input"
-                              type="file"
-                              accept="image/*"
-                              style={{ display: 'none' }}
-                              onChange={(e) => handleBannerImageUpload(e, 'mobile_image_url')}
-                            />
                           </div>
                         </div>
 
@@ -4094,7 +4221,19 @@ export default function AdminDashboard() {
                                   </p>
                                 )}
 
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, fontSize: 11.5, color: '#6B7280', marginBottom: 14 }}>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, fontSize: 11.5, color: '#6B7280', marginBottom: 14 }}>
+                                  <span style={{ background: '#F3F4F6', padding: '2px 8px', borderRadius: 4, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                    <Monitor size={12} color="#9E7B3B" /> Desktop: <strong style={{ color: '#111827' }}>Ready</strong>
+                                  </span>
+                                  {bn.mobile_image_url ? (
+                                    <span style={{ background: '#F0FDF4', color: '#15803D', border: '1px solid #BBF7D0', padding: '2px 8px', borderRadius: 4, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                      <Smartphone size={12} color="#15803D" /> Mobile: <strong>Uploaded</strong>
+                                    </span>
+                                  ) : (
+                                    <span style={{ background: '#F3F4F6', padding: '2px 8px', borderRadius: 4, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                      <Smartphone size={12} color="#9CA3AF" /> Mobile: <span>Responsive</span>
+                                    </span>
+                                  )}
                                   <span style={{ background: '#F3F4F6', padding: '2px 8px', borderRadius: 4 }}>
                                     CTA: <strong style={{ color: '#111827' }}>{bn.button_text || 'Shop Now'}</strong>
                                   </span>

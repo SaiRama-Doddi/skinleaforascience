@@ -1162,14 +1162,22 @@ const initDb = async () => {
     if (bannerCount[0].cnt === 0) {
       await pool.query(`
         INSERT INTO homepage_banners (banner_type, title, subtitle, desktop_image_url, mobile_image_url, link_url, button_text, flash_sale_end_time, display_order, is_active) VALUES
-        ('hero', 'Pharma-Grade Botanical Actives', '100% Pure Organic Extracts Certified by Global Herbal Labs', '/assets/hero_banner_1.jpg', '/assets/hero_banner_1_mobile.jpg', '/shop', 'Explore Catalog', NULL, 1, 1),
-        ('hero', 'Clinical Skin Radiance & Hydration', 'Formulated with Vitamin C & Hyaluronic Acid Hybrids', '/assets/hero_banner_2.jpg', '/assets/hero_banner_2_mobile.jpg', '/category/skincare', 'Discover Skincare', NULL, 2, 1),
-        ('offer', 'FLAT 20% OFF Summer Festival Sale', 'Use Promo Code SUMMER2026 at Checkout on Orders Above $99', '/assets/offer_banner_1.jpg', '/assets/offer_banner_1_mobile.jpg', '/offers', 'Claim Discount', NULL, 1, 1),
-        ('category', 'Pure Plant Extract Oils', 'Cold-pressed bioactive seed & leaf distillates', '/assets/cat_banner_extracts.jpg', '/assets/cat_banner_extracts_mobile.jpg', '/category/extracts', 'Shop Extracts', NULL, 1, 1),
-        ('flash_sale', 'Mega Flash Sale - Up to 50% OFF', 'Limited Stock Available! Ends In:', '/assets/flash_sale_banner.jpg', '/assets/flash_sale_banner_mobile.jpg', '/flash-sale', 'Grab Deals Now', DATE_ADD(NOW(), INTERVAL 3 DAY), 1, 1);
+        ('hero', 'Pharma-Grade Botanical Actives', '100% Pure Organic Extracts Certified by Global Herbal Labs', '/assets/heroimage.jpeg', '/assets/heroimage.jpeg', '/products', 'Explore Catalog', NULL, 1, 1),
+        ('hero', 'Clinical Skin Radiance & Hydration', 'Formulated with Vitamin C & Hyaluronic Acid Hybrids', 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=1600&auto=format&fit=crop&q=80', 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=800&auto=format&fit=crop&q=80', '/products', 'Discover Skincare', NULL, 2, 1),
+        ('offer', 'FLAT 20% OFF Summer Festival Sale', 'Use Promo Code SUMMER2026 at Checkout on Orders Above $99', 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=1600&auto=format&fit=crop&q=80', 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=800&auto=format&fit=crop&q=80', '/products', 'Claim Discount', NULL, 1, 1),
+        ('category', 'Pure Plant Extract Oils', 'Cold-pressed bioactive seed & leaf distillates', 'https://images.unsplash.com/photo-1608248597359-59750058e3ea?w=1600&auto=format&fit=crop&q=80', 'https://images.unsplash.com/photo-1608248597359-59750058e3ea?w=800&auto=format&fit=crop&q=80', '/products', 'Shop Extracts', NULL, 1, 1),
+        ('flash_sale', 'Mega Flash Sale - Up to 50% OFF', 'Limited Stock Available! Ends In:', 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=1600&auto=format&fit=crop&q=80', 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=800&auto=format&fit=crop&q=80', '/products', 'Grab Deals Now', DATE_ADD(NOW(), INTERVAL 3 DAY), 1, 1);
       `);
-      console.log('🌱 Seeded default homepage banners');
+      console.log('🌱 Seeded default homepage banners with valid image assets');
     }
+
+    // Auto-heal any broken fake image links from previous seeds
+    try {
+      await pool.query("UPDATE homepage_banners SET desktop_image_url = '/assets/heroimage.jpeg', mobile_image_url = '/assets/heroimage.jpeg' WHERE desktop_image_url LIKE '%hero_banner_1%' OR desktop_image_url LIKE '%cat_banner_extracts%'");
+      await pool.query("UPDATE homepage_banners SET desktop_image_url = 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=1600&auto=format&fit=crop&q=80' WHERE desktop_image_url LIKE '%hero_banner_2%'");
+      await pool.query("UPDATE homepage_banners SET desktop_image_url = 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=1600&auto=format&fit=crop&q=80' WHERE desktop_image_url LIKE '%offer_banner_1%'");
+      await pool.query("UPDATE homepage_banners SET desktop_image_url = 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=1600&auto=format&fit=crop&q=80' WHERE desktop_image_url LIKE '%flash_sale_banner%'");
+    } catch (_) {}
 
     // Seed default homepage layout sections if empty
     const [secCount] = await pool.query('SELECT COUNT(*) as cnt FROM homepage_sections');

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import './AdminLogin.css';
+import loginBotanicalProducts from '../assets/login_botanical_products.jpg';
 import { adminSendOtp, adminVerifyOtp } from '../services/api';
 import {
   ShieldCheck, Mail, KeyRound, ArrowRight, ArrowLeft,
@@ -141,7 +142,7 @@ export default function AdminLogin() {
         {/* Hero Skincare Product Display */}
         <div className="leafora-hero-img-wrap">
           <img 
-            src="/assets/hydra_glow_moisturizer.jpg" 
+            src={loginBotanicalProducts} 
             alt="LeafOra Skincare Products" 
             className="leafora-hero-img" 
           />
