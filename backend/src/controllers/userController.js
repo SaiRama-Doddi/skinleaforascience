@@ -221,6 +221,8 @@ const getUserWishlist = async (req, res) => {
     console.error('Error fetching user wishlist:', error);
     return res.status(500).json({ success: false, message: error.message });
   }
+};
+
 // 7b. TOGGLE USER WISHLIST ITEM
 const toggleUserWishlist = async (req, res) => {
   try {
