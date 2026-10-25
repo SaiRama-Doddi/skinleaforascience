@@ -1,41 +1,15 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { 
-  Search, Grid, List, Filter, Heart, ShoppingBag, Star, 
-  ChevronRight, X, RotateCcw, CheckCircle2, ShieldCheck, Leaf, Award, Eye, Sparkles
+  Search, Grid, List, Heart, ShoppingBag, Star, 
+  ChevronRight, X, CheckCircle2, ShieldCheck, Leaf, Award, Eye, Sparkles
 } from 'lucide-react';
-import { getProducts, getCategories } from '../services/api';
+import { getProducts } from '../services/api';
 import { addToCart } from '../services/cartService';
 import SEO from '../components/SEO';
 import skincareStoryPhoto from '../assets/skincare_story_showcase.jpg';
 import botanicalProductsPhoto from '../assets/login_botanical_products.jpg';
-import ingAloeImg from '../assets/ing_aloe.jpg';
-import ingNiacinamideImg from '../assets/ing_niacinamide.jpg';
-import ingDropperImg from '../assets/ing_dropper.jpg';
-import ingPowderImg from '../assets/ing_powder.jpg';
-import ingVitEImg from '../assets/ing_vit_e.jpg';
-import ingLicoriceImg from '../assets/ing_licorice.jpg';
 import './Shop.css';
-
-const categoryThumbnails = [
-  ingDropperImg,
-  ingAloeImg,
-  ingPowderImg,
-  ingNiacinamideImg,
-  ingVitEImg,
-  ingLicoriceImg
-];
-
-const getCategoryImg = (name, index = 0, dbImg = null) => {
-  if (dbImg && typeof dbImg === 'string' && dbImg.trim() !== '') return dbImg;
-  const norm = (name || '').toLowerCase();
-  if (norm.includes('all')) return ingDropperImg;
-  if (norm.includes('herbal') || norm.includes('extract')) return ingAloeImg;
-  if (norm.includes('supplement') || norm.includes('formulation')) return ingPowderImg;
-  if (norm.includes('skin') || norm.includes('care')) return ingVitEImg;
-  if (norm.includes('face') || norm.includes('cream')) return ingLicoriceImg;
-  return categoryThumbnails[index % categoryThumbnails.length];
-};
 
 export default function Shop() {
   const navigate = useNavigate();
@@ -44,13 +18,6 @@ export default function Shop() {
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
 
-  // Filter States matching reference image
-  const [selectedCategory, setSelectedCategory] = useState('All Products');
-  const [priceMax, setPriceMax] = useState(1000);
-  const [selectedSkinTypes, setSelectedSkinTypes] = useState([]);
-  const [selectedConcerns, setSelectedConcerns] = useState([]);
-  const [inStockOnly, setInStockOnly] = useState(false);
-  
   // Sort and Search
   const [sortBy, setSortBy] = useState('featured');
   const [searchQuery, setSearchQuery] = useState('');
@@ -65,15 +32,12 @@ export default function Shop() {
   const [wishlist, setWishlist] = useState([]);
   const [toastMessage, setToastMessage] = useState(null);
   const [quickViewProduct, setQuickViewProduct] = useState(null);
-  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 24;
 
-  const [dbCategories, setDbCategories] = useState([]);
-
-  // Load API products & categories from Database
+  // Load API products from Database
   useEffect(() => {
     getProducts()
       .then(res => {
@@ -105,51 +69,7 @@ export default function Shop() {
       })
       .catch(() => {})
       .finally(() => setLoadingProducts(false));
-
-    getCategories()
-      .then(res => {
-        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
-          setDbCategories(res.data);
-        }
-      })
-      .catch(() => {});
   }, []);
-
-  const normStr = (s) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-
-  const categoryOptions = useMemo(() => {
-    const list = [{ name: 'All Products', count: products.length, image: getCategoryImg('All Products', 0) }];
-    if (dbCategories.length > 0) {
-      dbCategories.forEach((cat, idx) => {
-        const count = products.filter(p => {
-          const pCat = normStr(p.category);
-          const cName = normStr(cat.name);
-          return pCat === cName || pCat.includes(cName) || cName.includes(pCat) || String(p.category_id) === String(cat.id);
-        }).length;
-        list.push({ 
-          name: cat.name, 
-          count, 
-          id: cat.id, 
-          image: getCategoryImg(cat.name, idx + 1, cat.image_url || cat.icon_url) 
-        });
-      });
-    } else {
-      const catMap = {};
-      products.forEach(p => {
-        if (p.category) {
-          catMap[p.category] = (catMap[p.category] || 0) + 1;
-        }
-      });
-      Object.keys(catMap).forEach((catName, idx) => {
-        list.push({ 
-          name: catName, 
-          count: catMap[catName], 
-          image: getCategoryImg(catName, idx + 1) 
-        });
-      });
-    }
-    return list;
-  }, [dbCategories, products]);
 
   const showToast = (msg) => {
     setToastMessage(msg);
@@ -164,63 +84,21 @@ export default function Shop() {
     showToast(wishlist.includes(id) ? 'Removed item from your Wishlist' : 'Saved item to your Wishlist ♥');
   };
 
-  const handleSkinTypeToggle = (type) => {
-    setSelectedSkinTypes(prev => 
-      prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]
-    );
-  };
-
-  const handleConcernToggle = (concern) => {
-    setSelectedConcerns(prev => 
-      prev.includes(concern) ? prev.filter(c => c !== concern) : [...prev, concern]
-    );
-  };
-
-  const handleClearFilters = () => {
-    setSelectedCategory('All Products');
-    setPriceMax(1000);
-    setSelectedSkinTypes([]);
-    setSelectedConcerns([]);
-    setInStockOnly(false);
-    setSearchQuery('');
-    setSortBy('featured');
-    showToast('All filters have been reset');
-  };
-
-  // Filter & Sort Logic
+  // Filter & Sort Logic (Search & Sort)
   const filteredProducts = useMemo(() => {
-    return products.filter(p => {
-      // Category filter
-      if (selectedCategory !== 'All Products') {
-        const selectedNorm = normStr(selectedCategory);
-        const prodCatNorm = normStr(p.category);
-        const match = prodCatNorm.includes(selectedNorm) || selectedNorm.includes(prodCatNorm);
-        if (!match) return false;
-      }
-      // Price filter
-      if (p.price > priceMax) return false;
-      // In stock filter
-      if (inStockOnly && !p.inStock) return false;
-      // Skin Type filter
-      if (selectedSkinTypes.length > 0) {
-        const hasSkinType = selectedSkinTypes.some(st => p.skinType?.includes(st));
-        if (!hasSkinType) return false;
-      }
-      // Concern filter
-      if (selectedConcerns.length > 0) {
-        const hasConcern = selectedConcerns.some(c => p.concerns?.includes(c));
-        if (!hasConcern) return false;
-      }
-      // Search query
-      if (searchQuery.trim() !== '') {
-        const query = searchQuery.toLowerCase();
-        const matchesName = p.name.toLowerCase().includes(query);
-        const matchesCategory = p.category.toLowerCase().includes(query);
+    let list = [...products];
+
+    if (searchQuery.trim() !== '') {
+      const query = searchQuery.toLowerCase();
+      list = list.filter(p => {
+        const matchesName = p.name?.toLowerCase().includes(query);
+        const matchesCategory = p.category?.toLowerCase().includes(query);
         const matchesDesc = p.description?.toLowerCase().includes(query);
-        if (!matchesName && !matchesCategory && !matchesDesc) return false;
-      }
-      return true;
-    }).sort((a, b) => {
+        return matchesName || matchesCategory || matchesDesc;
+      });
+    }
+
+    return list.sort((a, b) => {
       if (sortBy === 'price_asc') return a.price - b.price;
       if (sortBy === 'price_desc') return b.price - a.price;
       if (sortBy === 'rating') return b.rating - a.rating;
@@ -228,7 +106,7 @@ export default function Shop() {
       if (sortBy === 'popularity') return b.reviews - a.reviews;
       return 0; // Featured
     });
-  }, [products, selectedCategory, priceMax, selectedSkinTypes, selectedConcerns, inStockOnly, searchQuery, sortBy]);
+  }, [products, searchQuery, sortBy]);
 
   // Paginated Slice
   const paginatedProducts = filteredProducts.slice(0, currentPage * itemsPerPage);
@@ -252,151 +130,15 @@ export default function Shop() {
 
 
 
-      {/* 2. SHOP MAIN LAYOUT GRID (SIDEBAR + PRODUCTS AREA) */}
+      {/* 2. SHOP MAIN LAYOUT (FULL WIDTH CATALOG) */}
       <div className="shop-main-layout">
-
-        {/* SIDEBAR FILTER PANEL */}
-        <aside className="shop-sidebar">
-          
-          {/* Category Filter */}
-          <div>
-            <h3 className="filter-group-title">Categories</h3>
-            <ul className="category-filter-list">
-              {categoryOptions.map(cat => (
-                <li 
-                  key={cat.name} 
-                  className={`category-item ${selectedCategory === cat.name ? 'active' : ''}`}
-                  onClick={() => setSelectedCategory(cat.name)}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <img src={cat.image} alt={cat.name} className="sidebar-cat-thumb" />
-                    <span>{cat.name}</span>
-                  </div>
-                  <span className="cat-count">({cat.count}) <ChevronRight size={14} className="cat-arrow" /></span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <hr style={{ border: 'none', borderTop: '1px solid var(--leafora-border)', margin: '4px 0' }} />
-
-          <h3 className="filter-group-title" style={{ marginBottom: 12 }}>Filter By</h3>
-
-          {/* Price Range Slider */}
-          <div className="price-slider-box">
-            <div className="price-range-inputs">
-              <span>Price Range</span>
-              <span>₹0 — ₹{priceMax}</span>
-            </div>
-            <input 
-              type="range" 
-              min="10" 
-              max="1000" 
-              step="10"
-              value={priceMax} 
-              onChange={(e) => setPriceMax(Number(e.target.value))}
-              className="range-slider"
-            />
-          </div>
-
-          {/* Skin Type Filter */}
-          <div>
-            <h4 style={{ fontSize: '0.92rem', fontWeight: 600, color: 'var(--leafora-text-dark)', marginBottom: 10 }}>Skin Type</h4>
-            <div className="checkbox-filter-list">
-              {[
-                { name: 'Normal', count: 28 },
-                { name: 'Dry', count: 24 },
-                { name: 'Oily', count: 20 },
-                { name: 'Combination', count: 22 },
-                { name: 'Sensitive', count: 18 }
-              ].map(st => (
-                <label key={st.name} className="checkbox-item">
-                  <input 
-                    type="checkbox" 
-                    checked={selectedSkinTypes.includes(st.name)}
-                    onChange={() => handleSkinTypeToggle(st.name)}
-                  />
-                  <span className="checkbox-label-text">{st.name}</span>
-                  <span className="item-count">({st.count})</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          {/* Concerns Filter */}
-          <div>
-            <h4 style={{ fontSize: '0.92rem', fontWeight: 600, color: 'var(--leafora-text-dark)', marginBottom: 10 }}>Concerns</h4>
-            <div className="checkbox-filter-list">
-              {[
-                { name: 'Acne', count: 12 },
-                { name: 'Anti-Aging', count: 16 },
-                { name: 'Brightening', count: 14 },
-                { name: 'Hydration', count: 20 },
-                { name: 'Dark Spots', count: 10 }
-              ].map(c => (
-                <label key={c.name} className="checkbox-item">
-                  <input 
-                    type="checkbox" 
-                    checked={selectedConcerns.includes(c.name)}
-                    onChange={() => handleConcernToggle(c.name)}
-                  />
-                  <span className="checkbox-label-text">{c.name}</span>
-                  <span className="item-count">({c.count})</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          {/* Availability Filter */}
-          <div>
-            <h4 style={{ fontSize: '0.92rem', fontWeight: 600, color: 'var(--leafora-text-dark)', marginBottom: 10 }}>Availability</h4>
-            <label className="checkbox-item">
-              <input 
-                type="checkbox" 
-                checked={inStockOnly}
-                onChange={(e) => setInStockOnly(e.target.checked)}
-              />
-              <span className="checkbox-label-text">In Stock</span>
-              <span className="item-count">(32)</span>
-            </label>
-          </div>
-
-          {/* Clear Filters Button */}
-          <button className="btn-clear-filters" onClick={handleClearFilters}>
-            <RotateCcw size={14} /> Clear Filters
-          </button>
-        </aside>
 
         {/* PRODUCTS CONTENT AREA */}
         <main className="shop-content-area">
 
-          {/* HORIZONTAL CATEGORY ROW WITH SMALL IMAGES & ICONS */}
-          <div className="horizontal-category-scroll-wrapper">
-            <div className="horizontal-category-scroll">
-              {categoryOptions.map((cat) => (
-                <button
-                  key={cat.name}
-                  className={`category-scroll-chip ${selectedCategory === cat.name ? 'active' : ''}`}
-                  onClick={() => setSelectedCategory(cat.name)}
-                >
-                  <div className="chip-img-box">
-                    <img src={cat.image} alt={cat.name} />
-                  </div>
-                  <span className="chip-label">{cat.name}</span>
-                  <span className="chip-badge">({cat.count})</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* TOOLBAR ROW */}
           <div className="shop-toolbar">
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <button className="btn-mobile-filter-trigger" onClick={() => setIsMobileFilterOpen(true)}>
-                <Filter size={16} /> Filters
-              </button>
-              <span className="results-count">{filteredProducts.length} Products</span>
-            </div>
+            <span className="results-count">{filteredProducts.length} Products</span>
 
             <div className="toolbar-controls">
               {/* In-category Search */}
@@ -561,152 +303,7 @@ export default function Shop() {
         </main>
       </div>
 
-      {/* MOBILE OFF-CANVAS SLIDE-OVER FILTER DRAWER */}
-      {isMobileFilterOpen && (
-        <div className="mobile-filter-overlay" onClick={() => setIsMobileFilterOpen(false)}>
-          <div className="mobile-filter-drawer" onClick={e => e.stopPropagation()}>
-            <div className="mobile-drawer-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Filter size={18} color="var(--leafora-bronze)" />
-                <h3 style={{ margin: 0, fontFamily: 'Playfair Display, serif', fontSize: '1.25rem', color: 'var(--leafora-text-dark)' }}>
-                  Filter Products
-                </h3>
-              </div>
-              <button className="btn-drawer-close" onClick={() => setIsMobileFilterOpen(false)}>
-                <X size={20} />
-              </button>
-            </div>
 
-            {/* Drawer Content */}
-            <div className="mobile-drawer-body">
-              {/* Category Filter */}
-              <div>
-                <h4 className="mobile-filter-heading">Categories</h4>
-                <ul className="category-filter-list">
-                  {categoryOptions.map(cat => (
-                    <li 
-                      key={cat.name} 
-                      className={`category-item ${selectedCategory === cat.name ? 'active' : ''}`}
-                      onClick={() => { setSelectedCategory(cat.name); }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <img src={cat.image} alt={cat.name} className="sidebar-cat-thumb" />
-                        <span>{cat.name}</span>
-                      </div>
-                      <span className="cat-count">({cat.count}) <ChevronRight size={14} className="cat-arrow" /></span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <hr style={{ border: 'none', borderTop: '1px solid var(--leafora-border)', margin: '12px 0' }} />
-
-              {/* Price Range Slider */}
-              <div className="price-slider-box">
-                <div className="price-range-inputs">
-                  <span>Price Limit</span>
-                  <span>₹0 — ₹{priceMax}</span>
-                </div>
-                <input 
-                  type="range" 
-                  min="10" 
-                  max="1000" 
-                  step="10"
-                  value={priceMax} 
-                  onChange={(e) => setPriceMax(Number(e.target.value))}
-                  className="range-slider"
-                />
-              </div>
-
-              <hr style={{ border: 'none', borderTop: '1px solid var(--leafora-border)', margin: '12px 0' }} />
-
-              {/* Skin Type Filter */}
-              <div>
-                <h4 className="mobile-filter-heading">Skin Type</h4>
-                <div className="checkbox-filter-list">
-                  {[
-                    { name: 'Normal', count: 28 },
-                    { name: 'Dry', count: 24 },
-                    { name: 'Oily', count: 20 },
-                    { name: 'Combination', count: 22 },
-                    { name: 'Sensitive', count: 18 }
-                  ].map(st => (
-                    <label key={st.name} className="checkbox-item">
-                      <input 
-                        type="checkbox" 
-                        checked={selectedSkinTypes.includes(st.name)}
-                        onChange={() => handleSkinTypeToggle(st.name)}
-                      />
-                      <span className="checkbox-label-text">{st.name}</span>
-                      <span className="item-count">({st.count})</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <hr style={{ border: 'none', borderTop: '1px solid var(--leafora-border)', margin: '12px 0' }} />
-
-              {/* Concerns Filter */}
-              <div>
-                <h4 className="mobile-filter-heading">Concerns</h4>
-                <div className="checkbox-filter-list">
-                  {[
-                    { name: 'Acne', count: 12 },
-                    { name: 'Anti-Aging', count: 16 },
-                    { name: 'Brightening', count: 14 },
-                    { name: 'Hydration', count: 20 },
-                    { name: 'Dark Spots', count: 10 }
-                  ].map(c => (
-                    <label key={c.name} className="checkbox-item">
-                      <input 
-                        type="checkbox" 
-                        checked={selectedConcerns.includes(c.name)}
-                        onChange={() => handleConcernToggle(c.name)}
-                      />
-                      <span className="checkbox-label-text">{c.name}</span>
-                      <span className="item-count">({c.count})</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <hr style={{ border: 'none', borderTop: '1px solid var(--leafora-border)', margin: '12px 0' }} />
-
-              {/* Availability Filter */}
-              <div>
-                <h4 className="mobile-filter-heading">Availability</h4>
-                <label className="checkbox-item">
-                  <input 
-                    type="checkbox" 
-                    checked={inStockOnly}
-                    onChange={(e) => setInStockOnly(e.target.checked)}
-                  />
-                  <span className="checkbox-label-text">In Stock Only</span>
-                  <span className="item-count">(32)</span>
-                </label>
-              </div>
-            </div>
-
-            {/* Drawer Footer Actions */}
-            <div className="mobile-drawer-footer">
-              <button 
-                className="btn-clear-filters" 
-                style={{ flex: 1 }} 
-                onClick={() => { handleClearFilters(); setIsMobileFilterOpen(false); }}
-              >
-                <RotateCcw size={14} /> Reset
-              </button>
-              <button 
-                className="btn-card-add-cart" 
-                style={{ flex: 1 }} 
-                onClick={() => setIsMobileFilterOpen(false)}
-              >
-                Apply Filters ({filteredProducts.length})
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* QUICK VIEW MODAL */}
       {quickViewProduct && (

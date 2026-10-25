@@ -1,1 +1,1 @@
-2026-10-25 13:44:20 - restart trigger (removed category section)
+2026-10-25 14:00:20 - restart trigger (removed categories and filter options from shop catalog)
