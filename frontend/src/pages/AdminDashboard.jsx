@@ -1389,6 +1389,15 @@ export default function AdminDashboard() {
     reserved_stock: '0',
     low_stock_threshold: '10',
     description: '',
+    ingredients: '',
+    benefits: '',
+    how_to_use: '',
+    skin_type: '',
+    key_ingredients: '',
+    manufacturing_date: '',
+    expiry_date: '',
+    storage: '',
+    warning: '',
     images: ['', '', '', '', ''],
     is_active: true,
     is_featured: false,
@@ -1465,6 +1474,15 @@ export default function AdminDashboard() {
       reserved_stock: prod.reserved_stock ?? '0',
       low_stock_threshold: prod.low_stock_threshold ?? '10',
       description: prod.description || '',
+      ingredients: prod.ingredients || '',
+      benefits: prod.benefits || '',
+      how_to_use: prod.how_to_use || '',
+      skin_type: prod.skin_type || '',
+      key_ingredients: prod.key_ingredients || '',
+      manufacturing_date: prod.manufacturing_date || '',
+      expiry_date: prod.expiry_date || '',
+      storage: prod.storage || '',
+      warning: prod.warning || '',
       images: prodImgs.slice(0, 5),
       is_active: prod.is_active !== 0,
       is_featured: !!prod.is_featured,
@@ -1569,6 +1587,15 @@ export default function AdminDashboard() {
       reserved_stock: parseInt(productForm.reserved_stock || '0', 10),
       low_stock_threshold: parseInt(productForm.low_stock_threshold || '10', 10),
       description: productForm.description || '',
+      ingredients: productForm.ingredients || '',
+      benefits: productForm.benefits || '',
+      how_to_use: productForm.how_to_use || '',
+      skin_type: productForm.skin_type || '',
+      key_ingredients: productForm.key_ingredients || '',
+      manufacturing_date: productForm.manufacturing_date || '',
+      expiry_date: productForm.expiry_date || '',
+      storage: productForm.storage || '',
+      warning: productForm.warning || '',
       image_url: primaryImg,
       images: validImages.length > 0 ? validImages : [primaryImg],
       is_active: productForm.is_active ? 1 : 0,
@@ -3855,6 +3882,13 @@ export default function AdminDashboard() {
                     </button>
                     <button
                       type="button"
+                      className={`leafora-prod-tab ${productFormTab === 'formulation' ? 'active' : ''}`}
+                      onClick={() => setProductFormTab('formulation')}
+                    >
+                      🧪 Formulation & Specifications
+                    </button>
+                    <button
+                      type="button"
                       className={`leafora-prod-tab ${productFormTab === 'variants' ? 'active' : ''}`}
                       onClick={() => setProductFormTab('variants')}
                     >
@@ -3982,6 +4016,116 @@ export default function AdminDashboard() {
                           style={{ width: '100%', resize: 'vertical' }}
                           value={productForm.description}
                           onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* TAB 1B: FORMULATION & SPECIFICATIONS (9 NEW PRODUCT FIELDS) */}
+                  {productFormTab === 'formulation' && (
+                    <div className="leafora-prod-form-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
+                      <div className="leafora-form-group">
+                        <label className="leafora-form-label">Skin Type (e.g. All Skin Types, Sensitive, Oily, Dry)</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. All Skin Types, Oily to Acne-Prone"
+                          className="leafora-cat-input"
+                          value={productForm.skin_type}
+                          onChange={(e) => setProductForm({ ...productForm, skin_type: e.target.value })}
+                        />
+                      </div>
+
+                      <div className="leafora-form-group">
+                        <label className="leafora-form-label">Key Ingredients</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. 10% Vitamin C, Ferulic Acid, Hyaluronic Acid, Aloe Vera"
+                          className="leafora-cat-input"
+                          value={productForm.key_ingredients}
+                          onChange={(e) => setProductForm({ ...productForm, key_ingredients: e.target.value })}
+                        />
+                      </div>
+
+                      <div className="leafora-form-group">
+                        <label className="leafora-form-label">Manufacturing Date (MFG)</label>
+                        <input
+                          type="date"
+                          className="leafora-cat-input"
+                          value={productForm.manufacturing_date}
+                          onChange={(e) => setProductForm({ ...productForm, manufacturing_date: e.target.value })}
+                        />
+                      </div>
+
+                      <div className="leafora-form-group">
+                        <label className="leafora-form-label">Expiry Date (EXP)</label>
+                        <input
+                          type="date"
+                          className="leafora-cat-input"
+                          value={productForm.expiry_date}
+                          onChange={(e) => setProductForm({ ...productForm, expiry_date: e.target.value })}
+                        />
+                      </div>
+
+                      <div className="leafora-form-group" style={{ gridColumn: 'span 2' }}>
+                        <label className="leafora-form-label">Ingredients (Text Area) *</label>
+                        <textarea
+                          rows="4"
+                          placeholder="Aqua, Aloe Barbadensis Leaf Juice, Ethyl Ascorbic Acid, Glycerin, Niacinamide, Ferulic Acid, Sodium Hyaluronate, Phenoxyethanol..."
+                          className="leafora-cat-input"
+                          style={{ width: '100%', resize: 'vertical' }}
+                          value={productForm.ingredients}
+                          onChange={(e) => setProductForm({ ...productForm, ingredients: e.target.value })}
+                        />
+                        <span style={{ fontSize: 11, color: '#6B7280', marginTop: 4 }}>Complete INCI composition list shown under product ingredients</span>
+                      </div>
+
+                      <div className="leafora-form-group" style={{ gridColumn: 'span 2' }}>
+                        <label className="leafora-form-label">Benefits (Text Area) *</label>
+                        <textarea
+                          rows="4"
+                          placeholder="• Brightens dark spots and reduces hyperpigmentation&#10;• Boosts collagen production for firmer skin&#10;• Provides antioxidant defense against free radicals"
+                          className="leafora-cat-input"
+                          style={{ width: '100%', resize: 'vertical' }}
+                          value={productForm.benefits}
+                          onChange={(e) => setProductForm({ ...productForm, benefits: e.target.value })}
+                        />
+                        <span style={{ fontSize: 11, color: '#6B7280', marginTop: 4 }}>Clinical benefits and key results displayed in product benefits tab</span>
+                      </div>
+
+                      <div className="leafora-form-group" style={{ gridColumn: 'span 2' }}>
+                        <label className="leafora-form-label">How to Use (Text Area) *</label>
+                        <textarea
+                          rows="4"
+                          placeholder="Step 1: Cleanse skin thoroughly with Leafora Face Wash.&#10;Step 2: Apply 3-4 drops directly to face and gently pat until absorbed.&#10;Step 3: Follow with moisturizer and SPF in the morning."
+                          className="leafora-cat-input"
+                          style={{ width: '100%', resize: 'vertical' }}
+                          value={productForm.how_to_use}
+                          onChange={(e) => setProductForm({ ...productForm, how_to_use: e.target.value })}
+                        />
+                        <span style={{ fontSize: 11, color: '#6B7280', marginTop: 4 }}>Directions of use and step-by-step skincare routine ritual</span>
+                      </div>
+
+                      <div className="leafora-form-group">
+                        <label className="leafora-form-label">Storage Instructions (Text Area)</label>
+                        <textarea
+                          rows="3"
+                          placeholder="Store in a cool, dry place away from direct sunlight. Keep cap tightly closed after each use."
+                          className="leafora-cat-input"
+                          style={{ width: '100%', resize: 'vertical' }}
+                          value={productForm.storage}
+                          onChange={(e) => setProductForm({ ...productForm, storage: e.target.value })}
+                        />
+                      </div>
+
+                      <div className="leafora-form-group">
+                        <label className="leafora-form-label">Warning & Precautions (Text Area)</label>
+                        <textarea
+                          rows="3"
+                          placeholder="For external use only. Patch test recommended before first application. Avoid direct contact with eyes. Discontinue use if irritation occurs."
+                          className="leafora-cat-input"
+                          style={{ width: '100%', resize: 'vertical' }}
+                          value={productForm.warning}
+                          onChange={(e) => setProductForm({ ...productForm, warning: e.target.value })}
                         />
                       </div>
                     </div>
@@ -4666,6 +4810,51 @@ export default function AdminDashboard() {
                           {previewProduct.description || 'No detailed description provided.'}
                         </p>
                       </div>
+
+                      {/* Formulation & Specifications Card */}
+                      {(previewProduct.skin_type || previewProduct.key_ingredients || previewProduct.manufacturing_date || previewProduct.expiry_date || previewProduct.ingredients || previewProduct.benefits || previewProduct.how_to_use || previewProduct.storage || previewProduct.warning) && (
+                        <div style={{ marginTop: 14, background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 8, padding: 12 }}>
+                          <h5 style={{ margin: '0 0 8px 0', fontSize: 13, fontWeight: 700, color: '#A37F3F', display: 'flex', alignItems: 'center', gap: 6 }}>
+                            🧪 Formulation & Product Specifications
+                          </h5>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: 12, marginBottom: 8 }}>
+                            <div><strong>Skin Type:</strong> {previewProduct.skin_type || 'N/A'}</div>
+                            <div><strong>Key Ingredients:</strong> {previewProduct.key_ingredients || 'N/A'}</div>
+                            <div><strong>MFG Date:</strong> {previewProduct.manufacturing_date || 'N/A'}</div>
+                            <div><strong>EXP Date:</strong> {previewProduct.expiry_date || 'N/A'}</div>
+                          </div>
+                          {previewProduct.ingredients && (
+                            <div style={{ marginTop: 6, fontSize: 12 }}>
+                              <strong>Ingredients:</strong>
+                              <p style={{ margin: '2px 0 0', color: '#4B5563', whiteSpace: 'pre-line' }}>{previewProduct.ingredients}</p>
+                            </div>
+                          )}
+                          {previewProduct.benefits && (
+                            <div style={{ marginTop: 6, fontSize: 12 }}>
+                              <strong>Benefits:</strong>
+                              <p style={{ margin: '2px 0 0', color: '#4B5563', whiteSpace: 'pre-line' }}>{previewProduct.benefits}</p>
+                            </div>
+                          )}
+                          {previewProduct.how_to_use && (
+                            <div style={{ marginTop: 6, fontSize: 12 }}>
+                              <strong>How to Use:</strong>
+                              <p style={{ margin: '2px 0 0', color: '#4B5563', whiteSpace: 'pre-line' }}>{previewProduct.how_to_use}</p>
+                            </div>
+                          )}
+                          {previewProduct.storage && (
+                            <div style={{ marginTop: 6, fontSize: 12 }}>
+                              <strong>Storage:</strong>
+                              <p style={{ margin: '2px 0 0', color: '#4B5563', whiteSpace: 'pre-line' }}>{previewProduct.storage}</p>
+                            </div>
+                          )}
+                          {previewProduct.warning && (
+                            <div style={{ marginTop: 6, fontSize: 12 }}>
+                              <strong>Warning:</strong>
+                              <p style={{ margin: '2px 0 0', color: '#DC2626', whiteSpace: 'pre-line' }}>{previewProduct.warning}</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
 
                       {/* Variants Breakdown */}
                       {Array.isArray(previewProduct.variants) && previewProduct.variants.length > 0 && (

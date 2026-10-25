@@ -1,1 +1,1 @@
-2026-10-25 17:38:40 - restart trigger (fixed Admin Barcode crash, OTP bypass, user login validation, wishlist sync, admin API security)
+2026-10-25T12:52:51.686Z

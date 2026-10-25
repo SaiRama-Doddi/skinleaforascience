@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const { pool } = require('../config/db');
 const { sendOtpEmail } = require('../services/mailer');
+const ProductModel = require('../models/productModel');
 
 const ALLOWED_ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'hkahir46@gmail.com';
 
@@ -725,7 +726,8 @@ const addProduct = async (req, res) => {
   try {
     const {
       name, brand, sku, category, category_id, price, stock, warehouse_stock, reserved_stock, low_stock_threshold,
-      description, image_url, images, is_active, is_featured, is_trending, is_new_arrival,
+      description, ingredients, benefits, how_to_use, skin_type, key_ingredients, manufacturing_date, expiry_date, storage, warning,
+      image_url, images, is_active, is_featured, is_trending, is_new_arrival,
       meta_title, meta_description, meta_keywords, canonical_url, variants
     } = req.body;
 
@@ -745,13 +747,15 @@ const addProduct = async (req, res) => {
       const [result] = await pool.query(
         `INSERT INTO products 
           (name, brand, sku, category, category_id, price, stock, warehouse_stock, reserved_stock, low_stock_threshold, 
-           description, image_url, images, is_active, is_featured, is_trending, is_new_arrival, 
+           description, ingredients, benefits, how_to_use, skin_type, key_ingredients, manufacturing_date, expiry_date, storage, warning,
+           image_url, images, is_active, is_featured, is_trending, is_new_arrival, 
            meta_title, meta_description, meta_keywords, canonical_url) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           name, brand || 'Leafora', sku || `SKU-${Date.now().toString().slice(-6)}`, category || 'General', category_id ? Number(category_id) : null,
           Number(price), Number(stock || 0), Number(warehouse_stock || stock || 0), Number(reserved_stock || 0), Number(low_stock_threshold || 10),
-          description || '', primaryImg, imagesJson,
+          description || '', ingredients || '', benefits || '', how_to_use || '', skin_type || '', key_ingredients || '', manufacturing_date || null, expiry_date || null, storage || '', warning || '',
+          primaryImg, imagesJson,
           is_active !== undefined ? (is_active ? 1 : 0) : 1,
           is_featured ? 1 : 0, is_trending ? 1 : 0, is_new_arrival ? 1 : 0,
           meta_title || name, meta_description || description || '', meta_keywords || '', canonical_url || ''
@@ -792,13 +796,24 @@ const addProduct = async (req, res) => {
     const newProd = {
       id: prodId, name, brand: brand || 'Leafora', sku: sku || `SKU-${prodId}`, category: category || 'General',
       price: Number(price), stock: Number(stock || 0), warehouse_stock: Number(warehouse_stock || stock || 0), reserved_stock: Number(reserved_stock || 0), low_stock_threshold: Number(low_stock_threshold || 10),
-      description: description || '', image_url: primaryImg, images: imagesArr, is_active: is_active ? 1 : 0,
+      description: description || '',
+      ingredients: ingredients || '',
+      benefits: benefits || '',
+      how_to_use: how_to_use || '',
+      skin_type: skin_type || '',
+      key_ingredients: key_ingredients || '',
+      manufacturing_date: manufacturing_date || '',
+      expiry_date: expiry_date || '',
+      storage: storage || '',
+      warning: warning || '',
+      image_url: primaryImg, images: imagesArr, is_active: is_active ? 1 : 0,
       is_featured: is_featured ? 1 : 0, is_trending: is_trending ? 1 : 0, is_new_arrival: is_new_arrival ? 1 : 0,
       meta_title: meta_title || name, meta_description: meta_description || '', meta_keywords: meta_keywords || '', canonical_url: canonical_url || '',
       deleted_at: null, variants: variantsArr
     };
 
     inMemoryProducts.unshift(newProd);
+    try { ProductModel.clearCache(); } catch (e) {}
     return res.status(201).json({ success: true, message: 'Product created successfully', data: newProd });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
@@ -811,7 +826,8 @@ const updateProduct = async (req, res) => {
     const numId = Number(id);
     const {
       name, brand, sku, category, category_id, price, stock, warehouse_stock, reserved_stock, low_stock_threshold,
-      description, image_url, images, is_active, is_featured, is_trending, is_new_arrival,
+      description, ingredients, benefits, how_to_use, skin_type, key_ingredients, manufacturing_date, expiry_date, storage, warning,
+      image_url, images, is_active, is_featured, is_trending, is_new_arrival,
       meta_title, meta_description, meta_keywords, canonical_url, variants
     } = req.body;
 
@@ -836,6 +852,15 @@ const updateProduct = async (req, res) => {
           reserved_stock = COALESCE(?, reserved_stock),
           low_stock_threshold = COALESCE(?, low_stock_threshold),
           description = COALESCE(?, description),
+          ingredients = COALESCE(?, ingredients),
+          benefits = COALESCE(?, benefits),
+          how_to_use = COALESCE(?, how_to_use),
+          skin_type = COALESCE(?, skin_type),
+          key_ingredients = COALESCE(?, key_ingredients),
+          manufacturing_date = COALESCE(?, manufacturing_date),
+          expiry_date = COALESCE(?, expiry_date),
+          storage = COALESCE(?, storage),
+          warning = COALESCE(?, warning),
           image_url = COALESCE(?, image_url),
           images = COALESCE(?, images),
           is_active = COALESCE(?, is_active),
@@ -854,7 +879,17 @@ const updateProduct = async (req, res) => {
           warehouse_stock !== undefined ? Number(warehouse_stock) : null,
           reserved_stock !== undefined ? Number(reserved_stock) : null,
           low_stock_threshold !== undefined ? Number(low_stock_threshold) : null,
-          description, primaryImg, imagesJson,
+          description,
+          ingredients !== undefined ? ingredients : null,
+          benefits !== undefined ? benefits : null,
+          how_to_use !== undefined ? how_to_use : null,
+          skin_type !== undefined ? skin_type : null,
+          key_ingredients !== undefined ? key_ingredients : null,
+          manufacturing_date !== undefined ? manufacturing_date : null,
+          expiry_date !== undefined ? expiry_date : null,
+          storage !== undefined ? storage : null,
+          warning !== undefined ? warning : null,
+          primaryImg, imagesJson,
           is_active !== undefined ? (is_active ? 1 : 0) : null,
           is_featured !== undefined ? (is_featured ? 1 : 0) : null,
           is_trending !== undefined ? (is_trending ? 1 : 0) : null,
@@ -900,6 +935,15 @@ const updateProduct = async (req, res) => {
             reserved_stock: reserved_stock !== undefined ? Number(reserved_stock) : prod.reserved_stock,
             low_stock_threshold: low_stock_threshold !== undefined ? Number(low_stock_threshold) : prod.low_stock_threshold,
             description: description ?? prod.description,
+            ingredients: ingredients !== undefined ? ingredients : prod.ingredients,
+            benefits: benefits !== undefined ? benefits : prod.benefits,
+            how_to_use: how_to_use !== undefined ? how_to_use : prod.how_to_use,
+            skin_type: skin_type !== undefined ? skin_type : prod.skin_type,
+            key_ingredients: key_ingredients !== undefined ? key_ingredients : prod.key_ingredients,
+            manufacturing_date: manufacturing_date !== undefined ? manufacturing_date : prod.manufacturing_date,
+            expiry_date: expiry_date !== undefined ? expiry_date : prod.expiry_date,
+            storage: storage !== undefined ? storage : prod.storage,
+            warning: warning !== undefined ? warning : prod.warning,
             image_url: primaryImg ?? prod.image_url,
             images: imagesArr.length > 0 ? imagesArr : prod.images,
             is_active: is_active !== undefined ? (is_active ? 1 : 0) : prod.is_active,
@@ -915,6 +959,7 @@ const updateProduct = async (req, res) => {
         : prod
     );
 
+    try { ProductModel.clearCache(); } catch (e) {}
     return res.status(200).json({ success: true, message: 'Product updated successfully' });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
@@ -945,6 +990,8 @@ const deleteProduct = async (req, res) => {
       inMemoryProducts = inMemoryProducts.map(p => p.id === numId ? { ...p, deleted_at: new Date().toISOString() } : p);
     }
 
+    try { ProductModel.clearCache(); } catch (e) {}
+
     return res.status(200).json({
       success: true,
       message: force === 'true' ? `Product #${numId} permanently deleted` : `Product #${numId} moved to Trash Bin`
@@ -966,6 +1013,7 @@ const restoreProduct = async (req, res) => {
     }
 
     inMemoryProducts = inMemoryProducts.map(p => p.id === numId ? { ...p, deleted_at: null } : p);
+    try { ProductModel.clearCache(); } catch (e) {}
     return res.status(200).json({ success: true, message: `Product #${numId} restored from Trash` });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
@@ -985,11 +1033,14 @@ const duplicateProduct = async (req, res) => {
       if (source) {
         const [result] = await pool.query(
           `INSERT INTO products 
-            (name, brand, sku, category, price, stock, warehouse_stock, reserved_stock, low_stock_threshold, description, image_url, images, is_active, is_featured, is_trending, is_new_arrival, meta_title, meta_description, meta_keywords, canonical_url) 
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            (name, brand, sku, category, price, stock, warehouse_stock, reserved_stock, low_stock_threshold, description, 
+             ingredients, benefits, how_to_use, skin_type, key_ingredients, manufacturing_date, expiry_date, storage, warning,
+             image_url, images, is_active, is_featured, is_trending, is_new_arrival, meta_title, meta_description, meta_keywords, canonical_url) 
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             `${source.name} (Copy)`, source.brand || 'Leafora', `${source.sku || 'SKU'}-COPY`, source.category, source.price, source.stock, source.warehouse_stock || source.stock, source.reserved_stock || 0, source.low_stock_threshold || 10,
-            source.description, source.image_url, source.images, source.is_active, source.is_featured, source.is_trending || 0, source.is_new_arrival || 0,
+            source.description, source.ingredients || '', source.benefits || '', source.how_to_use || '', source.skin_type || '', source.key_ingredients || '', source.manufacturing_date || null, source.expiry_date || null, source.storage || '', source.warning || '',
+            source.image_url, source.images, source.is_active, source.is_featured, source.is_trending || 0, source.is_new_arrival || 0,
             source.meta_title, source.meta_description, source.meta_keywords, source.canonical_url
           ]
         );
@@ -1004,10 +1055,20 @@ const duplicateProduct = async (req, res) => {
         id: newId,
         name: `${prod.name} (Copy)`,
         sku: `${prod.sku || 'SKU'}-COPY`,
+        ingredients: prod.ingredients || '',
+        benefits: prod.benefits || '',
+        how_to_use: prod.how_to_use || '',
+        skin_type: prod.skin_type || '',
+        key_ingredients: prod.key_ingredients || '',
+        manufacturing_date: prod.manufacturing_date || '',
+        expiry_date: prod.expiry_date || '',
+        storage: prod.storage || '',
+        warning: prod.warning || '',
         deleted_at: null
       });
     }
 
+    try { ProductModel.clearCache(); } catch (e) {}
     return res.status(201).json({ success: true, message: `Product #${numId} duplicated successfully as #${newId}` });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
@@ -1060,6 +1121,7 @@ const bulkProductAction = async (req, res) => {
       return p;
     }).filter(p => !(action === 'permanent_delete' && numIds.includes(p.id)));
 
+    try { ProductModel.clearCache(); } catch (e) {}
     return res.status(200).json({ success: true, message: `Bulk action "${action}" completed for ${numIds.length} products` });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
@@ -1076,7 +1138,11 @@ const exportProductsCsv = async (req, res) => {
       rows = inMemoryProducts;
     }
 
-    const headers = ['id', 'name', 'brand', 'sku', 'category', 'price', 'stock', 'warehouse_stock', 'reserved_stock', 'low_stock_threshold', 'description', 'image_url', 'is_active', 'is_featured', 'is_trending', 'is_new_arrival', 'meta_title', 'meta_description', 'meta_keywords', 'canonical_url'];
+    const headers = [
+      'id', 'name', 'brand', 'sku', 'category', 'price', 'stock', 'warehouse_stock', 'reserved_stock', 'low_stock_threshold',
+      'description', 'ingredients', 'benefits', 'how_to_use', 'skin_type', 'key_ingredients', 'manufacturing_date', 'expiry_date', 'storage', 'warning',
+      'image_url', 'is_active', 'is_featured', 'is_trending', 'is_new_arrival', 'meta_title', 'meta_description', 'meta_keywords', 'canonical_url'
+    ];
     let csvStr = headers.join(',') + '\n';
 
     rows.forEach(r => {
@@ -1123,13 +1189,16 @@ const importProductsCsv = async (req, res) => {
       try {
         await pool.query(
           `INSERT INTO products 
-            (name, brand, sku, category, price, stock, warehouse_stock, reserved_stock, low_stock_threshold, description, image_url, is_active, is_featured, is_trending, is_new_arrival, meta_title, meta_description, meta_keywords, canonical_url) 
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (name, brand, sku, category, price, stock, warehouse_stock, reserved_stock, low_stock_threshold, 
+             description, ingredients, benefits, how_to_use, skin_type, key_ingredients, manufacturing_date, expiry_date, storage, warning,
+             image_url, is_active, is_featured, is_trending, is_new_arrival, meta_title, meta_description, meta_keywords, canonical_url) 
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
            ON DUPLICATE KEY UPDATE name=VALUES(name), price=VALUES(price), stock=VALUES(stock)`,
           [
             item.name, item.brand || 'Leafora', item.sku || `SKU-${Date.now()}`, item.category || 'General',
             Number(item.price || 0), Number(item.stock || 0), Number(item.warehouse_stock || item.stock || 0), Number(item.reserved_stock || 0), Number(item.low_stock_threshold || 10),
-            item.description || '', item.image_url || '/assets/vitamin_c_serum.jpg',
+            item.description || '', item.ingredients || '', item.benefits || '', item.how_to_use || '', item.skin_type || '', item.key_ingredients || '', item.manufacturing_date || null, item.expiry_date || null, item.storage || '', item.warning || '',
+            item.image_url || '/assets/vitamin_c_serum.jpg',
             item.is_active !== undefined ? (Number(item.is_active) ? 1 : 0) : 1,
             item.is_featured ? 1 : 0, item.is_trending ? 1 : 0, item.is_new_arrival ? 1 : 0,
             item.meta_title || item.name, item.meta_description || '', item.meta_keywords || '', item.canonical_url || ''
@@ -1141,7 +1210,17 @@ const importProductsCsv = async (req, res) => {
       inMemoryProducts.unshift({
         id: newId, name: item.name, brand: item.brand || 'Leafora', sku: item.sku || `SKU-${newId}`, category: item.category || 'General',
         price: Number(item.price || 0), stock: Number(item.stock || 0), warehouse_stock: Number(item.warehouse_stock || item.stock || 0), reserved_stock: Number(item.reserved_stock || 0), low_stock_threshold: Number(item.low_stock_threshold || 10),
-        description: item.description || '', image_url: item.image_url || '/assets/vitamin_c_serum.jpg', images: [item.image_url || '/assets/vitamin_c_serum.jpg'],
+        description: item.description || '',
+        ingredients: item.ingredients || '',
+        benefits: item.benefits || '',
+        how_to_use: item.how_to_use || '',
+        skin_type: item.skin_type || '',
+        key_ingredients: item.key_ingredients || '',
+        manufacturing_date: item.manufacturing_date || '',
+        expiry_date: item.expiry_date || '',
+        storage: item.storage || '',
+        warning: item.warning || '',
+        image_url: item.image_url || '/assets/vitamin_c_serum.jpg', images: [item.image_url || '/assets/vitamin_c_serum.jpg'],
         is_active: item.is_active !== undefined ? (Number(item.is_active) ? 1 : 0) : 1,
         is_featured: item.is_featured ? 1 : 0, is_trending: item.is_trending ? 1 : 0, is_new_arrival: item.is_new_arrival ? 1 : 0,
         meta_title: item.meta_title || item.name, meta_description: item.meta_description || '', meta_keywords: item.meta_keywords || '', canonical_url: item.canonical_url || '',
@@ -1149,6 +1228,8 @@ const importProductsCsv = async (req, res) => {
       });
       importedCount++;
     }
+
+    try { ProductModel.clearCache(); } catch (e) {}
 
     return res.status(200).json({ success: true, message: `Successfully imported ${importedCount} products from CSV` });
   } catch (error) {

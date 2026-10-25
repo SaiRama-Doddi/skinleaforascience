@@ -459,20 +459,35 @@ export default function ProductDetails() {
             <div className="tab-left-content">
               <h3>Product Details</h3>
               <p>
-                {product.description || 'Leafora Gentle Foaming Face Wash is crafted with the goodness of nature to purify your skin without stripping its natural moisture.'}
+                {product.description || 'Leafora formulation crafted with botanical science to nourish and revitalize your skin naturally.'}
               </p>
 
               <table className="specs-table">
                 <tbody>
                   <tr><td>Brand</td><td>{product.brand || 'Leafora Life Sciences'}</td></tr>
-                  <tr><td>Product Type</td><td>{product.productType || 'Botanical Skincare'}</td></tr>
-                  <tr><td>Skin Type</td><td>{product.skinType || 'All Skin Types'}</td></tr>
-                  <tr><td>Size</td><td>{product.size || '100 ml'}</td></tr>
-                  <tr><td>Target Concerns</td><td>{product.targetConcerns || 'Cleanses, Hydrates & Soothes'}</td></tr>
+                  <tr><td>Category</td><td>{product.category || 'Botanical Skincare'}</td></tr>
+                  <tr><td>Skin Type</td><td>{product.skin_type || product.skinType || 'All Skin Types'}</td></tr>
+                  {product.key_ingredients && <tr><td>Key Ingredients</td><td>{product.key_ingredients}</td></tr>}
+                  {product.manufacturing_date && <tr><td>Manufacturing Date</td><td>{product.manufacturing_date}</td></tr>}
+                  {product.expiry_date && <tr><td>Expiry Date</td><td>{product.expiry_date}</td></tr>}
+                  {product.storage && <tr><td>Storage</td><td>{product.storage}</td></tr>}
+                  {product.warning && <tr><td>Warning / Caution</td><td style={{ color: '#DC2626' }}>{product.warning}</td></tr>}
                   <tr><td>Formulation</td><td>{product.formulation || 'Sulfate Free, Paraben Free, Cruelty Free'}</td></tr>
-                  <tr><td>Shelf Life</td><td>{product.shelfLife || '24 Months'}</td></tr>
+                  <tr><td>Shelf Life</td><td>{product.expiry_date ? `Valid till ${product.expiry_date}` : (product.shelfLife || '24 Months')}</td></tr>
                 </tbody>
               </table>
+
+              {product.storage && (
+                <div style={{ marginTop: 16, padding: '12px 16px', background: '#F8F4EE', borderRadius: 8, fontSize: '0.9rem' }}>
+                  <strong>📦 Storage Instructions:</strong> {product.storage}
+                </div>
+              )}
+
+              {product.warning && (
+                <div style={{ marginTop: 10, padding: '12px 16px', background: '#FEF2F2', borderLeft: '4px solid #EF4444', borderRadius: 8, fontSize: '0.9rem', color: '#991B1B' }}>
+                  <strong>⚠️ Warning & Precautions:</strong> {product.warning}
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -480,54 +495,87 @@ export default function ProductDetails() {
         {/* TAB 2: INGREDIENTS */}
         {activeTab === 'ingredients' && (
           <div>
-            <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.4rem', marginBottom: 16 }}>Key Active Ingredients</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20 }}>
-              <div style={{ background: '#F8F4EE', padding: 20, borderRadius: 10 }}>
-                <h4 style={{ color: 'var(--leafora-bronze)', marginBottom: 6 }}>🌱 Organic Aloe Vera</h4>
-                <p style={{ fontSize: '0.88rem', color: '#475569' }}>Rich in vitamins C and E, provides instant thermal soothing and anti-inflammatory hydration.</p>
+            <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.4rem', marginBottom: 16 }}>Ingredients & Formulation</h3>
+            
+            {product.key_ingredients && (
+              <div style={{ marginBottom: 20, padding: 16, background: '#F8F4EE', borderRadius: 10, borderLeft: '4px solid var(--leafora-bronze)' }}>
+                <h4 style={{ color: 'var(--leafora-bronze)', marginBottom: 6, fontSize: '1rem', fontWeight: 700 }}>✨ Key Active Ingredients</h4>
+                <p style={{ margin: 0, fontSize: '0.92rem', color: '#334155', lineHeight: 1.6 }}>{product.key_ingredients}</p>
               </div>
-              <div style={{ background: '#F8F4EE', padding: 20, borderRadius: 10 }}>
-                <h4 style={{ color: 'var(--leafora-bronze)', marginBottom: 6 }}>🍵 Wild Green Tea Extract</h4>
-                <p style={{ fontSize: '0.88rem', color: '#475569' }}>Potent EGCG polyphenols protect cellular lipid membranes against environmental pollution.</p>
+            )}
+
+            {product.ingredients ? (
+              <div style={{ background: '#FAF9F6', padding: 20, borderRadius: 10, border: '1px solid #EFE8DE' }}>
+                <h4 style={{ color: '#1E293B', marginBottom: 8, fontSize: '0.95rem', fontWeight: 600 }}>Full Ingredient Composition (INCI):</h4>
+                <p style={{ fontSize: '0.9rem', color: '#475569', lineHeight: 1.8, whiteSpace: 'pre-line', margin: 0 }}>
+                  {product.ingredients}
+                </p>
               </div>
-              <div style={{ background: '#F8F4EE', padding: 20, borderRadius: 10 }}>
-                <h4 style={{ color: 'var(--leafora-bronze)', marginBottom: 6 }}>✨ Niacinamide (Vitamin B3)</h4>
-                <p style={{ fontSize: '0.88rem', color: '#475569' }}>Refines enlarged pore architecture while regulating sebum secretion balance.</p>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20 }}>
+                <div style={{ background: '#F8F4EE', padding: 20, borderRadius: 10 }}>
+                  <h4 style={{ color: 'var(--leafora-bronze)', marginBottom: 6 }}>🌱 Organic Aloe Vera</h4>
+                  <p style={{ fontSize: '0.88rem', color: '#475569' }}>Rich in vitamins C and E, provides instant thermal soothing and anti-inflammatory hydration.</p>
+                </div>
+                <div style={{ background: '#F8F4EE', padding: 20, borderRadius: 10 }}>
+                  <h4 style={{ color: 'var(--leafora-bronze)', marginBottom: 6 }}>🍵 Wild Green Tea Extract</h4>
+                  <p style={{ fontSize: '0.88rem', color: '#475569' }}>Potent EGCG polyphenols protect cellular lipid membranes against environmental pollution.</p>
+                </div>
+                <div style={{ background: '#F8F4EE', padding: 20, borderRadius: 10 }}>
+                  <h4 style={{ color: 'var(--leafora-bronze)', marginBottom: 6 }}>✨ Niacinamide (Vitamin B3)</h4>
+                  <p style={{ fontSize: '0.88rem', color: '#475569' }}>Refines enlarged pore architecture while regulating sebum secretion balance.</p>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
 
         {/* TAB 3: HOW TO USE */}
         {activeTab === 'how_to_use' && (
           <div>
-            <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.4rem', marginBottom: 16 }}>Simple 3-Step Daily Cleansing Ritual</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-                <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--leafora-bronze)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>1</div>
-                <div><strong>Dampen Face:</strong> Splash lukewarm water gently over face and neck.</div>
+            <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.4rem', marginBottom: 16 }}>Directions & Recommended Routine</h3>
+            {product.how_to_use ? (
+              <div style={{ background: '#F8F4EE', padding: 24, borderRadius: 10, borderLeft: '4px solid var(--leafora-bronze)' }}>
+                <p style={{ fontSize: '0.95rem', color: '#334155', lineHeight: 1.8, whiteSpace: 'pre-line', margin: 0 }}>
+                  {product.how_to_use}
+                </p>
               </div>
-              <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-                <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--leafora-bronze)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>2</div>
-                <div><strong>Lather & Massage:</strong> Pump 1-2 dollops of cleanser onto fingertips and massage in circular upward motions for 60 seconds.</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--leafora-bronze)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>1</div>
+                  <div><strong>Dampen Face:</strong> Splash lukewarm water gently over face and neck.</div>
+                </div>
+                <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--leafora-bronze)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>2</div>
+                  <div><strong>Lather & Massage:</strong> Pump 1-2 dollops onto fingertips and massage in circular upward motions for 60 seconds.</div>
+                </div>
+                <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--leafora-bronze)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>3</div>
+                  <div><strong>Rinse & Pat Dry:</strong> Rinse thoroughly with cool water and gently pat dry with a clean cotton cloth.</div>
+                </div>
               </div>
-              <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-                <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--leafora-bronze)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>3</div>
-                <div><strong>Rinse & Pat Dry:</strong> Rinse thoroughly with cool water and gently pat dry with a clean cotton cloth.</div>
-              </div>
-            </div>
+            )}
           </div>
         )}
 
         {/* TAB 4: BENEFITS */}
         {activeTab === 'benefits' && (
           <div>
-            <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.4rem', marginBottom: 16 }}>Clinical Benefits & Results</h3>
-            <ul style={{ paddingLeft: 20, lineHeight: 1.8, color: '#475569' }}>
-              <li><strong>98%</strong> reported immediate removal of excess surface oils and makeup residue.</li>
-              <li><strong>95%</strong> noticed smoother skin texture and zero post-wash tightness within 7 days.</li>
-              <li>Dermatologist-tested for high tolerance on acne-prone and reactive skin.</li>
-            </ul>
+            <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.4rem', marginBottom: 16 }}>Benefits & Clinical Efficacy</h3>
+            {product.benefits ? (
+              <div style={{ background: '#FAF9F6', padding: 24, borderRadius: 10, border: '1px solid #EFE8DE' }}>
+                <div style={{ fontSize: '0.95rem', color: '#334155', lineHeight: 1.8, whiteSpace: 'pre-line' }}>
+                  {product.benefits}
+                </div>
+              </div>
+            ) : (
+              <ul style={{ paddingLeft: 20, lineHeight: 1.8, color: '#475569' }}>
+                <li><strong>98%</strong> reported immediate removal of excess surface oils and makeup residue.</li>
+                <li><strong>95%</strong> noticed smoother skin texture and zero post-wash tightness within 7 days.</li>
+                <li>Dermatologist-tested for high tolerance on acne-prone and reactive skin.</li>
+              </ul>
+            )}
           </div>
         )}
 
