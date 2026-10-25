@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Leaf, User, LogOut, Wallet, Search, ShoppingBag, ChevronDown, Sparkles, ShieldCheck, Menu, X, Trash2, Home } from 'lucide-react';
+import { User, LogOut, Wallet, Search, ShoppingBag, ChevronDown, Sparkles, ShieldCheck, Menu, X, Trash2, Home } from 'lucide-react';
 import { checkHealth, getCategories, getProducts } from '../services/api';
 import { getCart, getCartCount, getCartSubtotal, updateCartQuantity, removeFromCart, DEFAULT_PRODUCT_IMAGE } from '../services/cartService';
 import leaforaLogo from '../assets/leafora-logo.png';
@@ -121,17 +121,12 @@ export default function Navbar() {
         <div className="navbar-inner">
           
           {/* Left: Brand Logo */}
-          <Link to="/" className="brand-logo">
+          <Link to="/" className="brand-logo" aria-label="LeafOra Life Sciences">
             <img 
               src={leaforaLogo} 
-              alt="Leafora Life Sciences Logo" 
+              alt="LeafOra Life Sciences Logo" 
               className="brand-logo-img"
-              style={{ height: '56px', width: 'auto', objectFit: 'contain', display: 'block' }} 
             />
-            <div className="brand-text-col">
-              <span className="brand-title" style={{ color: '#A67C52' }}>LeafOra</span>
-              <span className="brand-subtitle" style={{ color: '#A67C52' }}>LIFE SCIENCES</span>
-            </div>
           </Link>
 
           {/* Mobile Right: Waffle / Hamburger Button */}
@@ -147,14 +142,13 @@ export default function Navbar() {
           <nav className={`nav-links ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
             {/* Mobile Drawer Header */}
             <div className="mobile-drawer-top">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <Link to="/" onClick={() => setIsMobileMenuOpen(false)} style={{ display: 'flex', alignItems: 'center' }}>
                 <img 
                   src={leaforaLogo} 
-                  alt="LeafOra Logo" 
-                  style={{ height: '30px', width: 'auto', objectFit: 'contain' }} 
+                  alt="LeafOra Life Sciences Logo" 
+                  style={{ height: '46px', width: 'auto', objectFit: 'contain' }} 
                 />
-                <span className="mobile-drawer-brand">LeafOra Life Sciences</span>
-              </div>
+              </Link>
               <button className="btn-mobile-close" onClick={() => setIsMobileMenuOpen(false)}>
                 <X size={20} />
               </button>
