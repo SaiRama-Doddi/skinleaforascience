@@ -221,6 +221,60 @@ const getUserWishlist = async (req, res) => {
     console.error('Error fetching user wishlist:', error);
     return res.status(500).json({ success: false, message: error.message });
   }
+// 7b. TOGGLE USER WISHLIST ITEM
+const toggleUserWishlist = async (req, res) => {
+  try {
+    const { email, customer_id, product_id } = req.body;
+    if (!product_id) {
+      return res.status(400).json({ success: false, message: 'Product ID is required.' });
+    }
+
+    let custId = customer_id;
+    if (!custId && email) {
+      const [rows] = await pool.query('SELECT id FROM customers WHERE LOWER(email) = LOWER(?)', [email.trim()]);
+      if (rows.length > 0) custId = rows[0].id;
+    }
+
+    if (!custId) {
+      return res.status(400).json({ success: false, message: 'User account not found.' });
+    }
+
+    // Check if already in wishlist
+    const [existing] = await pool.query(
+      'SELECT id FROM customer_wishlist WHERE customer_id = ? AND product_id = ?',
+      [custId, product_id]
+    );
+
+    if (existing.length > 0) {
+      await pool.query('DELETE FROM customer_wishlist WHERE customer_id = ? AND product_id = ?', [custId, product_id]);
+      return res.status(200).json({
+        success: true,
+        action: 'removed',
+        message: 'Item removed from your Wishlist'
+      });
+    } else {
+      await pool.query('INSERT INTO customer_wishlist (customer_id, product_id) VALUES (?, ?)', [custId, product_id]);
+      return res.status(200).json({
+        success: true,
+        action: 'added',
+        message: 'Item added to your Wishlist ♥'
+      });
+    }
+  } catch (error) {
+    console.error('Error toggling wishlist:', error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// 7c. DELETE WISHLIST ITEM BY ID
+const deleteWishlistItem = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.query('DELETE FROM customer_wishlist WHERE id = ?', [id]);
+    return res.status(200).json({ success: true, message: 'Item removed from wishlist.' });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
 };
 
 // 8. PLACE USER ORDER
@@ -372,5 +426,7 @@ module.exports = {
   deleteUserAddress,
   getUserOrders,
   getUserWishlist,
+  toggleUserWishlist,
+  deleteWishlistItem,
   placeUserOrder
 };

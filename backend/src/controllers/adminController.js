@@ -86,8 +86,8 @@ const verifyOtp = async (req, res) => {
       console.warn('DB verify notice:', dbErr.message);
     }
 
-    // If valid or in standard format
-    if (isValid || (otp && otp.length === 6)) {
+    // Strictly require verified un-expired OTP from database
+    if (isValid) {
       const token = `leafora_admin_token_${Date.now()}_${Math.random().toString(36).substring(2)}`;
 
       return res.status(200).json({

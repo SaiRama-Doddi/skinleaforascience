@@ -5,7 +5,7 @@ import {
   ChevronLeft, ChevronRight, Play, Share2, Copy, Check, MapPin, 
   ChevronDown, ChevronUp, Sparkles, Leaf, Award, Eye, X
 } from 'lucide-react';
-import { getProductById, getProducts } from '../services/api';
+import { getProductById, getProducts, userToggleWishlist } from '../services/api';
 import { addToCart } from '../services/cartService';
 import SEO from '../components/SEO';
 import './ProductDetails.css';
@@ -37,6 +37,16 @@ export default function ProductDetails() {
     setLoadingProduct(true);
 
     if (id) {
+      try {
+        const stored = localStorage.getItem('leafora_wishlist_ids');
+        if (stored) {
+          const ids = JSON.parse(stored);
+          if (Array.isArray(ids) && (ids.includes(Number(id)) || ids.includes(id))) {
+            setIsWishlisted(true);
+          }
+        }
+      } catch (e) {}
+
       getProductById(id)
         .then(res => {
           if (res?.data) {
@@ -126,6 +136,33 @@ export default function ProductDetails() {
   const handleShareProduct = () => {
     navigator.clipboard.writeText(window.location.href);
     showToast('Product link copied to your clipboard!');
+  };
+
+  const handleToggleWishlist = async () => {
+    const nextState = !isWishlisted;
+    setIsWishlisted(nextState);
+
+    try {
+      const stored = localStorage.getItem('leafora_wishlist_ids');
+      let ids = stored ? JSON.parse(stored) : [];
+      const prodId = Number(product.id) || product.id;
+      if (nextState) {
+        if (!ids.includes(prodId)) ids.push(prodId);
+      } else {
+        ids = ids.filter(i => i !== prodId);
+      }
+      localStorage.setItem('leafora_wishlist_ids', JSON.stringify(ids));
+
+      const userProfileStr = localStorage.getItem('leafora_user_profile');
+      if (userProfileStr) {
+        const u = JSON.parse(userProfileStr);
+        if (u?.email) {
+          await userToggleWishlist({ email: u.email, product_id: product.id });
+        }
+      }
+    } catch (e) {}
+
+    showToast(nextState ? 'Added to Wishlist ♥' : 'Removed from Wishlist');
   };
 
   if (loadingProduct) {
@@ -225,7 +262,7 @@ export default function ProductDetails() {
             {/* Top Right Wishlist Heart */}
             <button 
               className={`pdp-wishlist-btn ${isWishlisted ? 'active' : ''}`}
-              onClick={() => { setIsWishlisted(!isWishlisted); showToast(isWishlisted ? 'Removed from Wishlist' : 'Added to Wishlist ♥'); }}
+              onClick={handleToggleWishlist}
             >
               <Heart size={18} fill={isWishlisted ? '#E53E3E' : 'none'} />
             </button>

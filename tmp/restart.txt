@@ -1,1 +1,1 @@
-2026-10-25 14:00:20 - restart trigger (removed categories and filter options from shop catalog)
+2026-10-25 17:38:40 - restart trigger (fixed Admin Barcode crash, OTP bypass, user login validation, wishlist sync, admin API security)

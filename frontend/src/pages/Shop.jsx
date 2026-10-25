@@ -4,7 +4,7 @@ import {
   Search, Grid, List, Heart, ShoppingBag, Star, 
   ChevronRight, X, CheckCircle2, ShieldCheck, Leaf, Award, Eye, Sparkles
 } from 'lucide-react';
-import { getProducts } from '../services/api';
+import { getProducts, userGetWishlist, userToggleWishlist } from '../services/api';
 import { addToCart } from '../services/cartService';
 import SEO from '../components/SEO';
 import skincareStoryPhoto from '../assets/skincare_story_showcase.jpg';
@@ -71,17 +71,57 @@ export default function Shop() {
       .finally(() => setLoadingProducts(false));
   }, []);
 
+  // Sync wishlist from localStorage and database on load
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('leafora_wishlist_ids');
+      if (stored) setWishlist(JSON.parse(stored));
+
+      const userProfileStr = localStorage.getItem('leafora_user_profile');
+      if (userProfileStr) {
+        const u = JSON.parse(userProfileStr);
+        if (u?.email) {
+          userGetWishlist(u.email)
+            .then(res => {
+              const list = res?.wishlist || res?.data?.wishlist || [];
+              if (Array.isArray(list) && list.length > 0) {
+                const ids = list.map(item => item.id);
+                setWishlist(ids);
+                localStorage.setItem('leafora_wishlist_ids', JSON.stringify(ids));
+              }
+            })
+            .catch(() => {});
+        }
+      }
+    } catch (e) {}
+  }, []);
+
   const showToast = (msg) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  const toggleWishlist = (id, e) => {
+  const toggleWishlist = async (id, e) => {
     if (e) e.stopPropagation();
-    setWishlist(prev => 
-      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
-    );
-    showToast(wishlist.includes(id) ? 'Removed item from your Wishlist' : 'Saved item to your Wishlist ♥');
+    const isCurrentlyWishlisted = wishlist.includes(id);
+    const updated = isCurrentlyWishlisted 
+      ? wishlist.filter(item => item !== id) 
+      : [...wishlist, id];
+
+    setWishlist(updated);
+
+    try {
+      localStorage.setItem('leafora_wishlist_ids', JSON.stringify(updated));
+      const userProfileStr = localStorage.getItem('leafora_user_profile');
+      if (userProfileStr) {
+        const u = JSON.parse(userProfileStr);
+        if (u?.email) {
+          await userToggleWishlist({ email: u.email, product_id: id });
+        }
+      }
+    } catch (err) {}
+
+    showToast(isCurrentlyWishlisted ? 'Removed item from your Wishlist' : 'Saved item to your Wishlist ♥');
   };
 
   // Filter & Sort Logic (Search & Sort)

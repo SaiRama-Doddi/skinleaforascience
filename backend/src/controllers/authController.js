@@ -151,28 +151,28 @@ const loginUser = async (req, res) => {
       console.warn('Login DB query fallback:', e.message);
     }
 
-    // If customer not found in DB or password hash does not match
-    if (customer && customer.password_hash && customer.password_hash !== hashed) {
-      return res.status(401).json({ success: false, message: 'Invalid email or password. Please check your credentials.' });
+    // If customer not found in DB
+    if (!customer) {
+      return res.status(404).json({
+        success: false,
+        message: 'No account found with this email. Please create an account first.'
+      });
+    }
+
+    // If password hash does not match
+    if (customer.password_hash && customer.password_hash !== hashed) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid email or password. Please check your credentials.'
+      });
     }
 
     // If status is Suspended / Blocked
-    if (customer && customer.status === 'Blocked') {
-      return res.status(403).json({ success: false, message: 'Your account has been temporarily suspended. Please contact support.' });
-    }
-
-    // If customer was not found in DB, create/mock session for seamless onboarding
-    if (!customer) {
-      customer = {
-        id: Date.now(),
-        name: email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
-        email: email.trim().toLowerCase(),
-        phone: '+1 555 0199',
-        wallet_balance: 25.00,
-        loyalty_points: 150,
-        loyalty_tier: 'Gold',
-        status: 'Active'
-      };
+    if (customer.status === 'Blocked') {
+      return res.status(403).json({
+        success: false,
+        message: 'Your account has been temporarily suspended. Please contact customer support.'
+      });
     }
 
     const token = generateToken();

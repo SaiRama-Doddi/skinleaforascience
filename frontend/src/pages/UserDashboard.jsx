@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { 
   userGetProfile, userUpdateProfile, userGetAddresses, userAddAddress, 
-  userDeleteAddress, userGetOrders, userGetWishlist 
+  userDeleteAddress, userGetOrders, userGetWishlist, userDeleteWishlistItem, userToggleWishlist
 } from '../services/api';
 import { addToCart } from '../services/cartService';
 import { detectLiveLocation } from '../services/locationService';
@@ -207,6 +207,21 @@ export default function UserDashboard() {
       setAddresses(prev => prev.filter(a => a.id !== addrId));
     } catch (e) {
       showToast('Error removing address.');
+    }
+  };
+
+  // Remove item from wishlist
+  const handleRemoveWishlist = async (item) => {
+    try {
+      if (item.wishlist_id) {
+        await userDeleteWishlistItem(item.wishlist_id);
+      } else {
+        await userToggleWishlist({ email: user?.email, product_id: item.id });
+      }
+      setWishlist(prev => prev.filter(w => w.id !== item.id));
+      showToast('Item removed from your wishlist.');
+    } catch (e) {
+      setWishlist(prev => prev.filter(w => w.id !== item.id));
     }
   };
 
@@ -501,15 +516,26 @@ export default function UserDashboard() {
                       <img src={item.image_url || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZHg9IjEwMCIgZmlsbD0iI0YzRjRGNiIvPjwvc3ZnPg=='} alt={item.name} />
                       <h4>{item.name}</h4>
                       <p className="wish-price">₹{Number(item.price).toFixed(2)}</p>
-                      <button 
-                        className="btn-wish-cart"
-                        onClick={() => {
-                          addToCart(item, 1);
-                          showToast(`Added "${item.name}" to cart!`);
-                        }}
-                      >
-                        <ShoppingBag size={14} /> Add to Cart
-                      </button>
+                      <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                        <button 
+                          className="btn-wish-cart"
+                          style={{ flex: 1 }}
+                          onClick={() => {
+                            addToCart(item, 1);
+                            showToast(`Added "${item.name}" to cart!`);
+                          }}
+                        >
+                          <ShoppingBag size={14} /> Add to Cart
+                        </button>
+                        <button 
+                          className="btn-addr-del"
+                          style={{ padding: '8px 12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                          onClick={() => handleRemoveWishlist(item)}
+                          title="Remove from Wishlist"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>

@@ -14,9 +14,15 @@ const api = axios.create({
 // Request interceptor
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('leafora_admin_token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    const adminToken = localStorage.getItem('leafora_admin_token');
+    const userToken = localStorage.getItem('leafora_user_token');
+
+    if (adminToken && window.location.pathname.startsWith('/admin')) {
+      config.headers.Authorization = `Bearer ${adminToken}`;
+    } else if (userToken) {
+      config.headers.Authorization = `Bearer ${userToken}`;
+    } else if (adminToken) {
+      config.headers.Authorization = `Bearer ${adminToken}`;
     }
     return config;
   },
@@ -246,6 +252,8 @@ export const userAddAddress = (data) => api.post('/user/addresses', data);
 export const userDeleteAddress = (id) => api.delete(`/user/addresses/${id}`);
 export const userGetOrders = (email) => api.get('/user/orders', { params: { email } });
 export const userGetWishlist = (email) => api.get('/user/wishlist', { params: { email } });
+export const userToggleWishlist = (data) => api.post('/user/wishlist/toggle', data);
+export const userDeleteWishlistItem = (id) => api.delete(`/user/wishlist/${id}`);
 export const placeOrder = (orderData) => api.post('/orders/place', orderData);
 export const createRazorpayOrder = (data) => api.post('/payments/create-razorpay-order', typeof data === 'object' ? data : { amount: data });
 export const verifyRazorpayPayment = (data) => api.post('/payments/verify-razorpay-payment', data);

@@ -7215,7 +7215,7 @@ export default function AdminDashboard() {
                           <tr key={shp.id}>
                             <td>
                               <div style={{ fontWeight: 700, color: '#A37F3F', display: 'flex', alignItems: 'center', gap: 6 }}>
-                                <Barcode size={14} /> {shp.awb_code || 'SR-AWB-PENDING'}
+                                <QrCode size={14} /> {shp.awb_code || 'SR-AWB-PENDING'}
                               </div>
                               <div style={{ fontSize: 11, color: '#6B7280' }}>Order #{shp.order_number}</div>
                             </td>
@@ -7696,7 +7696,7 @@ export default function AdminDashboard() {
             <div className="leafora-inline-modal">
               <div className="leafora-inline-modal-body" style={{ maxWidth: 520 }}>
                 <h4 style={{ margin: '0 0 10px 0', fontSize: 15, fontWeight: 700, color: '#111827', display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <Barcode size={18} color="#A37F3F" /> Generate Shiprocket AWB for Order #{showAwbModal.order.order_number || showAwbModal.order.id}
+                  <QrCode size={18} color="#A37F3F" /> Generate Shiprocket AWB for Order #{showAwbModal.order.order_number || showAwbModal.order.id}
                 </h4>
                 <form onSubmit={handleGenerateAwbSubmit}>
                   <div className="leafora-form-group">

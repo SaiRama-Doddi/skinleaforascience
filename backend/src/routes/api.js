@@ -6,6 +6,7 @@ const authController = require('../controllers/authController');
 
 const userController = require('../controllers/userController');
 const paymentController = require('../controllers/paymentController');
+const { verifyAdminToken } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
@@ -34,6 +35,9 @@ router.post('/user/addresses', userController.addUserAddress);
 router.delete('/user/addresses/:id', userController.deleteUserAddress);
 router.get('/user/orders', userController.getUserOrders);
 router.get('/user/wishlist', userController.getUserWishlist);
+router.post('/user/wishlist/toggle', userController.toggleUserWishlist);
+router.post('/user/wishlist', userController.toggleUserWishlist);
+router.delete('/user/wishlist/:id', userController.deleteWishlistItem);
 router.post('/orders/place', userController.placeUserOrder);
 
 // ─── RAZORPAY PAYMENT ENDPOINTS ───
@@ -43,6 +47,14 @@ router.post('/payments/verify-razorpay-payment', paymentController.verifyRazorpa
 // ─── ADMIN AUTHENTICATION ───
 router.post('/admin/send-otp', adminController.sendOtp);
 router.post('/admin/verify-otp', adminController.verifyOtp);
+
+// Protect all admin endpoints with admin token verification
+router.use('/admin', (req, res, next) => {
+  if (req.path === '/send-otp' || req.path === '/verify-otp') {
+    return next();
+  }
+  return verifyAdminToken(req, res, next);
+});
 
 // ─── ADMIN DASHBOARD ANALYTICS & UPLOADS ───
 router.get('/admin/analytics', adminController.getAnalytics);
