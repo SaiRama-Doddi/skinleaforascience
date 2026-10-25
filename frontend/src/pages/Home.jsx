@@ -4,7 +4,7 @@ import {
   ChevronRight, ChevronLeft, Sparkles, Globe, Share2, MessageCircle, CheckCircle2, Loader2
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { getCategories, getProducts, getBanners } from '../services/api';
+import { getProducts, getBanners } from '../services/api';
 import { addToCart } from '../services/cartService';
 import SEO from '../components/SEO';
 import skincareStoryImg from '../assets/skincare_story_showcase.jpg';
@@ -43,32 +43,14 @@ const HERO_CAROUSEL_SLIDES = [
 export default function Home() {
   const navigate = useNavigate();
   const [toastMsg, setToastMsg] = useState(null);
-  const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
   const [banners, setBanners] = useState([]);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isCarouselPaused, setIsCarouselPaused] = useState(false);
   const [touchStartX, setTouchStartX] = useState(null);
   const [touchEndX, setTouchEndX] = useState(null);
-  const [loadingCats, setLoadingCats] = useState(true);
   const [loadingProds, setLoadingProds] = useState(true);
-  const [showAllCategories, setShowAllCategories] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
-
-  // Category horizontal scroll ref for arrow navigation
-  const categoryScrollRef = useRef(null);
-
-  const scrollCategoryLeft = () => {
-    if (categoryScrollRef.current) {
-      categoryScrollRef.current.scrollBy({ left: -260, behavior: 'smooth' });
-    }
-  };
-
-  const scrollCategoryRight = () => {
-    if (categoryScrollRef.current) {
-      categoryScrollRef.current.scrollBy({ left: 260, behavior: 'smooth' });
-    }
-  };
 
   useEffect(() => {
     const handleResize = () => {
@@ -79,18 +61,6 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    // Fetch categories dynamically from backend API / database
-    getCategories()
-      .then((res) => {
-        if (res && res.data && res.data.length > 0) {
-          setCategories(res.data);
-        } else {
-          setCategories([]);
-        }
-      })
-      .catch(() => setCategories([]))
-      .finally(() => setLoadingCats(false));
-
     // Fetch products dynamically from backend API / database
     getProducts()
       .then((res) => {
@@ -158,8 +128,7 @@ export default function Home() {
     setTimeout(() => setToastMsg(null), 3000);
   };
 
-  const allCategories = categories;
-  const visibleCategories = (isMobile && !showAllCategories) ? allCategories.slice(0, 3) : allCategories;
+
 
   return (
     <div className="home-page-pixel">
@@ -253,58 +222,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 2. SHOP BY CATEGORY (HORIZONTALLY SCROLLABLE WITH RIGHT-SIDE ARROWS & VIEW ALL) */}
-      <section className="category-section-pixel">
-        <div className="category-container-pixel">
-          <div className="category-flex-header-pixel">
-            <div>
-              <span className="section-tag-gold-pixel single-line-title" style={{ whiteSpace: 'nowrap', display: 'block' }}>
-                EXPLORE OUR RANGE
-              </span>
-              <h2 className="section-title-serif-pixel single-line-title" style={{ margin: 0 }}>
-                Shop by Category
-              </h2>
-            </div>
 
-            <div className="category-header-right-controls">
-              {/* Left & Right Scroll Arrow Buttons */}
-              <div className="category-arrow-btns">
-                <button className="btn-cat-scroll" onClick={scrollCategoryLeft} aria-label="Scroll Categories Left">
-                  <ChevronLeft size={16} />
-                </button>
-                <button className="btn-cat-scroll" onClick={scrollCategoryRight} aria-label="Scroll Categories Right">
-                  <ChevronRight size={16} />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {loadingCats ? (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 0', gap: 10, color: '#A67C52' }}>
-              <Loader2 className="animate-spin" size={24} />
-              <span>Loading categories from database...</span>
-            </div>
-          ) : (
-            <div className="category-scroll-wrapper" ref={categoryScrollRef}>
-              {allCategories.map(cat => (
-                <Link key={cat.id} to={`/products?category=${encodeURIComponent(cat.slug || cat.name)}`} className="category-pill-card-pixel">
-                  <div className="category-circle-box-pixel">
-                    <img 
-                      src={cat.image_url || cat.icon_url || '/assets/face_wash.jpg'} 
-                      alt={cat.name} 
-                      onError={(e) => {
-                        e.currentTarget.onerror = null;
-                        e.currentTarget.src = '/assets/face_wash.jpg';
-                      }}
-                    />
-                  </div>
-                  <span className="category-pill-name-pixel">{cat.name}</span>
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
 
       {/* Dynamic Offer / Flash Sale Banner if configured in Admin */}
       {(() => {
