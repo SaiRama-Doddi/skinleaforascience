@@ -328,9 +328,9 @@ export default function Home() {
               <span>Loading products from database...</span>
             </div>
           ) : products.length > 0 ? (
-            /* Grid Layout: Database Products + 1 Tall Golden Promo Card */
+            /* Grid Layout: 3 Bestseller Database Products */
             <div className="bestseller-layout-grid-pixel">
-              {products.slice(0, 4).map(item => (
+              {products.slice(0, 3).map(item => (
                 <div 
                   key={item.id} 
                   className="product-card-pixel"
@@ -374,26 +374,6 @@ export default function Home() {
                   </div>
                 </div>
               ))}
-
-              {/* TALL GOLDEN PROMO CARD */}
-              <div className="tall-golden-promo-card-pixel">
-                <img 
-                  src={skincareStoryImg} 
-                  alt="Nature Meets Science Promo Background"
-                  style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.25, zIndex: 1 }} 
-                />
-                <div style={{ position: 'relative', zIndex: 2 }}>
-                  <h3 className="promo-title-gold-pixel">
-                    NATURE MEETS SCIENCE FOR HEALTHY RADIANT SKIN
-                  </h3>
-                </div>
-
-                <div style={{ position: 'relative', zIndex: 2 }}>
-                  <Link to="/products" className="btn-gold-white-pixel">
-                    Shop Collection <ArrowRight size={14} />
-                  </Link>
-                </div>
-              </div>
             </div>
           ) : (
             <div style={{ padding: '30px 0', textAlign: 'center', color: '#78716C', fontSize: '0.95rem' }}>
