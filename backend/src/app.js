@@ -49,6 +49,53 @@ if (!fs.existsSync(uploadsDir)) {
 }
 app.use('/uploads', express.static(uploadsDir, staticCacheOptions));
 
+// Dynamic Media & Uploads Handler - Serves from Disk OR MySQL Database
+app.get(['/uploads/:filename', '/api/media/:filename'], async (req, res, next) => {
+  const filename = req.params.filename;
+  if (!filename) return next();
+
+  // 1. Check physical disk locations
+  const diskCandidates = [
+    path.join(__dirname, '../public/uploads', filename),
+    path.join(__dirname, '../../public/uploads', filename),
+    path.join(__dirname, '../../dist/uploads', filename),
+    path.join(process.cwd(), 'public/uploads', filename),
+    path.join(process.cwd(), 'uploads', filename)
+  ];
+
+  for (const diskPath of diskCandidates) {
+    try {
+      if (fs.existsSync(diskPath)) {
+        return res.sendFile(path.resolve(diskPath));
+      }
+    } catch (_) {}
+  }
+
+  // 2. Fetch from MySQL media_storage table
+  try {
+    const { pool } = require('./config/db');
+    const [rows] = await pool.query(
+      'SELECT mime_type, data_base64 FROM media_storage WHERE filename = ? LIMIT 1',
+      [filename]
+    );
+    if (rows && rows[0]) {
+      const mimeType = rows[0].mime_type || 'image/jpeg';
+      let base64Data = rows[0].data_base64;
+      if (base64Data.includes(';base64,')) {
+        base64Data = base64Data.split(';base64,')[1];
+      }
+      const imgBuffer = Buffer.from(base64Data, 'base64');
+      res.setHeader('Content-Type', mimeType);
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      return res.send(imgBuffer);
+    }
+  } catch (dbErr) {
+    console.error('Media DB fetch notice:', dbErr.message);
+  }
+
+  return next();
+});
+
 // API Routes
 app.use('/api', apiRoutes);
 

@@ -8,6 +8,7 @@ import {
 import { getProductById, getProducts, userToggleWishlist } from '../services/api';
 import { addToCart } from '../services/cartService';
 import SEO from '../components/SEO';
+import botanicalProductsPhoto from '../assets/login_botanical_products.jpg';
 import './ProductDetails.css';
 
 
@@ -246,7 +247,14 @@ export default function ProductDetails() {
                   className={`thumb-item ${selectedImgIndex === idx ? 'active' : ''}`}
                   onClick={() => setSelectedImgIndex(idx)}
                 >
-                  <img src={imgUrl} alt={`${product.name} Thumb ${idx + 1}`} />
+                  <img 
+                    src={imgUrl} 
+                    alt={`${product.name} Thumb ${idx + 1}`} 
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = botanicalProductsPhoto;
+                    }}
+                  />
                 </div>
               ))}
             </div>
@@ -284,6 +292,10 @@ export default function ProductDetails() {
               src={product.gallery[selectedImgIndex] || product.gallery[0]} 
               alt={product.name} 
               className="main-img-display"
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = botanicalProductsPhoto;
+              }}
             />
 
             {/* Corner Text Callout inside Image */}
@@ -701,6 +713,10 @@ export default function ProductDetails() {
                 <img 
                   src={item.image_url || item.image || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZHg9IjEwMCIgZmlsbD0iI0YzRjRGNiIvPjwvc3ZnPg=='} 
                   alt={item.name} 
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = botanicalProductsPhoto;
+                  }}
                 />
               </div>
               <div className="shop-card-info">

@@ -1153,22 +1153,57 @@ export default function AdminDashboard() {
   }, [activeTab, categoryViewTab, catLevelFilter, catStatusFilter, catSearchQuery]);
 
 
+  const compressImage = (file) => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new window.Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          const maxDim = 1200;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+          resolve(compressedDataUrl);
+        };
+        img.onerror = () => resolve(e.target.result);
+        img.src = e.target.result;
+      };
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(file);
+    });
+  };
+
   const handleCatMediaUpload = async (field, file) => {
     if (!file) return;
-    const reader = new FileReader();
-    reader.onloadend = async () => {
-      const base64Data = reader.result;
-      try {
-        const res = await adminUploadImage(base64Data);
-        const savedUrl = (res && res.success && res.url) ? res.url : base64Data;
-        setCategoryForm(prev => ({ ...prev, [field]: savedUrl }));
-        showNotification(`${field.replace('_url', '').toUpperCase()} uploaded successfully!`);
-      } catch (err) {
-        setCategoryForm(prev => ({ ...prev, [field]: base64Data }));
-        showNotification(`${field.replace('_url', '').toUpperCase()} attached!`);
-      }
-    };
-    reader.readAsDataURL(file);
+    try {
+      const base64Data = await compressImage(file);
+      if (!base64Data) throw new Error('Image read failed');
+      const res = await adminUploadImage(base64Data);
+      const savedUrl = (res && res.success && res.url) ? res.url : base64Data;
+      setCategoryForm(prev => ({ ...prev, [field]: savedUrl }));
+      showNotification(`${field.replace('_url', '').toUpperCase()} saved to database!`);
+    } catch (err) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setCategoryForm(prev => ({ ...prev, [field]: reader.result }));
+        showNotification(`${field.replace('_url', '').toUpperCase()} saved directly!`);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleSaveCategory = async (e) => {
@@ -1504,30 +1539,31 @@ export default function AdminDashboard() {
   const handleProductImageUpload = async (slotIdx, file) => {
     if (!file) return;
     setUploadingSlot(slotIdx);
-    const reader = new FileReader();
-    reader.onloadend = async () => {
-      const base64Data = reader.result;
-      try {
-        const res = await adminUploadImage(base64Data);
-        const savedUrl = (res && res.success && res.url) ? res.url : base64Data;
+    try {
+      const base64Data = await compressImage(file);
+      if (!base64Data) throw new Error('Image read failed');
+      const res = await adminUploadImage(base64Data);
+      const savedUrl = (res && res.success && res.url) ? res.url : base64Data;
+      setProductForm(prev => {
+        const updatedImgs = [...prev.images];
+        updatedImgs[slotIdx] = savedUrl;
+        return { ...prev, images: updatedImgs };
+      });
+      showNotification(`Image ${slotIdx + 1} stored in database successfully!`);
+    } catch (err) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
         setProductForm(prev => {
           const updatedImgs = [...prev.images];
-          updatedImgs[slotIdx] = savedUrl;
+          updatedImgs[slotIdx] = reader.result;
           return { ...prev, images: updatedImgs };
         });
-        showNotification(`Image ${slotIdx + 1} uploaded successfully!`);
-      } catch (err) {
-        setProductForm(prev => {
-          const updatedImgs = [...prev.images];
-          updatedImgs[slotIdx] = base64Data;
-          return { ...prev, images: updatedImgs };
-        });
-        showNotification(`Image ${slotIdx + 1} attached!`);
-      } finally {
-        setUploadingSlot(null);
-      }
-    };
-    reader.readAsDataURL(file);
+        showNotification(`Image ${slotIdx + 1} stored directly!`);
+      };
+      reader.readAsDataURL(file);
+    } finally {
+      setUploadingSlot(null);
+    }
   };
 
   const handleProductImageUrlChange = (slotIdx, value) => {
@@ -4315,7 +4351,15 @@ export default function AdminDashboard() {
 
                               <div className="leafora-slot-preview-area">
                                 {imgUrl ? (
-                                  <img src={imgUrl} alt={`Product Slot ${slotIdx + 1}`} className="leafora-slot-img-preview" />
+                                  <img 
+                                    src={imgUrl} 
+                                    alt={`Product Slot ${slotIdx + 1}`} 
+                                    className="leafora-slot-img-preview" 
+                                    onError={(e) => {
+                                      e.target.onerror = null;
+                                      e.target.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNGM0Y0RjYiLz48cGF0aCBkPSJNNTAgMjAgQzMwIDIwIDIwIDQwIDIwIDYwIEMyMCA4MCAzMCA5MCA1MCA5MCBDNzAgOTAgODAgODAgODAgNjAgQzgwIDQwIDcwIDIwIDUwIDIwIFoiIGZpbGw9IiNBNjdDNTIiIG9wYWNpdHk9IjAuNCIvPjwvc3ZnPg==';
+                                    }}
+                                  />
                                 ) : (
                                   <div className="leafora-slot-placeholder"><Plus size={20} color="#9CA3AF" /><span>Add Image {slotIdx + 1}</span></div>
                                 )}
@@ -4326,7 +4370,7 @@ export default function AdminDashboard() {
                                   {uploadingSlot === slotIdx ? 'Uploading...' : 'Choose File'}
                                   <input type="file" accept="image/*" onChange={(e) => { const file = e.target.files?.[0]; if (file) handleProductImageUpload(slotIdx, file); }} style={{ display: 'none' }} />
                                 </label>
-                                <input type="text" placeholder="or Image URL..." className="leafora-slot-url-input" value={imgUrl.startsWith('data:') ? 'Uploaded File' : imgUrl} onChange={(e) => handleProductImageUrlChange(slotIdx, e.target.value)} />
+                                <input type="text" placeholder="or Image URL..." className="leafora-slot-url-input" value={imgUrl.startsWith('data:') ? 'Stored in Database' : imgUrl} onChange={(e) => handleProductImageUrlChange(slotIdx, e.target.value)} />
                               </div>
                             </div>
                           );
@@ -4673,12 +4717,30 @@ export default function AdminDashboard() {
 
                             <td>
                               <div className="leafora-product-cell-expanded">
-                                <img src={primaryImg} alt={prod.name} className="leafora-product-img" />
+                                <img 
+                                  src={primaryImg} 
+                                  alt={prod.name} 
+                                  className="leafora-product-img" 
+                                  onError={(e) => {
+                                    e.target.onerror = null;
+                                    e.target.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNGM0Y0RjYiLz48cGF0aCBkPSJNNTAgMjAgQzMwIDIwIDIwIDQwIDIwIDYwIEMyMCA4MCAzMCA5MCA1MCA5MCBDNzAgOTAgODAgODAgODAgNjAgQzgwIDQwIDcwIDIwIDUwIDIwIFoiIGZpbGw9IiNBNjdDNTIiIG9wYWNpdHk9IjAuNCIvPjwvc3ZnPg==';
+                                  }}
+                                />
                                 <div>
                                   <div style={{ fontWeight: 700, color: '#111827' }}>{prod.name}</div>
                                   <div className="leafora-gallery-preview-row">
                                     {prodImages.map((img, idx) => (
-                                      <img key={idx} src={img} alt={`Thumb ${idx+1}`} className="leafora-gallery-mini-thumb" title={`Image ${idx+1}`} />
+                                      <img 
+                                        key={idx} 
+                                        src={img} 
+                                        alt={`Thumb ${idx+1}`} 
+                                        className="leafora-gallery-mini-thumb" 
+                                        title={`Image ${idx+1}`} 
+                                        onError={(e) => {
+                                          e.target.onerror = null;
+                                          e.target.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNGM0Y0RjYiLz48cGF0aCBkPSJNNTAgMjAgQzMwIDIwIDIwIDQwIDIwIDYwIEMyMCA4MCAzMCA5MCA1MCA5MCBDNzAgOTAgODAgODAgODAgNjAgQzgwIDQwIDcwIDIwIDUwIDIwIFoiIGZpbGw9IiNBNjdDNTIiIG9wYWNpdHk9IjAuNCIvPjwvc3ZnPg==';
+                                        }}
+                                      />
                                     ))}
                                     <span className="leafora-img-count-badge">🖼️ {prodImages.length} {prodImages.length === 1 ? 'image' : 'images'}</span>
                                   </div>

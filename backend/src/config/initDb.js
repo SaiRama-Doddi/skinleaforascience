@@ -154,6 +154,19 @@ const initDb = async () => {
       );
     `);
 
+    // 4bb. Media Storage Table (Direct Database Storage for Images)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS media_storage (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        filename VARCHAR(255) UNIQUE NOT NULL,
+        mime_type VARCHAR(100) NOT NULL,
+        data_base64 LONGTEXT NOT NULL,
+        file_size INT DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_filename (filename)
+      );
+    `);
+
     // Ensure image columns use LONGTEXT to store base64 image data directly in database
     const longtextQueries = [
       "ALTER TABLE categories MODIFY COLUMN image_url LONGTEXT",

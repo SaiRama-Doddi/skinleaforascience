@@ -49,6 +49,10 @@ export default function ProductCard({ product }) {
             alt={product.name} 
             loading="lazy"
             decoding="async"
+            onError={(e) => {
+              e.currentTarget.onerror = null;
+              e.currentTarget.src = SVG_PLACEHOLDER;
+            }}
             style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'all 0.3s ease' }} 
           />
           {images.length > 1 && (
@@ -68,6 +72,10 @@ export default function ProductCard({ product }) {
                 alt={`Thumb ${idx + 1}`}
                 loading="lazy"
                 decoding="async"
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = SVG_PLACEHOLDER;
+                }}
                 onClick={(e) => {
                   e.stopPropagation();
                   setSelectedImgIndex(idx);

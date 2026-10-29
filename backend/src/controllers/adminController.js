@@ -554,52 +554,63 @@ const uploadImage = async (req, res) => {
       dataUrl = `data:image/jpeg;base64,${image_data}`;
     }
 
-    // Try saving as physical file in static uploads/ directory
-    try {
-      const matches = dataUrl.match(/^data:image\/([A-Za-z0-9-+\/]+);base64,(.+)$/);
-      if (matches && matches.length === 3) {
-        let ext = matches[1].replace('jpeg', 'jpg').split('+')[0];
-        if (ext === 'svg+xml') ext = 'svg';
-        const buffer = Buffer.from(matches[2], 'base64');
-        const filename = `banner_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${ext}`;
+    let mimeType = 'image/jpeg';
+    let ext = 'jpg';
+    let base64Content = dataUrl;
 
-        const candidateDirs = [
-          path.join(__dirname, '../public/uploads'),
-          path.join(__dirname, '../../public/uploads'),
-          path.join(__dirname, '../../dist/uploads'),
-          path.join(__dirname, '../../build/uploads'),
-          path.join(process.cwd(), 'public/uploads'),
-          path.join(process.cwd(), 'uploads')
-        ];
-
-        let fileSaved = false;
-        for (const targetDir of candidateDirs) {
-          try {
-            if (!fs.existsSync(targetDir)) {
-              fs.mkdirSync(targetDir, { recursive: true });
-            }
-            fs.writeFileSync(path.join(targetDir, filename), buffer);
-            fileSaved = true;
-          } catch (_) {}
-        }
-
-        if (fileSaved) {
-          return res.status(200).json({
-            success: true,
-            url: `/uploads/${filename}`,
-            message: 'Image uploaded and saved successfully'
-          });
-        }
-      }
-    } catch (saveErr) {
-      console.warn('Physical upload notice, falling back to data URL:', saveErr.message);
+    const matches = dataUrl.match(/^data:([A-Za-z0-9-+\/]+);base64,(.+)$/);
+    if (matches && matches.length === 3) {
+      mimeType = matches[1];
+      ext = matches[1].replace('image/', '').replace('jpeg', 'jpg').split('+')[0];
+      if (ext === 'svg+xml') ext = 'svg';
+      base64Content = matches[2];
     }
 
-    // Return Base64 Data URL directly for direct MySQL LONGTEXT storage
+    const filename = `banner_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${ext}`;
+
+    // 1. Store directly in MySQL media_storage table
+    try {
+      await pool.query(
+        `INSERT INTO media_storage (filename, mime_type, data_base64, file_size) 
+         VALUES (?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE data_base64 = VALUES(data_base64), mime_type = VALUES(mime_type)`,
+        [filename, mimeType, dataUrl, Buffer.byteLength(base64Content, 'base64')]
+      );
+    } catch (dbErr) {
+      console.warn('media_storage insert notice:', dbErr.message);
+    }
+
+    // 2. Also write physical file to uploads folders for static server caching
+    try {
+      const buffer = Buffer.from(base64Content, 'base64');
+      const candidateDirs = [
+        path.join(__dirname, '../public/uploads'),
+        path.join(__dirname, '../../public/uploads'),
+        path.join(__dirname, '../../dist/uploads'),
+        path.join(__dirname, '../../build/uploads'),
+        path.join(process.cwd(), 'public/uploads'),
+        path.join(process.cwd(), 'uploads')
+      ];
+
+      for (const targetDir of candidateDirs) {
+        try {
+          if (!fs.existsSync(targetDir)) {
+            fs.mkdirSync(targetDir, { recursive: true });
+          }
+          fs.writeFileSync(path.join(targetDir, filename), buffer);
+        } catch (_) {}
+      }
+    } catch (saveErr) {
+      console.warn('Physical disk cache notice:', saveErr.message);
+    }
+
+    // Return the data URL directly so product stores the image data directly in database
     return res.status(200).json({ 
       success: true, 
-      url: dataUrl, 
-      message: 'Image prepared for database storage successfully' 
+      url: dataUrl,
+      media_url: `/uploads/${filename}`,
+      filename: filename,
+      message: 'Image stored in database successfully' 
     });
   } catch (error) {
     console.error('Upload Error:', error);

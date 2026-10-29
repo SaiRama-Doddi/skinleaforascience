@@ -319,8 +319,14 @@ export default function Shop() {
                     >
                       <Heart size={16} fill={wishlist.includes(product.id) ? '#E53E3E' : 'none'} />
                     </button>
-
-                    <img src={product.image} alt={product.name} />
+                    <img 
+                      src={product.image} 
+                      alt={product.name} 
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = botanicalProductsPhoto;
+                      }}
+                    />
                   </div>
 
                   {/* Card Info */}
@@ -358,7 +364,7 @@ export default function Shop() {
                     </button>
                     {viewMode === 'list' && (
                       <button 
-                        className="btn-clear-filters"
+                        className="btn-clear-filters" 
                         onClick={(e) => { e.stopPropagation(); setQuickViewProduct(product); }}
                       >
                         <Eye size={14} /> Quick View
@@ -421,7 +427,14 @@ export default function Shop() {
 
             <div className="quickview-grid">
               <div className="quickview-img-box">
-                <img src={quickViewProduct.image} alt={quickViewProduct.name} />
+                <img 
+                  src={quickViewProduct.image} 
+                  alt={quickViewProduct.name} 
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = botanicalProductsPhoto;
+                  }}
+                />
               </div>
 
               <div className="quickview-info">
