@@ -29,9 +29,14 @@ export default function ProductCard({ product }) {
     >
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#C58A2A', background: 'rgba(197, 138, 42, 0.12)', padding: '4px 10px', borderRadius: 20 }}>
-            {product.category || 'Biotech'}
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#C58A2A', background: 'rgba(197, 138, 42, 0.12)', padding: '4px 10px', borderRadius: 20 }}>
+              {product.category || 'Biotech'}
+            </span>
+            <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#10B981', background: 'rgba(16, 185, 129, 0.12)', padding: '3px 8px', borderRadius: 12 }}>
+              {product.net_quantity || '100g'}
+            </span>
+          </div>
           <span style={{ color: 'var(--text-dim)', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: 4 }}>
             <Tag size={12} /> ID: #{product.id}
           </span>

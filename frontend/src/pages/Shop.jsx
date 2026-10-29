@@ -37,6 +37,60 @@ export default function Shop() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 24;
 
+  const fallbackShopProducts = [
+    {
+      id: 1,
+      name: 'LEAFORA Salicylic Acid Face Wash',
+      brand: 'Leafora Life Sciences',
+      net_quantity: '100ml',
+      category: 'Face Cleanser',
+      price: 499,
+      rating: '4.9',
+      reviews: 58,
+      badge: 'Best Seller',
+      badgeType: 'bestseller',
+      skinType: ['Oily', 'Acne-prone', 'All Skin Types'],
+      inStock: true,
+      image_url: botanicalProductsPhoto,
+      image: botanicalProductsPhoto,
+      description: 'Salicylic acid face wash enriched with Vitamin E, Zinc PCA and botanical leaf extracts for radiant, blemish-free skin.'
+    },
+    {
+      id: 2,
+      name: 'LeafExtract Pharma Grades',
+      brand: 'Leafora Life Sciences',
+      net_quantity: '100g',
+      category: 'Herbal Extracts',
+      price: 49.99,
+      rating: '4.8',
+      reviews: 34,
+      badge: 'Certified',
+      badgeType: 'new',
+      skinType: ['All Skin Types'],
+      inStock: true,
+      image_url: skincareStoryPhoto,
+      image: skincareStoryPhoto,
+      description: 'Pharma-grade botanical extracts produced under laboratory environments.'
+    },
+    {
+      id: 3,
+      name: 'BioVital Nutraceutical Solution',
+      brand: 'Leafora Life Sciences',
+      net_quantity: '100ml',
+      category: 'Nutraceuticals',
+      price: 29.50,
+      rating: '4.7',
+      reviews: 42,
+      badge: null,
+      badgeType: null,
+      skinType: ['All Skin Types'],
+      inStock: true,
+      image_url: botanicalProductsPhoto,
+      image: botanicalProductsPhoto,
+      description: 'Natural bio-vital nutraceutical active blend for youthful cellular rejuvenation.'
+    }
+  ];
+
   // Load API products from Database
   useEffect(() => {
     getProducts()
@@ -49,7 +103,8 @@ export default function Shop() {
             return {
               id: p.id,
               name: p.name,
-              brand: p.brand || 'Leafora',
+              brand: p.brand || 'Leafora Life Sciences',
+              net_quantity: p.net_quantity || '100g',
               category: p.category || 'Skincare',
               price: Number(p.price) || 0,
               rating: (4.7 + (i % 4) * 0.1).toFixed(1),
@@ -65,11 +120,21 @@ export default function Shop() {
             };
           });
           setProducts(apiMerged);
+        } else {
+          setProducts(fallbackShopProducts);
         }
       })
-      .catch(() => {})
+      .catch(() => {
+        setProducts(fallbackShopProducts);
+      })
       .finally(() => setLoadingProducts(false));
   }, []);
+
+  const handleClearFilters = () => {
+    setSearchQuery('');
+    setSortBy('featured');
+    setCurrentPage(1);
+  };
 
   // Sync wishlist from localStorage and database on load
   useEffect(() => {
@@ -260,7 +325,10 @@ export default function Shop() {
 
                   {/* Card Info */}
                   <div className="shop-card-info">
-                    <span className="shop-card-brand">{product.brand}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, marginBottom: 2 }}>
+                      <span className="shop-card-brand">{product.brand || 'Leafora Life Sciences'}</span>
+                      <span className="product-net-qty-badge">{product.net_quantity || '100g'}</span>
+                    </div>
                     <h3 className="shop-card-title">{product.name}</h3>
 
                     <div className="shop-card-rating">
@@ -357,7 +425,10 @@ export default function Shop() {
               </div>
 
               <div className="quickview-info">
-                <span className="shop-card-brand">{quickViewProduct.brand} • {quickViewProduct.category}</span>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 4 }}>
+                  <span className="shop-card-brand">{quickViewProduct.brand || 'Leafora Life Sciences'} • {quickViewProduct.category}</span>
+                  <span className="product-net-qty-badge">{quickViewProduct.net_quantity || '100g'}</span>
+                </div>
                 <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.6rem', marginTop: 4, marginBottom: 8 }}>{quickViewProduct.name}</h2>
                 
                 <div className="shop-card-rating" style={{ marginBottom: 16 }}>

@@ -319,6 +319,9 @@ export default function ProductDetails() {
               <span className="pdp-price-original">₹{Number(product.originalPrice).toFixed(2)}</span>
             )}
             {product.discount && <span className="pdp-discount-badge">{product.discount}</span>}
+            <span className="product-net-qty-badge" style={{ fontSize: '0.82rem', padding: '3px 10px' }}>
+              ⚖️ {product.net_quantity || '100g'}
+            </span>
           </div>
 
           <p className="pdp-description">{product.description}</p>
@@ -466,6 +469,7 @@ export default function ProductDetails() {
                 <tbody>
                   <tr><td>Brand</td><td>{product.brand || 'Leafora Life Sciences'}</td></tr>
                   <tr><td>Category</td><td>{product.category || 'Botanical Skincare'}</td></tr>
+                  <tr><td>Net Quantity / Volume</td><td><strong style={{ color: '#1A3E2F' }}>{product.net_quantity || '100g'}</strong></td></tr>
                   <tr><td>Skin Type</td><td>{product.skin_type || product.skinType || 'All Skin Types'}</td></tr>
                   {product.key_ingredients && <tr><td>Key Ingredients</td><td>{product.key_ingredients}</td></tr>}
                   {product.manufacturing_date && <tr><td>Manufacturing Date</td><td>{product.manufacturing_date}</td></tr>}
@@ -700,7 +704,10 @@ export default function ProductDetails() {
                 />
               </div>
               <div className="shop-card-info">
-                <span className="shop-card-brand">{item.brand || 'Leafora'}</span>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, marginBottom: 2 }}>
+                  <span className="shop-card-brand">{item.brand || 'Leafora Life Sciences'}</span>
+                  <span className="product-net-qty-badge">{item.net_quantity || '100g'}</span>
+                </div>
                 <h3 className="shop-card-title">{item.name}</h3>
                 <div className="shop-card-rating">
                   <div className="stars-row">

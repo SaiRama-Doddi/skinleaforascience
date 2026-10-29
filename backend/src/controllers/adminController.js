@@ -609,15 +609,15 @@ const uploadImage = async (req, res) => {
 
 // In-memory Products Fallback
 let inMemoryProducts = [
-  { id: 1, name: 'LeafExtract Pharma Grades', brand: 'Leafora', sku: 'LFA-628708', category: 'Herbal Extracts', price: 49.99, stock: 117, warehouse_stock: 120, reserved_stock: 0, low_stock_threshold: 10, description: 'Pharma-grade botanical extracts.', image_url: '/assets/vitamin_c_serum.jpg', images: ['/assets/vitamin_c_serum.jpg'], is_active: 1, is_featured: 1, is_trending: 1, is_new_arrival: 1, meta_title: 'LeafExtract Pharma Grades', meta_description: 'Pharma extracts', meta_keywords: 'extracts', canonical_url: '/products/leafextract', deleted_at: null, variants: [] },
-  { id: 2, name: 'BioVital Nutraceutical', brand: 'Leafora', sku: 'LFA-954068', category: 'Supplements', price: 29.50, stock: 85, warehouse_stock: 85, reserved_stock: 0, low_stock_threshold: 10, description: 'Natural bio-vital nutraceutical.', image_url: '/assets/hydra_glow_moisturizer.jpg', images: ['/assets/hydra_glow_moisturizer.jpg'], is_active: 1, is_featured: 1, is_trending: 0, is_new_arrival: 0, meta_title: 'BioVital Nutraceutical', meta_description: 'Nutraceutical', meta_keywords: 'bio', canonical_url: '/products/biovital', deleted_at: null, variants: [] },
-  { id: 3, name: 'EcoScience Active Solution', brand: 'Leafora', sku: 'LFA-978964', category: 'Biotech Formulations', price: 89.00, stock: 40, warehouse_stock: 40, reserved_stock: 0, low_stock_threshold: 10, description: 'Active science solutions.', image_url: '/assets/face_wash.jpg', images: ['/assets/face_wash.jpg'], is_active: 1, is_featured: 0, is_trending: 1, is_new_arrival: 1, meta_title: 'EcoScience Active Solution', meta_description: 'Active solution', meta_keywords: 'ecoscience', canonical_url: '/products/ecoscience', deleted_at: null, variants: [] },
-  { id: 4, name: 'Aloe Vera Pure Gel Base', brand: 'Leafora', sku: 'LFA-ALOE-04', category: 'Skin Care actives', price: 19.99, stock: 100, warehouse_stock: 100, reserved_stock: 0, low_stock_threshold: 10, description: 'Pure aloe vera gel base.', image_url: '/assets/vitamin_c_serum.jpg', images: ['/assets/vitamin_c_serum.jpg'], is_active: 1, is_featured: 1, is_trending: 1, is_new_arrival: 0, meta_title: 'Aloe Vera Pure Gel Base', meta_description: 'Aloe gel', meta_keywords: 'aloe', canonical_url: '/products/aloe-vera', deleted_at: null, variants: [] },
-  { id: 5, name: 'Curcumin 95% Extract', brand: 'Leafora', sku: 'LFA-CURC-05', category: 'Herbal Extracts', price: 65.00, stock: 80, warehouse_stock: 80, reserved_stock: 0, low_stock_threshold: 10, description: '95% pure curcumin extract.', image_url: '/assets/sunscreen_spf50.jpg', images: ['/assets/sunscreen_spf50.jpg'], is_active: 1, is_featured: 1, is_trending: 0, is_new_arrival: 1, meta_title: 'Curcumin 95% Extract', meta_description: 'Curcumin extract', meta_keywords: 'curcumin', canonical_url: '/products/curcumin', deleted_at: null, variants: [] },
-  { id: 6, name: 'Gentle Foaming Face Wash', brand: 'Leafora', sku: 'LFA-WASH-06', category: 'Face Creams', price: 499.00, stock: 50, warehouse_stock: 50, reserved_stock: 0, low_stock_threshold: 10, description: 'Gentle foaming facial cleanser.', image_url: '/assets/face_wash.jpg', images: ['/assets/face_wash.jpg'], is_active: 1, is_featured: 1, is_trending: 1, is_new_arrival: 1, meta_title: 'Gentle Foaming Face Wash', meta_description: 'Face wash', meta_keywords: 'facewash', canonical_url: '/products/facewash', deleted_at: null, variants: [] },
-  { id: 7, name: 'Curcumin 95% Extract (Copy)', brand: 'Leafora', sku: 'LFA-CURC-07', category: 'Herbal Extracts', price: 65.00, stock: 80, warehouse_stock: 80, reserved_stock: 0, low_stock_threshold: 10, description: '95% pure curcumin extract copy.', image_url: '/assets/sunscreen_spf50.jpg', images: ['/assets/sunscreen_spf50.jpg'], is_active: 1, is_featured: 0, is_trending: 0, is_new_arrival: 0, meta_title: 'Curcumin 95% Extract Copy', meta_description: 'Curcumin copy', meta_keywords: 'curcumin', canonical_url: '/products/curcumin-copy', deleted_at: null, variants: [] },
-  { id: 8, name: 'Gentle Foaming Face Wash (Copy)', brand: 'Leafora', sku: 'LFA-WASH-08', category: 'Face Creams', price: 499.00, stock: 50, warehouse_stock: 50, reserved_stock: 0, low_stock_threshold: 10, description: 'Gentle foaming cleanser copy.', image_url: '/assets/face_wash.jpg', images: ['/assets/face_wash.jpg'], is_active: 1, is_featured: 0, is_trending: 0, is_new_arrival: 0, meta_title: 'Foaming Face Wash Copy', meta_description: 'Face wash copy', meta_keywords: 'facewash', canonical_url: '/products/facewash-copy', deleted_at: null, variants: [] },
-  { id: 9, name: 'SPF 30 Daily Sunscreen', brand: 'Leafora', sku: 'LFA-SUN-09', category: 'Sunscreen', price: 600.00, stock: 60, warehouse_stock: 60, reserved_stock: 0, low_stock_threshold: 10, description: 'Daily SPF 30 sunscreen protection.', image_url: '/assets/sunscreen_spf50.jpg', images: ['/assets/sunscreen_spf50.jpg'], is_active: 1, is_featured: 1, is_trending: 1, is_new_arrival: 1, meta_title: 'SPF 30 Daily Sunscreen', meta_description: 'SPF 30 Sunscreen', meta_keywords: 'sunscreen', canonical_url: '/products/spf30-sunscreen', deleted_at: null, variants: [] }
+  { id: 1, name: 'LeafExtract Pharma Grades', brand: 'Leafora', sku: 'LFA-628708', net_quantity: '100g', category: 'Herbal Extracts', price: 49.99, stock: 117, warehouse_stock: 120, reserved_stock: 0, low_stock_threshold: 10, description: 'Pharma-grade botanical extracts.', image_url: '/assets/vitamin_c_serum.jpg', images: ['/assets/vitamin_c_serum.jpg'], is_active: 1, is_featured: 1, is_trending: 1, is_new_arrival: 1, meta_title: 'LeafExtract Pharma Grades', meta_description: 'Pharma extracts', meta_keywords: 'extracts', canonical_url: '/products/leafextract', deleted_at: null, variants: [] },
+  { id: 2, name: 'BioVital Nutraceutical', brand: 'Leafora', sku: 'LFA-954068', net_quantity: '100g', category: 'Supplements', price: 29.50, stock: 85, warehouse_stock: 85, reserved_stock: 0, low_stock_threshold: 10, description: 'Natural bio-vital nutraceutical.', image_url: '/assets/hydra_glow_moisturizer.jpg', images: ['/assets/hydra_glow_moisturizer.jpg'], is_active: 1, is_featured: 1, is_trending: 0, is_new_arrival: 0, meta_title: 'BioVital Nutraceutical', meta_description: 'Nutraceutical', meta_keywords: 'bio', canonical_url: '/products/biovital', deleted_at: null, variants: [] },
+  { id: 3, name: 'EcoScience Active Solution', brand: 'Leafora', sku: 'LFA-978964', net_quantity: '100ml', category: 'Biotech Formulations', price: 89.00, stock: 40, warehouse_stock: 40, reserved_stock: 0, low_stock_threshold: 10, description: 'Active science solutions.', image_url: '/assets/face_wash.jpg', images: ['/assets/face_wash.jpg'], is_active: 1, is_featured: 0, is_trending: 1, is_new_arrival: 1, meta_title: 'EcoScience Active Solution', meta_description: 'Active solution', meta_keywords: 'ecoscience', canonical_url: '/products/ecoscience', deleted_at: null, variants: [] },
+  { id: 4, name: 'Aloe Vera Pure Gel Base', brand: 'Leafora', sku: 'LFA-ALOE-04', net_quantity: '100g', category: 'Skin Care actives', price: 19.99, stock: 100, warehouse_stock: 100, reserved_stock: 0, low_stock_threshold: 10, description: 'Pure aloe vera gel base.', image_url: '/assets/vitamin_c_serum.jpg', images: ['/assets/vitamin_c_serum.jpg'], is_active: 1, is_featured: 1, is_trending: 1, is_new_arrival: 0, meta_title: 'Aloe Vera Pure Gel Base', meta_description: 'Aloe gel', meta_keywords: 'aloe', canonical_url: '/products/aloe-vera', deleted_at: null, variants: [] },
+  { id: 5, name: 'Curcumin 95% Extract', brand: 'Leafora', sku: 'LFA-CURC-05', net_quantity: '100g', category: 'Herbal Extracts', price: 65.00, stock: 80, warehouse_stock: 80, reserved_stock: 0, low_stock_threshold: 10, description: '95% pure curcumin extract.', image_url: '/assets/sunscreen_spf50.jpg', images: ['/assets/sunscreen_spf50.jpg'], is_active: 1, is_featured: 1, is_trending: 0, is_new_arrival: 1, meta_title: 'Curcumin 95% Extract', meta_description: 'Curcumin extract', meta_keywords: 'curcumin', canonical_url: '/products/curcumin', deleted_at: null, variants: [] },
+  { id: 6, name: 'Gentle Foaming Face Wash', brand: 'Leafora', sku: 'LFA-WASH-06', net_quantity: '100ml', category: 'Face Creams', price: 499.00, stock: 50, warehouse_stock: 50, reserved_stock: 0, low_stock_threshold: 10, description: 'Gentle foaming facial cleanser.', image_url: '/assets/face_wash.jpg', images: ['/assets/face_wash.jpg'], is_active: 1, is_featured: 1, is_trending: 1, is_new_arrival: 1, meta_title: 'Gentle Foaming Face Wash', meta_description: 'Face wash', meta_keywords: 'facewash', canonical_url: '/products/facewash', deleted_at: null, variants: [] },
+  { id: 7, name: 'Curcumin 95% Extract (Copy)', brand: 'Leafora', sku: 'LFA-CURC-07', net_quantity: '100g', category: 'Herbal Extracts', price: 65.00, stock: 80, warehouse_stock: 80, reserved_stock: 0, low_stock_threshold: 10, description: '95% pure curcumin extract copy.', image_url: '/assets/sunscreen_spf50.jpg', images: ['/assets/sunscreen_spf50.jpg'], is_active: 1, is_featured: 0, is_trending: 0, is_new_arrival: 0, meta_title: 'Curcumin 95% Extract Copy', meta_description: 'Curcumin copy', meta_keywords: 'curcumin', canonical_url: '/products/curcumin-copy', deleted_at: null, variants: [] },
+  { id: 8, name: 'Gentle Foaming Face Wash (Copy)', brand: 'Leafora', sku: 'LFA-WASH-08', net_quantity: '100ml', category: 'Face Creams', price: 499.00, stock: 50, warehouse_stock: 50, reserved_stock: 0, low_stock_threshold: 10, description: 'Gentle foaming cleanser copy.', image_url: '/assets/face_wash.jpg', images: ['/assets/face_wash.jpg'], is_active: 1, is_featured: 0, is_trending: 0, is_new_arrival: 0, meta_title: 'Foaming Face Wash Copy', meta_description: 'Face wash copy', meta_keywords: 'facewash', canonical_url: '/products/facewash-copy', deleted_at: null, variants: [] },
+  { id: 9, name: 'SPF 30 Daily Sunscreen', brand: 'Leafora', sku: 'LFA-SUN-09', net_quantity: '100ml', category: 'Sunscreen', price: 600.00, stock: 60, warehouse_stock: 60, reserved_stock: 0, low_stock_threshold: 10, description: 'Daily SPF 30 sunscreen protection.', image_url: '/assets/sunscreen_spf50.jpg', images: ['/assets/sunscreen_spf50.jpg'], is_active: 1, is_featured: 1, is_trending: 1, is_new_arrival: 1, meta_title: 'SPF 30 Daily Sunscreen', meta_description: 'SPF 30 Sunscreen', meta_keywords: 'sunscreen', canonical_url: '/products/spf30-sunscreen', deleted_at: null, variants: [] }
 ];
 
 // ─── CONTROL SUITE 2: PRODUCTS ───
@@ -725,7 +725,7 @@ const getProducts = async (req, res) => {
 const addProduct = async (req, res) => {
   try {
     const {
-      name, brand, sku, category, category_id, price, stock, warehouse_stock, reserved_stock, low_stock_threshold,
+      name, brand, sku, net_quantity, category, category_id, price, stock, warehouse_stock, reserved_stock, low_stock_threshold,
       description, ingredients, benefits, how_to_use, skin_type, key_ingredients, manufacturing_date, expiry_date, storage, warning,
       image_url, images, is_active, is_featured, is_trending, is_new_arrival,
       meta_title, meta_description, meta_keywords, canonical_url, variants
@@ -746,13 +746,13 @@ const addProduct = async (req, res) => {
     try {
       const [result] = await pool.query(
         `INSERT INTO products 
-          (name, brand, sku, category, category_id, price, stock, warehouse_stock, reserved_stock, low_stock_threshold, 
+          (name, brand, sku, net_quantity, category, category_id, price, stock, warehouse_stock, reserved_stock, low_stock_threshold, 
            description, ingredients, benefits, how_to_use, skin_type, key_ingredients, manufacturing_date, expiry_date, storage, warning,
            image_url, images, is_active, is_featured, is_trending, is_new_arrival, 
            meta_title, meta_description, meta_keywords, canonical_url) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
-          name, brand || 'Leafora', sku || `SKU-${Date.now().toString().slice(-6)}`, category || 'General', category_id ? Number(category_id) : null,
+          name, brand || 'Leafora', sku || `SKU-${Date.now().toString().slice(-6)}`, net_quantity || '100g', category || 'General', category_id ? Number(category_id) : null,
           Number(price), Number(stock || 0), Number(warehouse_stock || stock || 0), Number(reserved_stock || 0), Number(low_stock_threshold || 10),
           description || '', ingredients || '', benefits || '', how_to_use || '', skin_type || '', key_ingredients || '', manufacturing_date || null, expiry_date || null, storage || '', warning || '',
           primaryImg, imagesJson,
@@ -794,7 +794,7 @@ const addProduct = async (req, res) => {
     }
 
     const newProd = {
-      id: prodId, name, brand: brand || 'Leafora', sku: sku || `SKU-${prodId}`, category: category || 'General',
+      id: prodId, name, brand: brand || 'Leafora', sku: sku || `SKU-${prodId}`, net_quantity: net_quantity || '100g', category: category || 'General',
       price: Number(price), stock: Number(stock || 0), warehouse_stock: Number(warehouse_stock || stock || 0), reserved_stock: Number(reserved_stock || 0), low_stock_threshold: Number(low_stock_threshold || 10),
       description: description || '',
       ingredients: ingredients || '',
@@ -825,7 +825,7 @@ const updateProduct = async (req, res) => {
     const { id } = req.params;
     const numId = Number(id);
     const {
-      name, brand, sku, category, category_id, price, stock, warehouse_stock, reserved_stock, low_stock_threshold,
+      name, brand, sku, net_quantity, category, category_id, price, stock, warehouse_stock, reserved_stock, low_stock_threshold,
       description, ingredients, benefits, how_to_use, skin_type, key_ingredients, manufacturing_date, expiry_date, storage, warning,
       image_url, images, is_active, is_featured, is_trending, is_new_arrival,
       meta_title, meta_description, meta_keywords, canonical_url, variants
@@ -844,6 +844,7 @@ const updateProduct = async (req, res) => {
           name = COALESCE(?, name),
           brand = COALESCE(?, brand),
           sku = COALESCE(?, sku),
+          net_quantity = COALESCE(?, net_quantity),
           category = COALESCE(?, category),
           category_id = COALESCE(?, category_id),
           price = COALESCE(?, price),
@@ -873,7 +874,7 @@ const updateProduct = async (req, res) => {
           canonical_url = COALESCE(?, canonical_url)
          WHERE id = ?`,
         [
-          name, brand, sku, category, category_id ? Number(category_id) : null,
+          name, brand, sku, net_quantity !== undefined ? net_quantity : null, category, category_id ? Number(category_id) : null,
           price !== undefined ? Number(price) : null,
           stock !== undefined ? Number(stock) : null,
           warehouse_stock !== undefined ? Number(warehouse_stock) : null,
@@ -928,6 +929,7 @@ const updateProduct = async (req, res) => {
             name: name ?? prod.name,
             brand: brand ?? prod.brand,
             sku: sku ?? prod.sku,
+            net_quantity: net_quantity ?? prod.net_quantity ?? '100g',
             category: category ?? prod.category,
             price: price !== undefined ? Number(price) : prod.price,
             stock: stock !== undefined ? Number(stock) : prod.stock,

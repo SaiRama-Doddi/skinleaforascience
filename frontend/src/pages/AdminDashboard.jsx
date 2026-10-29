@@ -1382,6 +1382,7 @@ export default function AdminDashboard() {
     name: '',
     brand: 'Leafora Clinical',
     sku: '',
+    net_quantity: '100g',
     category: 'Herbal Extracts',
     price: '',
     stock: '100',
@@ -1467,6 +1468,7 @@ export default function AdminDashboard() {
       name: prod.name || '',
       brand: prod.brand || 'Leafora Clinical',
       sku: prod.sku || '',
+      net_quantity: prod.net_quantity || '100g',
       category: prod.category || 'Herbal Extracts',
       price: prod.price ?? '',
       stock: prod.stock ?? '100',
@@ -1580,6 +1582,7 @@ export default function AdminDashboard() {
       name: productForm.name.trim(),
       brand: productForm.brand || 'Leafora Clinical',
       sku: productForm.sku || `LFA-${Date.now().toString().slice(-6)}`,
+      net_quantity: productForm.net_quantity || '100g',
       category: productForm.category,
       price: parseFloat(productForm.price),
       stock: parseInt(productForm.stock || '0', 10),
@@ -3997,6 +4000,39 @@ export default function AdminDashboard() {
                       </div>
 
                       <div className="leafora-form-group">
+                        <label className="leafora-form-label">Net Quantity / Volume (e.g. 100g, 100ml) *</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. 100g or 100ml"
+                          className="leafora-cat-input"
+                          value={productForm.net_quantity || ''}
+                          onChange={(e) => setProductForm({ ...productForm, net_quantity: e.target.value })}
+                        />
+                        <div style={{ display: 'flex', gap: 5, marginTop: 6, flexWrap: 'wrap' }}>
+                          {['50g', '100g', '150g', '200g', '30ml', '50ml', '100ml', '200ml'].map(preset => (
+                            <button
+                              key={preset}
+                              type="button"
+                              onClick={() => setProductForm({ ...productForm, net_quantity: preset })}
+                              style={{
+                                fontSize: 11,
+                                padding: '2px 8px',
+                                borderRadius: 12,
+                                border: (productForm.net_quantity || '').toLowerCase() === preset.toLowerCase() ? '1px solid #A67C52' : '1px solid #E5D5C0',
+                                background: (productForm.net_quantity || '').toLowerCase() === preset.toLowerCase() ? '#A67C52' : '#FAF7F2',
+                                color: (productForm.net_quantity || '').toLowerCase() === preset.toLowerCase() ? '#FFFFFF' : '#6B7280',
+                                cursor: 'pointer',
+                                fontWeight: 600,
+                                transition: 'all 0.15s ease'
+                              }}
+                            >
+                              {preset}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="leafora-form-group">
                         <label className="leafora-form-label">Total Available Stock</label>
                         <input
                           type="number"
@@ -4168,11 +4204,32 @@ export default function AdminDashboard() {
                                 <td>
                                   <input
                                     type="text"
-                                    placeholder="e.g. 50ml Dropper Bottle"
+                                    placeholder="e.g. 100g, 100ml, 50ml Dropper"
                                     className="leafora-cat-input"
                                     value={v.variant_name}
                                     onChange={(e) => handleUpdateProductVariant(vIdx, 'variant_name', e.target.value)}
                                   />
+                                  <div style={{ display: 'flex', gap: 4, marginTop: 4, flexWrap: 'wrap' }}>
+                                    {['50g', '100g', '150g', '200g', '30ml', '50ml', '100ml', '200ml'].map(preset => (
+                                      <button
+                                        key={preset}
+                                        type="button"
+                                        onClick={() => handleUpdateProductVariant(vIdx, 'variant_name', preset)}
+                                        style={{
+                                          fontSize: 10,
+                                          padding: '1px 6px',
+                                          borderRadius: 8,
+                                          border: (v.variant_name || '').toLowerCase() === preset.toLowerCase() ? '1px solid #A67C52' : '1px solid #E5E7EB',
+                                          background: (v.variant_name || '').toLowerCase() === preset.toLowerCase() ? '#A67C52' : '#F9FAFB',
+                                          color: (v.variant_name || '').toLowerCase() === preset.toLowerCase() ? '#FFF' : '#4B5563',
+                                          cursor: 'pointer',
+                                          fontWeight: 600
+                                        }}
+                                      >
+                                        {preset}
+                                      </button>
+                                    ))}
+                                  </div>
                                 </td>
                                 <td>
                                   <input
@@ -4632,6 +4689,9 @@ export default function AdminDashboard() {
                             <td>
                               <div style={{ fontWeight: 600, color: '#374151' }}>{prod.category || 'General'}</div>
                               <div style={{ fontSize: 11, color: '#9CA3AF' }}>Brand: {prod.brand || 'Leafora'}</div>
+                              <span style={{ display: 'inline-block', marginTop: 4, padding: '2px 8px', fontSize: 11, fontWeight: 600, borderRadius: 12, background: '#FEF3C7', color: '#92400E', border: '1px solid #FDE68A' }}>
+                                ⚖️ {prod.net_quantity || '100g'}
+                              </span>
                             </td>
 
                             <td>

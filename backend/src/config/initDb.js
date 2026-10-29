@@ -114,6 +114,7 @@ const initDb = async () => {
     const prodCols = [
       "ALTER TABLE products ADD COLUMN brand VARCHAR(100) DEFAULT 'Leafora' AFTER name",
       "ALTER TABLE products ADD COLUMN sku VARCHAR(100) DEFAULT NULL AFTER brand",
+      "ALTER TABLE products ADD COLUMN net_quantity VARCHAR(50) DEFAULT '100g' AFTER sku",
       "ALTER TABLE products ADD COLUMN warehouse_stock INT DEFAULT 0 AFTER stock",
       "ALTER TABLE products ADD COLUMN reserved_stock INT DEFAULT 0 AFTER warehouse_stock",
       "ALTER TABLE products ADD COLUMN low_stock_threshold INT DEFAULT 10 AFTER reserved_stock",

@@ -774,6 +774,20 @@
   font-weight: 500;
 }
 
+.product-net-qty-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #1A3E2F;
+  background: #EBF3EE;
+  border: 1px solid #C8DDD0;
+  padding: 1px 7px;
+  border-radius: 10px;
+  letter-spacing: 0.02em;
+  line-height: 1.3;
+}
+
 .product-title-pixel {
   font-family: 'Playfair Display', serif;
   font-size: 1.05rem;

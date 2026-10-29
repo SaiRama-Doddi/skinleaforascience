@@ -60,15 +60,49 @@ export default function Home() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  const fallbackHomeProducts = [
+    {
+      id: 1,
+      name: 'LEAFORA Salicylic Acid Face Wash',
+      brand: 'Leafora Life Sciences',
+      net_quantity: '100ml',
+      price: 499,
+      reviews: 0,
+      image_url: '/assets/login_botanical_products.jpg'
+    },
+    {
+      id: 2,
+      name: 'LeafExtract Pharma Grades',
+      brand: 'Leafora Life Sciences',
+      net_quantity: '100g',
+      price: 49.99,
+      reviews: 12,
+      image_url: '/assets/skincare_story_showcase.jpg'
+    },
+    {
+      id: 3,
+      name: 'BioVital Nutraceutical Solution',
+      brand: 'Leafora Life Sciences',
+      net_quantity: '100ml',
+      price: 29.50,
+      reviews: 8,
+      image_url: '/assets/login_botanical_products.jpg'
+    }
+  ];
+
   useEffect(() => {
     // Fetch products dynamically from backend API / database
     getProducts()
       .then((res) => {
-        if (res && res.data) {
+        if (res && res.data && Array.isArray(res.data) && res.data.length > 0) {
           setProducts(res.data);
+        } else {
+          setProducts(fallbackHomeProducts);
         }
       })
-      .catch(() => {})
+      .catch(() => {
+        setProducts(fallbackHomeProducts);
+      })
       .finally(() => setLoadingProds(false));
 
     // Fetch active banners dynamically from database table homepage_banners
@@ -307,7 +341,10 @@ export default function Home() {
                     <img src={item.image_url || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNGM0Y0RjYiLz48cGF0aCBkPSJNNTAgMjAgQzMwIDIwIDIwIDQwIDIwIDYwIEMyMCA4MCAzMCA5MCA1MCA5MCBDNzAgOTAgODAgODAgODAgNjAgQzgwIDQwIDcwIDIwIDUwIDIwIFoiIGZpbGw9IiNBNjdDNTIiIG9wYWNpdHk9IjAuNCIvPjwvc3ZnPg=='} alt={item.name} />
                   </div>
                   <div>
-                    <span className="product-brand-pixel">{item.brand || 'Leafora'}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, marginBottom: 2 }}>
+                      <span className="product-brand-pixel">{item.brand || 'Leafora Life Sciences'}</span>
+                      <span className="product-net-qty-badge">{item.net_quantity || '100g'}</span>
+                    </div>
                     <h3 className="product-title-pixel">{item.name}</h3>
                     <div className="product-stars-pixel">
                       {[...Array(5)].map((_, i) => <Star key={i} size={12} fill="#A67C52" color="#A67C52" />)}
