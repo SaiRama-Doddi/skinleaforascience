@@ -1,0 +1,309 @@
+/* PolicyPages.css - Luxury Botanical Styling for LeafOra Policies */
+.policy-page-wrapper {
+  background-color: #FAF8F5;
+  min-height: 80vh;
+  padding-bottom: 80px;
+}
+
+.policy-hero-banner {
+  background: linear-gradient(135deg, #1A3E2F 0%, #10281E 100%);
+  color: #FFFFFF;
+  padding: 60px 20px 48px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.policy-hero-banner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 20%, rgba(197, 138, 42, 0.18) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.policy-hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(197, 138, 42, 0.15);
+  border: 1px solid rgba(197, 138, 42, 0.4);
+  color: #E2B768;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 6px 16px;
+  border-radius: 30px;
+  margin-bottom: 16px;
+}
+
+.policy-hero-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin: 0 0 12px;
+  color: #FFFFFF;
+  letter-spacing: -0.5px;
+}
+
+.policy-hero-subtitle {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.85);
+  max-width: 650px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+/* Tabs Navigation */
+.policy-tabs-bar {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  padding: 20px;
+  background: #FFFFFF;
+  border-bottom: 1px solid #EFEAE3;
+  position: sticky;
+  top: 76px;
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  overflow-x: auto;
+}
+
+.policy-tab-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 22px;
+  border-radius: 25px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #4B5563;
+  text-decoration: none;
+  background: #F3F0EA;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.policy-tab-link:hover {
+  background: #E8E2D6;
+  color: #1A3E2F;
+}
+
+.policy-tab-link.active {
+  background: #1A3E2F;
+  color: #FFFFFF;
+  border-color: #1A3E2F;
+  box-shadow: 0 2px 8px rgba(26, 62, 47, 0.25);
+}
+
+/* Main Container */
+.policy-content-container {
+  max-width: 900px;
+  margin: 40px auto 0;
+  padding: 0 20px;
+}
+
+.policy-card {
+  background: #FFFFFF;
+  border: 1px solid #EFEAE3;
+  border-radius: 16px;
+  padding: 44px 48px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
+}
+
+.policy-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 1px solid #F0ECE4;
+  padding-bottom: 24px;
+  margin-bottom: 32px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.policy-company-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1A3E2F;
+  margin: 0 0 6px;
+}
+
+.policy-company-sub {
+  font-size: 0.88rem;
+  color: #6B7280;
+  margin: 0;
+}
+
+.policy-intro-box {
+  background: #F8F5EF;
+  border-left: 4px solid #C58A2A;
+  padding: 18px 22px;
+  border-radius: 0 10px 10px 0;
+  margin-bottom: 32px;
+  font-size: 0.98rem;
+  line-height: 1.65;
+  color: #2D3748;
+}
+
+/* Sections List */
+.policy-sections-list {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.policy-section-item {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+  padding: 18px 20px;
+  border-radius: 12px;
+  background: #FAF8F5;
+  border: 1px solid #F0EAE1;
+  transition: all 0.2s ease;
+}
+
+.policy-section-item:hover {
+  background: #F4EFE7;
+  border-color: #E2D7C8;
+}
+
+.policy-num-badge {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #1A3E2F;
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.88rem;
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+.policy-item-content {
+  flex: 1;
+}
+
+.policy-item-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1A3E2F;
+  margin: 0 0 6px;
+}
+
+.policy-item-desc {
+  font-size: 0.95rem;
+  color: #4B5563;
+  line-height: 1.65;
+  margin: 0;
+}
+
+/* Notice & Contact Box */
+.policy-legal-footnote {
+  margin-top: 36px;
+  padding: 16px 20px;
+  background: #EFF6F2;
+  border: 1px solid #D1E5D9;
+  border-radius: 10px;
+  font-size: 0.92rem;
+  color: #1A3E2F;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.policy-concierge-card {
+  margin-top: 32px;
+  background: linear-gradient(135deg, #FAF7F2 0%, #F5ECE0 100%);
+  border: 1px solid #E6D8C5;
+  border-radius: 14px;
+  padding: 26px 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.policy-concierge-info h4 {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.15rem;
+  margin: 0 0 6px;
+  color: #1A3E2F;
+}
+
+.policy-concierge-info p {
+  font-size: 0.9rem;
+  color: #6B7280;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.policy-concierge-btns {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.policy-btn-contact {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: #1A3E2F;
+  color: #FFFFFF;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.policy-btn-contact:hover {
+  background: #132E23;
+  transform: translateY(-1px);
+}
+
+.policy-btn-whatsapp {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: #25D366;
+  color: #FFFFFF;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.policy-btn-whatsapp:hover {
+  background: #1EBE5D;
+  transform: translateY(-1px);
+}
+
+@media (max-width: 768px) {
+  .policy-hero-title {
+    font-size: 1.85rem;
+  }
+  .policy-card {
+    padding: 24px 20px;
+  }
+  .policy-section-item {
+    padding: 14px 14px;
+    gap: 12px;
+  }
+  .policy-concierge-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

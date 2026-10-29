@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { ShieldCheck, Heart, Mail, Phone, MapPin } from 'lucide-react';
 import leaforaLogo from '../assets/leafora-logo.png';
 
@@ -141,10 +142,10 @@ export default function Footer() {
               Customer Care
             </h4>
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10, fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.9)' }}>
-              <li><a href="#track" style={{ color: 'inherit', textDecoration: 'none' }}>Track Your Order</a></li>
-              <li><a href="#returns" style={{ color: 'inherit', textDecoration: 'none' }}>30-Day Money Back Guarantee</a></li>
-              <li><a href="#shipping" style={{ color: 'inherit', textDecoration: 'none' }}>Free Shipping Details</a></li>
-              <li><a href="#faq" style={{ color: 'inherit', textDecoration: 'none' }}>Skincare FAQs</a></li>
+              <li><Link to="/shipping-policy" style={{ color: 'inherit', textDecoration: 'none' }}>Shipping & Delivery Policy</Link></li>
+              <li><Link to="/terms-and-conditions" style={{ color: 'inherit', textDecoration: 'none' }}>Terms & Conditions</Link></li>
+              <li><Link to="/privacy-policy" style={{ color: 'inherit', textDecoration: 'none' }}>Privacy Policy</Link></li>
+              <li><Link to="/contact" style={{ color: 'inherit', textDecoration: 'none' }}>Help & Concierge Support</Link></li>
             </ul>
           </div>
 
@@ -178,10 +179,10 @@ export default function Footer() {
           <div>
             © {new Date().getFullYear()} <strong>Leafora Life Science</strong>. All rights reserved. Premium Organic Skincare.
           </div>
-          <div style={{ display: 'flex', gap: 16 }}>
-            <span>Privacy Policy</span>
-            <span>Terms of Service</span>
-            <span>Cookies Policy</span>
+          <div style={{ display: 'flex', gap: 20 }}>
+            <Link to="/privacy-policy" style={{ color: 'inherit', textDecoration: 'none' }}>Privacy Policy</Link>
+            <Link to="/terms-and-conditions" style={{ color: 'inherit', textDecoration: 'none' }}>Terms & Conditions</Link>
+            <Link to="/shipping-policy" style={{ color: 'inherit', textDecoration: 'none' }}>Shipping & Delivery</Link>
           </div>
         </div>
       </div>
