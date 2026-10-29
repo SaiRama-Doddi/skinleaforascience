@@ -378,7 +378,7 @@ export default function Shop() {
           ) : (
             <div style={{ background: '#FFFFFF', padding: 48, borderRadius: 12, textAlign: 'center', border: '1px solid var(--leafora-border)' }}>
               <Leaf size={32} color="var(--leafora-bronze)" style={{ marginBottom: 12 }} />
-              <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.4rem', color: 'var(--leafora-text-dark)', marginBottom: 8 }}>
+              <h3 style={{ fontFamily: 'Inter, sans-serif', fontSize: '1.4rem', color: 'var(--leafora-text-dark)', marginBottom: 8 }}>
                 No products match your selected filters
               </h3>
               <p style={{ color: 'var(--leafora-text-muted)', fontSize: '0.9rem', marginBottom: 20 }}>
@@ -442,7 +442,7 @@ export default function Shop() {
                   <span className="shop-card-brand">{quickViewProduct.brand || 'Leafora Life Sciences'} • {quickViewProduct.category}</span>
                   <span className="product-net-qty-badge">{quickViewProduct.net_quantity || '100g'}</span>
                 </div>
-                <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.6rem', marginTop: 4, marginBottom: 8 }}>{quickViewProduct.name}</h2>
+                <h2 style={{ fontFamily: 'Inter, sans-serif', fontSize: '1.6rem', marginTop: 4, marginBottom: 8 }}>{quickViewProduct.name}</h2>
                 
                 <div className="shop-card-rating" style={{ marginBottom: 16 }}>
                   <div className="stars-row">

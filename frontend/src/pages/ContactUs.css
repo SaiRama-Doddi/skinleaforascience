@@ -2,12 +2,12 @@
    LEAFORA LIFE SCIENCES - LUXURY BOTANICAL CONTACT US PAGE STYLES
    ========================================================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Alex+Brush&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 .contact-us-page {
   width: 100%;
   background-color: #FAF7F2;
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-family: 'Inter', sans-serif;
   color: #1A2E22;
   box-sizing: border-box;
   overflow-x: hidden;

@@ -326,7 +326,7 @@ export default function ContactUs() {
             <div className="faq-modal-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <HelpCircle size={22} color="#C58A2A" />
-                <h3 style={{ margin: 0, fontFamily: 'Playfair Display, serif', fontSize: '1.4rem', color: '#0F3B2E' }}>
+                <h3 style={{ margin: 0, fontFamily: 'Inter, sans-serif', fontSize: '1.4rem', color: '#0F3B2E' }}>
                   Frequently Asked Questions
                 </h3>
               </div>

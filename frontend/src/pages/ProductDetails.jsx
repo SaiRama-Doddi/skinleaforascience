@@ -178,7 +178,7 @@ export default function ProductDetails() {
   if (!product) {
     return (
       <div className="details-container" style={{ textAlign: 'center', padding: '80px 20px' }}>
-        <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: '2rem', color: '#1A2E22', marginBottom: '12px' }}>Product Not Found</h2>
+        <h2 style={{ fontFamily: 'Inter, sans-serif', fontSize: '2rem', color: '#1A2E22', marginBottom: '12px' }}>Product Not Found</h2>
         <p style={{ color: '#64748B', marginBottom: '24px' }}>The product you are looking for does not exist or has been removed.</p>
         <Link to="/shop" style={{ display: 'inline-block', padding: '12px 24px', background: '#A67C52', color: '#FFF', borderRadius: '8px', textDecoration: 'none', fontWeight: 600 }}>
           Back to Shop
@@ -511,7 +511,7 @@ export default function ProductDetails() {
         {/* TAB 2: INGREDIENTS */}
         {activeTab === 'ingredients' && (
           <div>
-            <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.4rem', marginBottom: 16 }}>Ingredients & Formulation</h3>
+            <h3 style={{ fontFamily: 'Inter, sans-serif', fontSize: '1.4rem', marginBottom: 16 }}>Ingredients & Formulation</h3>
             
             {product.key_ingredients && (
               <div style={{ marginBottom: 20, padding: 16, background: '#F8F4EE', borderRadius: 10, borderLeft: '4px solid var(--leafora-bronze)' }}>
@@ -549,7 +549,7 @@ export default function ProductDetails() {
         {/* TAB 3: HOW TO USE */}
         {activeTab === 'how_to_use' && (
           <div>
-            <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.4rem', marginBottom: 16 }}>Directions & Recommended Routine</h3>
+            <h3 style={{ fontFamily: 'Inter, sans-serif', fontSize: '1.4rem', marginBottom: 16 }}>Directions & Recommended Routine</h3>
             {product.how_to_use ? (
               <div style={{ background: '#F8F4EE', padding: 24, borderRadius: 10, borderLeft: '4px solid var(--leafora-bronze)' }}>
                 <p style={{ fontSize: '0.95rem', color: '#334155', lineHeight: 1.8, whiteSpace: 'pre-line', margin: 0 }}>
@@ -578,7 +578,7 @@ export default function ProductDetails() {
         {/* TAB 4: BENEFITS */}
         {activeTab === 'benefits' && (
           <div>
-            <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.4rem', marginBottom: 16 }}>Benefits & Clinical Efficacy</h3>
+            <h3 style={{ fontFamily: 'Inter, sans-serif', fontSize: '1.4rem', marginBottom: 16 }}>Benefits & Clinical Efficacy</h3>
             {product.benefits ? (
               <div style={{ background: '#FAF9F6', padding: 24, borderRadius: 10, border: '1px solid #EFE8DE' }}>
                 <div style={{ fontSize: '0.95rem', color: '#334155', lineHeight: 1.8, whiteSpace: 'pre-line' }}>
@@ -654,7 +654,7 @@ export default function ProductDetails() {
 
       {/* 3. FREQUENTLY ASKED QUESTIONS (FAQS) ACCORDION */}
       <section className="faqs-section">
-        <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.8rem', color: '#1A2E22' }}>Frequently Asked Questions</h2>
+        <h2 style={{ fontFamily: 'Inter, sans-serif', fontSize: '1.8rem', color: '#1A2E22' }}>Frequently Asked Questions</h2>
         <div className="faqs-grid">
           {[
             {
@@ -691,7 +691,7 @@ export default function ProductDetails() {
       {/* 4. "YOU MAY ALSO LIKE" RELATED PRODUCTS GRID */}
       <section className="related-products-section">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-          <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.8rem', color: '#1A2E22', margin: 0 }}>You May Also Like</h2>
+          <h2 style={{ fontFamily: 'Inter, sans-serif', fontSize: '1.8rem', color: '#1A2E22', margin: 0 }}>You May Also Like</h2>
           <Link to="/shop" style={{ color: 'var(--leafora-bronze)', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
             View All <ChevronRight size={16} />
           </Link>

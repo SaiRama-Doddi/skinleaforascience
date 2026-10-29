@@ -290,7 +290,7 @@ export default function Home() {
                     {promo.subtitle}
                   </span>
                 )}
-                <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: isMobile ? '1.3rem' : '1.9rem', fontWeight: 700, margin: '0 0 12px 0', textShadow: '0 2px 6px rgba(0,0,0,0.5)' }}>
+                <h3 style={{ fontFamily: 'Inter, sans-serif', fontSize: isMobile ? '1.3rem' : '1.9rem', fontWeight: 700, margin: '0 0 12px 0', textShadow: '0 2px 6px rgba(0,0,0,0.5)' }}>
                   {promo.title}
                 </h3>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#9E7B3B', color: '#FFF', padding: '8px 20px', borderRadius: 24, fontSize: '0.85rem', fontWeight: 600 }}>
@@ -454,7 +454,7 @@ export default function Home() {
               <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#A67C52', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
                 <Leaf size={16} />
               </div>
-              <span style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.2rem', fontWeight: 700, color: '#1F2937' }}>
+              <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '1.2rem', fontWeight: 700, color: '#1F2937' }}>
                 LeafOra
               </span>
             </div>

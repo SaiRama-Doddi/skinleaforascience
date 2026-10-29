@@ -1,5 +1,5 @@
 /* Pixel-Perfect Home Page CSS matching reference image input_file_1.png */
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400;1,600&family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 :root {
   --leafora-cream-bg: #FAF7F2;
@@ -218,7 +218,7 @@
 }
 
 .section-title-serif-pixel {
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: 'Inter', sans-serif;
   font-size: 2.7rem;
   font-weight: 700;
   color: #1F2937;
@@ -446,7 +446,7 @@
 
 .single-line-title {
   white-space: nowrap !important;
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: 'Inter', sans-serif;
 }
 
 .category-header-right-controls {
@@ -789,7 +789,7 @@
 }
 
 .product-title-pixel {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Inter', sans-serif;
   font-size: 1.05rem;
   font-weight: 600;
   color: var(--leafora-text-dark);
