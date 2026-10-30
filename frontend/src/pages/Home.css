@@ -325,23 +325,24 @@
 
 .hero-leafora-title {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  font-size: clamp(2rem, 3.4vw, 2.85rem);
-  font-weight: 800;
-  line-height: 1.14;
-  letter-spacing: -0.025em;
+  font-size: clamp(2rem, 3.4vw, 2.9rem);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.015em;
   margin: 0 0 12px 0;
   display: flex;
   flex-direction: column;
 }
 
 .hero-leafora-title-green {
+  font-weight: 600;
   color: #0E3628;
 }
 
 .hero-leafora-title-gold {
   font-family: 'Playfair Display', 'Cormorant Garamond', Georgia, serif;
   font-style: italic;
-  font-weight: 600;
+  font-weight: 500;
   color: #B88A3E;
   letter-spacing: -0.01em;
   margin-top: 1px;
@@ -353,7 +354,7 @@
   color: #234939;
   max-width: 430px;
   margin: 0 0 20px 0;
-  font-weight: 450;
+  font-weight: 400;
 }
 
 .hero-leafora-btn-wrap {
@@ -425,7 +426,7 @@
 
 .hero-leafora-badge-heading {
   font-size: 0.86rem;
-  font-weight: 700;
+  font-weight: 600;
   color: #0E3628;
   line-height: 1.25;
   margin-bottom: 2px;
@@ -470,121 +471,169 @@
   .hero-leafora-section {
     width: 100%;
     max-width: 100%;
-    height: calc(100svh - 75px);
-    max-height: 560px;
-    min-height: 460px;
-    padding: 0;
+    height: auto;
+    min-height: auto;
+    max-height: none;
+    aspect-ratio: 1792 / 2400;
     overflow: hidden;
+    position: relative;
     display: flex;
-    align-items: center;
-    justify-content: center;
+    align-items: flex-start;
+    justify-content: flex-start;
+    padding: 0;
   }
 
   .hero-leafora-bg-layer {
     position: absolute;
     inset: 0;
+    width: 100%;
+    height: 100%;
   }
 
   .hero-leafora-bg-img {
-    object-position: center bottom;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center top;
+    display: block;
   }
 
   .hero-leafora-content-wrap {
-    padding: 16px 14px;
-    justify-content: center;
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    padding: 24px 20px 0 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
   }
 
   .hero-leafora-card {
-    max-width: 360px;
+    max-width: 100%;
     width: 100%;
-    align-items: center;
-    text-align: center;
-    background: rgba(250, 246, 239, 0.82);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    padding: 16px 14px;
-    border-radius: 16px;
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
+    align-items: flex-start;
+    text-align: left;
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    padding: 0;
+    box-shadow: none;
+    border-radius: 0;
   }
 
   .hero-leafora-eyebrow {
-    font-size: 0.65rem;
-    letter-spacing: 1.3px;
-    margin-bottom: 4px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 1.4px;
+    color: #143D2F;
+    margin-bottom: 6px;
   }
 
   .hero-leafora-title {
-    font-size: clamp(1.55rem, 5.2vw, 1.95rem);
-    line-height: 1.12;
-    margin-bottom: 6px;
-    align-items: center;
+    font-size: clamp(1.68rem, 6.2vw, 2.25rem);
+    font-weight: 600;
+    line-height: 1.14;
+    letter-spacing: -0.015em;
+    margin-bottom: 8px;
+    align-items: flex-start;
+  }
+
+  .hero-leafora-title-green {
+    font-weight: 600;
+  }
+
+  .hero-leafora-title-gold {
+    font-weight: 500;
   }
 
   .hero-leafora-desc {
-    font-size: 0.78rem;
-    line-height: 1.35;
-    margin-bottom: 12px;
-    text-align: center;
-    max-width: 290px;
+    font-size: 0.84rem;
+    line-height: 1.45;
+    color: #234939;
+    margin-bottom: 14px;
+    text-align: left;
+    max-width: 310px;
+    font-weight: 400;
   }
 
   .hero-leafora-btn-wrap {
-    margin-bottom: 12px;
+    margin-bottom: 16px;
   }
 
   .hero-leafora-shop-btn {
-    padding: 9px 22px;
-    font-size: 0.82rem;
+    padding: 10px 24px;
+    font-size: 0.86rem;
+    font-weight: 600;
+    gap: 8px;
   }
 
   .hero-leafora-badges-row {
-    gap: 10px;
-    justify-content: center;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 14px;
     width: 100%;
   }
 
   .hero-leafora-badge-item {
-    width: 80px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    width: 82px;
   }
 
   .hero-leafora-icon-circle {
-    width: 36px;
-    height: 36px;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: rgba(14, 54, 40, 0.08);
+    color: #0E3628;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     margin-bottom: 4px;
   }
 
   .hero-leafora-icon-circle svg {
-    width: 17px;
-    height: 17px;
+    width: 18px;
+    height: 18px;
   }
 
   .hero-leafora-badge-heading {
-    font-size: 0.76rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #0E3628;
+    line-height: 1.2;
+    margin-bottom: 1px;
+    white-space: nowrap;
   }
 
   .hero-leafora-badge-sub {
-    font-size: 0.66rem;
+    font-size: 0.68rem;
+    font-weight: 500;
+    color: #2D4A3E;
+    line-height: 1.2;
   }
 }
 
-@media (max-width: 420px) {
-  .hero-leafora-section {
-    height: calc(100svh - 70px);
-    max-height: 520px;
-    min-height: 420px;
-  }
-  .hero-leafora-card {
-    padding: 12px 10px;
-    max-width: 320px;
-  }
-  .hero-leafora-badges-row {
-    gap: 6px;
-  }
-  .hero-leafora-badge-item {
-    width: 74px;
+@media (max-width: 400px) {
+  .hero-leafora-content-wrap {
+    padding: 20px 16px 0 16px;
   }
   .hero-leafora-title {
-    font-size: 1.45rem;
+    font-size: 1.62rem;
+  }
+  .hero-leafora-desc {
+    font-size: 0.8rem;
+    max-width: 280px;
+  }
+  .hero-leafora-badges-row {
+    gap: 8px;
+  }
+  .hero-leafora-badge-item {
+    width: 76px;
   }
 }
 

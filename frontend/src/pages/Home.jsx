@@ -116,7 +116,7 @@ export default function Home() {
           <picture className="hero-leafora-picture">
             <source media="(max-width: 768px)" srcSet={homepageMobile} />
             <img
-              src={homepageDesktop}
+              src={isMobile ? homepageMobile : homepageDesktop}
               alt="LeafOra Life Sciences - A Healthier, Brighter You Naturally"
               className="hero-leafora-bg-img"
               loading="eager"
