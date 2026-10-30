@@ -151,26 +151,32 @@ export default function Home() {
             <div className="hero-leafora-badges-row">
               <div className="hero-leafora-badge-item">
                 <div className="hero-leafora-icon-circle">
-                  <Leaf size={22} strokeWidth={1.8} />
+                  <Leaf size={20} strokeWidth={1.8} />
                 </div>
-                <div className="hero-leafora-badge-heading">100%</div>
-                <div className="hero-leafora-badge-sub">Natural Ingredients</div>
+                <div className="hero-leafora-badge-text-box">
+                  <div className="hero-leafora-badge-heading">100%</div>
+                  <div className="hero-leafora-badge-sub">Natural Ingredients</div>
+                </div>
               </div>
 
               <div className="hero-leafora-badge-item">
                 <div className="hero-leafora-icon-circle">
-                  <FlaskConical size={22} strokeWidth={1.8} />
+                  <FlaskConical size={20} strokeWidth={1.8} />
                 </div>
-                <div className="hero-leafora-badge-heading">No Harmful</div>
-                <div className="hero-leafora-badge-sub">Chemicals</div>
+                <div className="hero-leafora-badge-text-box">
+                  <div className="hero-leafora-badge-heading">No Harmful</div>
+                  <div className="hero-leafora-badge-sub">Chemicals</div>
+                </div>
               </div>
 
               <div className="hero-leafora-badge-item">
                 <div className="hero-leafora-icon-circle">
-                  <ShieldCheck size={22} strokeWidth={1.8} />
+                  <ShieldCheck size={20} strokeWidth={1.8} />
                 </div>
-                <div className="hero-leafora-badge-heading">Dermatologically</div>
-                <div className="hero-leafora-badge-sub">Tested</div>
+                <div className="hero-leafora-badge-text-box">
+                  <div className="hero-leafora-badge-heading">Dermatologically</div>
+                  <div className="hero-leafora-badge-sub">Tested</div>
+                </div>
               </div>
             </div>
           </div>
