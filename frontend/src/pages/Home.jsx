@@ -7,9 +7,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { getProducts, getBanners } from '../services/api';
 import { addToCart } from '../services/cartService';
 import SEO from '../components/SEO';
-import routineStep1Img from '../assets/routine_step1.jpg';
-import routineStep2Img from '../assets/routine_step2.jpg';
-import routineStep3Img from '../assets/routine_step3.jpg';
+import dbProduct1 from '../assets/db_product_1.jpg';
+import dbProduct2 from '../assets/db_product_2.jpg';
+import dbProduct3 from '../assets/db_product_3.jpg';
 import homepageDesktop from '../assets/hero_section/homepage.jpg';
 import homepageMobile from '../assets/hero_section/homepage-mobile.jpg';
 import './Home.css';
@@ -35,28 +35,28 @@ export default function Home() {
       id: 1,
       name: 'LEAFORA Salicylic Acid Face Wash',
       brand: 'Leafora Life Sciences',
-      net_quantity: '100ml',
+      net_quantity: '100g',
       price: 499,
-      reviews: 0,
-      image_url: '/assets/login_botanical_products.jpg'
+      reviews: 40,
+      image_url: dbProduct1
     },
     {
       id: 2,
-      name: 'LeafExtract Pharma Grades',
+      name: 'LEAFORA Niacinamide 10% Face Brightening Serum',
       brand: 'Leafora Life Sciences',
-      net_quantity: '100g',
-      price: 49.99,
-      reviews: 12,
-      image_url: '/assets/skincare_story_showcase.jpg'
+      net_quantity: '30ml',
+      price: 649,
+      reviews: 54,
+      image_url: dbProduct2
     },
     {
       id: 3,
-      name: 'BioVital Nutraceutical Solution',
+      name: 'LEAFORA SPF 50 PA++++ Ultra-Light Gel Sunscreen',
       brand: 'Leafora Life Sciences',
-      net_quantity: '100ml',
-      price: 29.50,
-      reviews: 8,
-      image_url: '/assets/login_botanical_products.jpg'
+      net_quantity: '50g',
+      price: 649,
+      reviews: 68,
+      image_url: dbProduct3
     }
   ];
 
@@ -347,100 +347,140 @@ export default function Home() {
       </section>
 
       {/* 5. YOUR DAILY SKINCARE ROUTINE (3 SIMPLE STEPS) */}
-      <section className="routine-design-section" aria-label="Your Daily Skincare Routine">
-        <div className="routine-design-container">
-          <div className="routine-design-card">
-            {/* Ambient decorative leaf corners */}
-            <div className="routine-ambient-leaf-tl" aria-hidden="true" />
-            <div className="routine-ambient-leaf-bl" aria-hidden="true" />
+      {(() => {
+        const stepCleanse = products.find(p => p.id === 1 || p.name?.toLowerCase().includes('wash') || p.category?.toLowerCase().includes('wash')) || products[0] || fallbackHomeProducts[0];
+        const stepTreat = products.find(p => p.id === 2 || p.name?.toLowerCase().includes('serum') || p.category?.toLowerCase().includes('serum')) || products[1] || fallbackHomeProducts[1];
+        const stepProtect = products.find(p => p.id === 3 || p.name?.toLowerCase().includes('sunscreen') || p.category?.toLowerCase().includes('sunscreen')) || products[2] || fallbackHomeProducts[2];
 
-            <div className="routine-design-inner">
-              {/* Left Column: Eyebrow, Editorial Title, Description, Shop CTA */}
-              <div className="routine-design-left">
-                <span className="routine-design-eyebrow">YOUR DAILY SKINCARE ROUTINE</span>
-                <h2 className="routine-design-title">
-                  3 Simple Steps<br />
-                  <span className="routine-design-title-sub">for Radiant Skin</span>
-                </h2>
-                <p className="routine-design-desc">
-                  A complete skincare routine with just 3 essentials to keep your skin fresh, healthy and glowing every day.
-                </p>
-                <Link to="/products" className="routine-design-cta-btn" aria-label="Shop the Routine">
-                  <span>Shop the Routine</span>
-                  <ArrowRight size={17} strokeWidth={2.2} />
-                </Link>
-              </div>
+        const steps = [
+          {
+            num: '01',
+            badgeClass: 'badge-cleanse',
+            podClass: 'pod-sage',
+            stepTitle: 'Cleanse',
+            subtitle: 'Salicylic Acid Face Wash',
+            desc: 'Removes dirt & excess oil without drying.',
+            product: stepCleanse,
+            image: stepCleanse?.image_url || dbProduct1
+          },
+          {
+            num: '02',
+            badgeClass: 'badge-treat',
+            podClass: 'pod-gold',
+            stepTitle: 'Treat',
+            subtitle: 'Niacinamide 10% Serum',
+            desc: 'Brightens skin & reduces dark spots.',
+            product: stepTreat,
+            image: stepTreat?.image_url || dbProduct2
+          },
+          {
+            num: '03',
+            badgeClass: 'badge-protect',
+            podClass: 'pod-coral',
+            stepTitle: 'Protect',
+            subtitle: 'SPF 50 PA++++ Sunscreen',
+            desc: 'Shields from UVA/UVB rays for healthy, youthful skin.',
+            product: stepProtect,
+            image: stepProtect?.image_url || dbProduct3
+          }
+        ];
 
-              {/* Right Steps Grid / Row */}
-              <div className="routine-design-steps">
-                {/* Step 1: Cleanse */}
-                <div className="routine-step-col">
-                  <div className="routine-step-img-wrap">
-                    <img 
-                      src={routineStep1Img} 
-                      alt="Salicylic Acid Face Wash" 
-                      className="routine-step-product-img"
-                      loading="lazy"
-                    />
-                  </div>
-                  <div className="routine-step-body">
-                    <div className="routine-step-number badge-cleanse">01</div>
-                    <h3 className="routine-step-headline">Cleanse</h3>
-                    <div className="routine-step-product-title">Salicylic Acid Face Wash</div>
-                    <p className="routine-step-product-desc">
-                      Removes dirt & excess oil without drying.
+        return (
+          <section className="routine-showcase-section" aria-label="Your Daily Skincare Routine">
+            <div className="routine-showcase-container">
+              <div className="routine-showcase-card">
+                <div className="routine-showcase-inner">
+                  {/* Left Column: Eyebrow, Editorial Title, Description, Bullet Highlights, Shop CTA */}
+                  <div className="routine-showcase-left">
+                    <div className="routine-eyebrow-pill">
+                      <Sparkles size={14} className="routine-eyebrow-sparkle" />
+                      <span>YOUR DAILY SKINCARE ROUTINE</span>
+                    </div>
+
+                    <h2 className="routine-editorial-title">
+                      3 Simple Steps<br />
+                      <span className="routine-editorial-sub">for Radiant Skin</span>
+                    </h2>
+
+                    <p className="routine-editorial-desc">
+                      A complete skincare routine with just 3 essentials to keep your skin fresh, healthy and glowing every day.
                     </p>
-                  </div>
-                </div>
 
-                <div className="routine-step-divider" aria-hidden="true" />
+                    <div className="routine-benefits-list">
+                      <div className="routine-benefit-item">
+                        <CheckCircle2 size={16} className="routine-benefit-icon" />
+                        <span>100% Organic botanical ingredients</span>
+                      </div>
+                      <div className="routine-benefit-item">
+                        <CheckCircle2 size={16} className="routine-benefit-icon" />
+                        <span>Toxin-free & dermatologically tested</span>
+                      </div>
+                      <div className="routine-benefit-item">
+                        <CheckCircle2 size={16} className="routine-benefit-icon" />
+                        <span>Gentle for daily, long-term skin health</span>
+                      </div>
+                    </div>
 
-                {/* Step 2: Treat */}
-                <div className="routine-step-col">
-                  <div className="routine-step-img-wrap">
-                    <img 
-                      src={routineStep2Img} 
-                      alt="Niacinamide 10% Serum" 
-                      className="routine-step-product-img"
-                      loading="lazy"
-                    />
+                    <div className="routine-cta-wrap">
+                      <Link to="/products" className="routine-master-cta-btn" aria-label="Shop the Routine">
+                        <span>Shop the Routine</span>
+                        <ArrowRight size={17} strokeWidth={2.2} />
+                      </Link>
+                    </div>
                   </div>
-                  <div className="routine-step-body">
-                    <div className="routine-step-number badge-treat">02</div>
-                    <h3 className="routine-step-headline">Treat</h3>
-                    <div className="routine-step-product-title">Niacinamide 10% Serum</div>
-                    <p className="routine-step-product-desc">
-                      Brightens skin & reduces dark spots.
-                    </p>
-                  </div>
-                </div>
 
-                <div className="routine-step-divider" aria-hidden="true" />
+                  {/* Right Column: 3 Real Database Product Steps */}
+                  <div className="routine-steps-grid">
+                    {steps.map((st, idx) => (
+                      <React.Fragment key={st.num}>
+                        {idx > 0 && <div className="routine-step-divider" aria-hidden="true" />}
+                        <div 
+                          className="routine-step-card"
+                          onClick={() => st.product?.id && navigate(`/products/${st.product.id}`)}
+                          style={{ cursor: 'pointer' }}
+                        >
+                          {/* Product Image Pod using Real Database Product Image */}
+                          <div className={`routine-product-pod ${st.podClass}`}>
+                            <img 
+                              src={st.image} 
+                              alt={st.subtitle}
+                              className="routine-product-img"
+                              loading="lazy"
+                              onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.src = idx === 0 ? dbProduct1 : idx === 1 ? dbProduct2 : dbProduct3;
+                              }}
+                            />
+                          </div>
 
-                {/* Step 3: Protect */}
-                <div className="routine-step-col">
-                  <div className="routine-step-img-wrap">
-                    <img 
-                      src={routineStep3Img} 
-                      alt="SPF 50 PA++++ Sunscreen" 
-                      className="routine-step-product-img"
-                      loading="lazy"
-                    />
-                  </div>
-                  <div className="routine-step-body">
-                    <div className="routine-step-number badge-protect">03</div>
-                    <h3 className="routine-step-headline">Protect</h3>
-                    <div className="routine-step-product-title">SPF 50 PA++++ Sunscreen</div>
-                    <p className="routine-step-product-desc">
-                      Shields from UVA/UVB rays for healthy, youthful skin.
-                    </p>
+                          {/* Step Content */}
+                          <div className="routine-step-details">
+                            <div className={`routine-step-badge ${st.badgeClass}`}>
+                              {st.num}
+                            </div>
+                            <h3 className="routine-step-title">{st.stepTitle}</h3>
+                            <div className="routine-step-product-name">{st.subtitle}</div>
+                            <p className="routine-step-desc">{st.desc}</p>
+                            
+                            <div className="routine-step-footer">
+                              <span className="routine-step-price">
+                                ₹{Number(st.product?.price || (idx === 0 ? 499 : 649)).toFixed(2)}
+                              </span>
+                              <span className="routine-step-link-text">
+                                View Details <ArrowRight size={13} />
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </React.Fragment>
+                    ))}
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </section>
+          </section>
+        );
+      })()}
 
 
     </div>
