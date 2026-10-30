@@ -29,7 +29,7 @@ import {
   LayoutDashboard, Grid, Package, ShoppingCart, CreditCard, Users,
   Tag, Star, Megaphone, BarChart2, Settings, Search, Bell, Calendar,
   ChevronDown, ArrowUpRight, Plus, RefreshCw, LogOut, Edit, Trash2,
-  CheckCircle2, Download, Send, Eye, ShieldAlert, FileSpreadsheet, Copy,
+  CheckCircle2, Download, Send, Eye, EyeOff, ShieldAlert, FileSpreadsheet, Copy,
   X, Layers, ShoppingBag, ArrowRight, ArrowUp, ArrowDown, Upload, RotateCcw, Menu,
   Sparkles, TrendingUp, Image, FolderTree, Globe, FileText, ChevronRight, SlidersHorizontal,
   AlertTriangle, XCircle, Warehouse, Boxes, Clock, Filter, DollarSign, Percent,
@@ -39,6 +39,11 @@ import {
 } from 'lucide-react';
 
 export default function AdminDashboard() {
+  const [showGatewaySecret, setShowGatewaySecret] = useState(false);
+  const [showShiprocketPass, setShowShiprocketPass] = useState(false);
+  const [showSmtpPass, setShowSmtpPass] = useState(false);
+  const [showSmsKey, setShowSmsKey] = useState(false);
+
   // Helper for downloading CSV exports with authentication
   const openAuthenticatedExport = (baseUrl) => {
     const token = localStorage.getItem('leafora_admin_token') || '';
@@ -6655,13 +6660,24 @@ export default function AdminDashboard() {
 
                   <div className="leafora-form-group">
                     <label className="leafora-form-label">API Secret Key / Merchant Key</label>
-                    <input
-                      type="password"
-                      className="leafora-cat-input"
-                      value={gatewayForm.key_secret}
-                      onChange={(e) => setGatewayForm({ ...gatewayForm, key_secret: e.target.value })}
-                      required
-                    />
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type={showGatewaySecret ? 'text' : 'password'}
+                        className="leafora-cat-input"
+                        style={{ paddingRight: 38 }}
+                        value={gatewayForm.key_secret}
+                        onChange={(e) => setGatewayForm({ ...gatewayForm, key_secret: e.target.value })}
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowGatewaySecret(!showGatewaySecret)}
+                        style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8' }}
+                        title={showGatewaySecret ? 'Hide secret' : 'Show secret'}
+                      >
+                        {showGatewaySecret ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
                   </div>
 
                   <div className="leafora-form-group">
@@ -11327,12 +11343,23 @@ export default function AdminDashboard() {
 
                         <div>
                           <label className="leafora-form-label">SMTP Password / API Key</label>
-                          <input
-                            type="password"
-                            className="leafora-input"
-                            value={integrationsForm.smtp_password}
-                            onChange={(e) => setIntegrationsForm({ ...integrationsForm, smtp_password: e.target.value })}
-                          />
+                          <div style={{ position: 'relative' }}>
+                            <input
+                              type={showSmtpPass ? 'text' : 'password'}
+                              className="leafora-input"
+                              style={{ paddingRight: 38 }}
+                              value={integrationsForm.smtp_password}
+                              onChange={(e) => setIntegrationsForm({ ...integrationsForm, smtp_password: e.target.value })}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowSmtpPass(!showSmtpPass)}
+                              style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8' }}
+                              title={showSmtpPass ? 'Hide password' : 'Show password'}
+                            >
+                              {showSmtpPass ? <EyeOff size={16} /> : <Eye size={16} />}
+                            </button>
+                          </div>
                         </div>
 
                         <div>
@@ -11376,12 +11403,23 @@ export default function AdminDashboard() {
 
                         <div>
                           <label className="leafora-form-label">SMS API Auth Key</label>
-                          <input
-                            type="password"
-                            className="leafora-input"
-                            value={integrationsForm.sms_api_key}
-                            onChange={(e) => setIntegrationsForm({ ...integrationsForm, sms_api_key: e.target.value })}
-                          />
+                          <div style={{ position: 'relative' }}>
+                            <input
+                              type={showSmsKey ? 'text' : 'password'}
+                              className="leafora-input"
+                              style={{ paddingRight: 38 }}
+                              value={integrationsForm.sms_api_key}
+                              onChange={(e) => setIntegrationsForm({ ...integrationsForm, sms_api_key: e.target.value })}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowSmsKey(!showSmsKey)}
+                              style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8' }}
+                              title={showSmsKey ? 'Hide key' : 'Show key'}
+                            >
+                              {showSmsKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                            </button>
+                          </div>
                         </div>
 
                         <div>

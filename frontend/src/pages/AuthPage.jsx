@@ -559,6 +559,14 @@ export default function AuthPage({ initialMode = 'login', onAuthSuccess, isModal
                             onChange={(e) => setForgotForm({ ...forgotForm, new_password: e.target.value })}
                             required
                           />
+                          <button
+                            type="button"
+                            className="eye-toggle-btn"
+                            onClick={() => setShowPassword(!showPassword)}
+                            title={showPassword ? "Hide password" : "Show password"}
+                          >
+                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                          </button>
                         </div>
                       </div>
 
@@ -573,6 +581,14 @@ export default function AuthPage({ initialMode = 'login', onAuthSuccess, isModal
                             onChange={(e) => setForgotForm({ ...forgotForm, confirm_new_password: e.target.value })}
                             required
                           />
+                          <button
+                            type="button"
+                            className="eye-toggle-btn"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            title={showConfirmPassword ? "Hide password" : "Show password"}
+                          >
+                            {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                          </button>
                         </div>
                       </div>
                     </>
