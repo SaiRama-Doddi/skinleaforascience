@@ -20,7 +20,6 @@ export default function ContactUs() {
 
   const [loading, setLoading] = useState(false);
   const [alert, setAlert] = useState(null);
-  const [showFaqModal, setShowFaqModal] = useState(false);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -306,59 +305,16 @@ export default function ContactUs() {
           </div>
 
           <div className="faq-banner-right">
-            <button 
-              className="faq-btn-outline" 
-              onClick={() => setShowFaqModal(true)}
+            <Link 
+              to="/faq" 
+              className="faq-btn-outline"
             >
               View FAQs <ChevronRight size={16} />
-            </button>
+            </Link>
           </div>
 
         </div>
       </section>
-
-      {/* ───────────────────────────────────────────────────────────── */}
-      {/* 4. INTERACTIVE FAQ MODAL */}
-      {/* ───────────────────────────────────────────────────────────── */}
-      {showFaqModal && (
-        <div className="faq-modal-overlay" onClick={() => setShowFaqModal(false)}>
-          <div className="faq-modal-card" onClick={(e) => e.stopPropagation()}>
-            <div className="faq-modal-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <HelpCircle size={22} color="#C58A2A" />
-                <h3 style={{ margin: 0, fontFamily: 'Inter, sans-serif', fontSize: '1.4rem', color: '#0F3B2E' }}>
-                  Frequently Asked Questions
-                </h3>
-              </div>
-              <button className="faq-close-btn" onClick={() => setShowFaqModal(false)}>
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="faq-modal-body">
-              <div className="faq-item-box">
-                <h4>🌿 Are LeafOra products 100% natural & cruelty-free?</h4>
-                <p>Yes! All our skincare formulations use pure bio-botanical extracts and zero harsh chemicals or synthetic parabens. We are 100% cruelty-free.</p>
-              </div>
-
-              <div className="faq-item-box">
-                <h4>🚚 What are your shipping times & delivery options?</h4>
-                <p>We provide Free Express Delivery on orders above ₹999. Standard domestic orders deliver within 2-4 business days.</p>
-              </div>
-
-              <div className="faq-item-box">
-                <h4>🔄 What is your Return & Refund policy?</h4>
-                <p>We offer a 30-day money-back guarantee. If you are not satisfied with your purchase, contact our support team for a full refund.</p>
-              </div>
-
-              <div className="faq-item-box">
-                <h4>✨ How do I choose the right skincare routine for my skin type?</h4>
-                <p>You can send us a message through the contact form above specifying your skin concern, and our expert dermatological team will guide you!</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
     </div>
   );

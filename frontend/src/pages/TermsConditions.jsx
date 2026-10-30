@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { FileText, ShieldCheck, Truck, Scale, Mail, Phone, MessageSquare } from 'lucide-react';
+import { FileText, ShieldCheck, Truck, Scale, Mail, Phone, MessageSquare, HelpCircle } from 'lucide-react';
 import SEO from '../components/SEO';
 import './PolicyPages.css';
 
@@ -82,6 +82,9 @@ export default function TermsConditions() {
         </Link>
         <Link to="/privacy-policy" className="policy-tab-link">
           <ShieldCheck size={15} /> Privacy Policy
+        </Link>
+        <Link to="/faq" className="policy-tab-link">
+          <HelpCircle size={15} /> FAQs
         </Link>
       </div>
 

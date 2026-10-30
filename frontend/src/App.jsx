@@ -13,6 +13,7 @@ import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
 import AboutUs from './pages/AboutUs';
 import ContactUs from './pages/ContactUs';
+import Faq from './pages/Faq';
 import TermsConditions from './pages/TermsConditions';
 import ShippingPolicy from './pages/ShippingPolicy';
 import PrivacyPolicy from './pages/PrivacyPolicy';
@@ -75,6 +76,8 @@ function Layout() {
           <Route path="/about-us" element={<AboutUs />} />
           <Route path="/contact" element={<ContactUs />} />
           <Route path="/contact-us" element={<ContactUs />} />
+          <Route path="/faq" element={<Faq />} />
+          <Route path="/faqs" element={<Faq />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/terms" element={<TermsConditions />} />
           <Route path="/terms-and-conditions" element={<TermsConditions />} />

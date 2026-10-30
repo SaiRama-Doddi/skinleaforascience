@@ -131,6 +131,9 @@ export default function Footer() {
                 <Link to="/shipping-policy" className="footer-link-item">Shipping & Delivery Policy</Link>
               </li>
               <li>
+                <Link to="/faq" className="footer-link-item">Frequently Asked Questions (FAQ)</Link>
+              </li>
+              <li>
                 <Link to="/terms-and-conditions" className="footer-link-item">Terms & Conditions</Link>
               </li>
               <li>

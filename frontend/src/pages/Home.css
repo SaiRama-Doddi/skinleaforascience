@@ -1233,6 +1233,10 @@
   letter-spacing: -0.5px;
 }
 
+.routine-desktop-break {
+  display: inline;
+}
+
 .routine-editorial-sub {
   font-style: italic;
   color: #21432E;
@@ -1665,8 +1669,13 @@
     margin-bottom: 10px;
   }
 
+  .routine-desktop-break {
+    display: none;
+  }
+
   .routine-editorial-title {
-    font-size: 1.85rem;
+    font-size: clamp(1.1rem, 4.3vw, 1.45rem);
+    white-space: nowrap;
     margin-bottom: 12px;
   }
 

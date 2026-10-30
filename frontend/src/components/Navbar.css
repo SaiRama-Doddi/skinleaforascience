@@ -1084,7 +1084,9 @@
   }
 
   .brand-logo-img {
-    height: 38px;
+    height: 52px;
+    max-height: 52px;
+    width: auto;
   }
 
   .mobile-bottom-nav {

@@ -398,7 +398,8 @@ export default function Home() {
                     </div>
 
                     <h2 className="routine-editorial-title">
-                      3 Simple Steps<br />
+                      <span>3 Simple Steps</span>
+                      <span className="routine-desktop-break"><br /></span>{' '}
                       <span className="routine-editorial-sub">for Radiant Skin</span>
                     </h2>
 
