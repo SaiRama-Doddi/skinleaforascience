@@ -502,7 +502,7 @@
     position: relative;
     z-index: 2;
     width: 100%;
-    padding: 24px 20px 0 20px;
+    padding: 18px 16px 0 16px;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -523,23 +523,28 @@
   }
 
   .hero-leafora-eyebrow {
-    font-size: 0.68rem;
+    font-size: 0.65rem;
     font-weight: 600;
-    letter-spacing: 1.4px;
+    letter-spacing: 1.2px;
     color: #143D2F;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
+    display: block;
   }
 
+  /* One-line title on mobile per user instruction */
   .hero-leafora-title {
-    font-size: clamp(1.68rem, 6.2vw, 2.25rem);
+    display: block;
+    font-size: clamp(1.15rem, 4.4vw, 1.48rem);
     font-weight: 600;
-    line-height: 1.14;
+    line-height: 1.24;
     letter-spacing: -0.015em;
-    margin-bottom: 8px;
-    align-items: flex-start;
+    margin: 0 0 10px 0;
+    text-align: left;
   }
 
-  .hero-leafora-title-green {
+  .hero-leafora-title-green,
+  .hero-leafora-title-gold {
+    display: inline !important;
     font-weight: 600;
   }
 
@@ -547,93 +552,41 @@
     font-weight: 500;
   }
 
+  /* HIDE paragraph text on mobile per user instruction */
   .hero-leafora-desc {
-    font-size: 0.84rem;
-    line-height: 1.45;
-    color: #234939;
-    margin-bottom: 14px;
-    text-align: left;
-    max-width: 310px;
-    font-weight: 400;
+    display: none !important;
   }
 
+  /* KEEP only the button on mobile */
   .hero-leafora-btn-wrap {
-    margin-bottom: 16px;
+    margin-bottom: 0;
+    display: block;
   }
 
   .hero-leafora-shop-btn {
-    padding: 10px 24px;
-    font-size: 0.86rem;
+    padding: 8px 20px;
+    font-size: 0.82rem;
     font-weight: 600;
-    gap: 8px;
+    gap: 7px;
+    box-shadow: 0 3px 12px rgba(14, 54, 40, 0.28);
   }
 
+  /* HIDE 100%, No Harmful Chemicals badges on mobile per user instruction */
   .hero-leafora-badges-row {
-    display: flex;
-    align-items: flex-start;
-    justify-content: flex-start;
-    gap: 14px;
-    width: 100%;
-  }
-
-  .hero-leafora-badge-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    width: 82px;
-  }
-
-  .hero-leafora-icon-circle {
-    width: 38px;
-    height: 38px;
-    border-radius: 50%;
-    background: rgba(14, 54, 40, 0.08);
-    color: #0E3628;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 4px;
-  }
-
-  .hero-leafora-icon-circle svg {
-    width: 18px;
-    height: 18px;
-  }
-
-  .hero-leafora-badge-heading {
-    font-size: 0.78rem;
-    font-weight: 600;
-    color: #0E3628;
-    line-height: 1.2;
-    margin-bottom: 1px;
-    white-space: nowrap;
-  }
-
-  .hero-leafora-badge-sub {
-    font-size: 0.68rem;
-    font-weight: 500;
-    color: #2D4A3E;
-    line-height: 1.2;
+    display: none !important;
   }
 }
 
 @media (max-width: 400px) {
   .hero-leafora-content-wrap {
-    padding: 20px 16px 0 16px;
+    padding: 14px 14px 0 14px;
   }
   .hero-leafora-title {
-    font-size: 1.62rem;
+    font-size: 1.18rem;
   }
-  .hero-leafora-desc {
-    font-size: 0.8rem;
-    max-width: 280px;
-  }
-  .hero-leafora-badges-row {
-    gap: 8px;
-  }
-  .hero-leafora-badge-item {
-    width: 76px;
+  .hero-leafora-shop-btn {
+    padding: 7px 18px;
+    font-size: 0.78rem;
   }
 }
 

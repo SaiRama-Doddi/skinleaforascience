@@ -132,8 +132,8 @@ export default function Home() {
             </span>
             
             <h1 className="hero-leafora-title">
-              <span className="hero-leafora-title-green">A Healthier,</span>
-              <span className="hero-leafora-title-green">Brighter You</span>
+              <span className="hero-leafora-title-green">A Healthier, </span>
+              <span className="hero-leafora-title-green">Brighter You </span>
               <span className="hero-leafora-title-gold">Naturally</span>
             </h1>
 
