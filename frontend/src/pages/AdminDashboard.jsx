@@ -2823,7 +2823,7 @@ export default function AdminDashboard() {
               src={leaforaLogo} 
               alt="LeafOra Life Sciences" 
               className="leafora-sidebar-brand-img"
-              style={{ height: '44px', width: 'auto', maxWidth: '100%', objectFit: 'contain', cursor: 'pointer' }}
+              style={{ height: '82px', width: 'auto', maxWidth: '100%', objectFit: 'contain', cursor: 'pointer' }}
             />
           </div>
 
