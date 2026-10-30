@@ -369,7 +369,10 @@ export default function ProductDetails() {
 
           <button 
             className="btn-pdp-buy-now"
-            onClick={() => showToast('Proceeding to Express Direct Checkout...')}
+            onClick={() => {
+            addToCart(product, quantity);
+            navigate('/cart');
+          }}
           >
             Buy Now
           </button>

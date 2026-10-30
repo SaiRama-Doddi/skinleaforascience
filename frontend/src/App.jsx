@@ -94,6 +94,7 @@ function Layout() {
           <Route path="/forgot-password" element={<AuthPage initialMode="forgot" />} />
           <Route path="/dashboard" element={<UserDashboard />} />
           <Route path="/account" element={<UserDashboard />} />
+          <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route 
             path="/admin/dashboard" 
