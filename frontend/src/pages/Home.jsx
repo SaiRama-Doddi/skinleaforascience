@@ -7,7 +7,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import { getProducts, getBanners } from '../services/api';
 import { addToCart } from '../services/cartService';
 import SEO from '../components/SEO';
-import skincareStoryImg from '../assets/skincare_story_showcase.jpg';
+import routineBannerImg from '../assets/daily_routine_banner.jpg';
+import routineStep1Img from '../assets/routine_step1.jpg';
+import routineStep2Img from '../assets/routine_step2.jpg';
+import routineStep3Img from '../assets/routine_step3.jpg';
 import homepageDesktop from '../assets/hero_section/homepage.jpg';
 import homepageMobile from '../assets/hero_section/homepage-mobile.jpg';
 import './Home.css';
@@ -344,43 +347,87 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 5. BRAND STORY BANNER ("Skincare That Cares") */}
-      <section className="brand-story-section-pixel">
-        <div className="brand-story-banner-pixel">
-          <div className="story-left-pixel">
-            <h2 className="section-title-serif-pixel">Skincare That Cares</h2>
-            <p className="section-desc-pixel">
-              Good for your skin. Good for the planet.
-            </p>
-            <Link to="/products" className="btn-bronze-pill-pixel">
-              Learn Our Story <ArrowRight size={16} />
+      {/* 5. YOUR DAILY SKINCARE ROUTINE (3 SIMPLE STEPS) */}
+      <section className="daily-routine-section" aria-label="Your Daily Skincare Routine">
+        <div className="daily-routine-container">
+          {/* Desktop Visual Banner with Interactive Shop Link */}
+          <div className="daily-routine-desktop-wrap desktop-only">
+            <Link to="/products" className="daily-routine-banner-link" aria-label="Shop the Routine - 3 Simple Steps for Radiant Skin">
+              <img 
+                src={routineBannerImg} 
+                alt="Your Daily Skincare Routine - 3 Simple Steps for Radiant Skin with LeafOra" 
+                className="daily-routine-banner-img"
+                loading="lazy"
+              />
+              <span className="routine-shop-overlay-btn">
+                <span>Shop the Routine</span>
+                <ArrowRight size={16} strokeWidth={2.2} />
+              </span>
             </Link>
           </div>
 
-          {/* Center Product Pedestal Image */}
-          <div className="story-center-box">
-            <img 
-              src={skincareStoryImg} 
-              alt="Skincare That Cares Product Lineup" 
-              className="story-center-img-pixel"
-            />
-          </div>
-
-          {/* Right Brand Panel */}
-          <div className="story-right-pixel">
-            <div className="vertical-tags-pixel">
-              PURE INGREDIENTS<br />
-              REAL RESULTS<br />
-              A BRIGHTER YOU
+          {/* Mobile Fully-Responsive Routine Layout */}
+          <div className="daily-routine-mobile-wrap mobile-only">
+            <div className="routine-mobile-header">
+              <span className="routine-mobile-eyebrow">YOUR DAILY SKINCARE ROUTINE</span>
+              <h2 className="routine-mobile-title">
+                3 Simple Steps<br />
+                <span>for Radiant Skin</span>
+              </h2>
+              <p className="routine-mobile-desc">
+                A complete skincare routine with just 3 essentials to keep your skin fresh, healthy and glowing every day.
+              </p>
+              <Link to="/products" className="routine-mobile-shop-btn">
+                <span>Shop the Routine</span>
+                <ArrowRight size={16} strokeWidth={2.2} />
+              </Link>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12 }}>
-              <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#A67C52', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
-                <Leaf size={16} />
+            <div className="routine-mobile-steps-list">
+              {/* Step 1 */}
+              <div className="routine-mobile-step-card">
+                <div className="routine-mobile-step-img-box">
+                  <img src={routineStep1Img} alt="Step 1: Cleanse - Salicylic Acid Face Wash" />
+                </div>
+                <div className="routine-mobile-step-info">
+                  <div className="routine-step-badge badge-cleanse">01</div>
+                  <h3 className="routine-step-heading">Cleanse</h3>
+                  <div className="routine-step-prod-name">Salicylic Acid Face Wash</div>
+                  <p className="routine-step-detail">
+                    Removes dirt & excess oil without drying.
+                  </p>
+                </div>
               </div>
-              <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '1.2rem', fontWeight: 700, color: '#1F2937' }}>
-                LeafOra
-              </span>
+
+              {/* Step 2 */}
+              <div className="routine-mobile-step-card">
+                <div className="routine-mobile-step-img-box">
+                  <img src={routineStep2Img} alt="Step 2: Treat - Niacinamide 10% Serum" />
+                </div>
+                <div className="routine-mobile-step-info">
+                  <div className="routine-step-badge badge-treat">02</div>
+                  <h3 className="routine-step-heading">Treat</h3>
+                  <div className="routine-step-prod-name">Niacinamide 10% Serum</div>
+                  <p className="routine-step-detail">
+                    Brightens skin & reduces dark spots.
+                  </p>
+                </div>
+              </div>
+
+              {/* Step 3 */}
+              <div className="routine-mobile-step-card">
+                <div className="routine-mobile-step-img-box">
+                  <img src={routineStep3Img} alt="Step 3: Protect - SPF 50 PA++++ Sunscreen" />
+                </div>
+                <div className="routine-mobile-step-info">
+                  <div className="routine-step-badge badge-protect">03</div>
+                  <h3 className="routine-step-heading">Protect</h3>
+                  <div className="routine-step-prod-name">SPF 50 PA++++ Sunscreen</div>
+                  <p className="routine-step-detail">
+                    Shields from UVA/UVB rays for healthy, youthful skin.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>

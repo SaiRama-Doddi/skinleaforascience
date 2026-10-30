@@ -1165,67 +1165,88 @@
   color: var(--leafora-text-muted);
 }
 
-/* 5. BRAND STORY BANNER ("Skincare That Cares") */
-.brand-story-section-pixel {
+/* 5. DAILY SKINCARE ROUTINE SECTION (3 SIMPLE STEPS) */
+.daily-routine-section {
   background-color: var(--leafora-cream-bg);
-  padding: 40px 40px;
-}
-
-.brand-story-banner-pixel {
-  max-width: 1320px;
-  margin: 0 auto;
-  background-color: var(--leafora-card-cream);
-  border: 1px solid var(--leafora-border);
-  border-radius: 24px;
-  overflow: hidden;
-  display: grid;
-  grid-template-columns: 1fr 1.3fr 260px;
-  align-items: center;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.04);
-}
-
-.story-left-pixel {
   padding: 48px 40px;
 }
 
-.story-center-box {
-  width: 100%;
-  height: 320px;
-  overflow: hidden;
-  position: relative;
-  border-left: 1px solid var(--leafora-border);
-  border-right: 1px solid var(--leafora-border);
+.daily-routine-container {
+  max-width: 1320px;
+  margin: 0 auto;
 }
 
-.story-center-img-pixel {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
+.daily-routine-desktop-wrap {
   display: block;
-  transition: transform 0.5s ease;
+  position: relative;
+  width: 100%;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--leafora-border);
+  background: #FAF7F2;
 }
 
-.brand-story-banner-pixel:hover .story-center-img-pixel {
-  transform: scale(1.04);
+.daily-routine-banner-link {
+  display: block;
+  width: 100%;
+  position: relative;
+  text-decoration: none;
+  cursor: pointer;
+  line-height: 0;
 }
 
-.story-right-pixel {
-  padding: 40px 32px;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 16px;
-  border-left: 1px solid var(--leafora-border);
+.daily-routine-banner-img {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: contain;
 }
 
-.vertical-tags-pixel {
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  color: var(--leafora-bronze);
-  line-height: 1.6;
+.routine-shop-overlay-btn {
+  position: absolute;
+  left: 4.6%;
+  bottom: 14%;
+  height: 12.5%;
+  width: 22%;
+  min-width: 170px;
+  max-width: 240px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 9999px;
+  border: 1.5px solid #C58A2A;
+  color: #A96B21;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: clamp(0.78rem, 1.05vw, 0.96rem);
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  box-shadow: 0 4px 14px rgba(197, 138, 42, 0.18);
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  line-height: 1;
+}
+
+.daily-routine-banner-link:hover .routine-shop-overlay-btn {
+  background: #A96B21;
+  color: #FFFFFF;
+  border-color: #A96B21;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(169, 107, 33, 0.32);
+}
+
+.daily-routine-banner-link:hover .routine-shop-overlay-btn svg {
+  transform: translateX(4px);
+}
+
+.routine-shop-overlay-btn svg {
+  transition: transform 0.2s ease;
+}
+
+.daily-routine-mobile-wrap {
+  display: none;
 }
 
 /* 6. CLEAN FOOTER MATCHING REFERENCE IMAGE */
@@ -1351,49 +1372,156 @@
 }
 
 @media (max-width: 768px) {
-  .brand-story-section-pixel {
+  .daily-routine-section {
     padding: 24px 14px;
   }
 
-  .brand-story-banner-pixel {
-    grid-template-columns: 1fr;
-    border-radius: 18px;
-    text-align: center;
+  .daily-routine-desktop-wrap {
+    display: none !important;
   }
 
-  .story-left-pixel {
-    padding: 32px 20px;
+  .daily-routine-mobile-wrap {
+    display: block !important;
+    background: linear-gradient(180deg, #FDFBF8 0%, #F8F3EC 100%);
+    border-radius: 18px;
+    border: 1px solid var(--leafora-border);
+    padding: 24px 16px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.03);
+  }
+
+  .routine-mobile-header {
+    text-align: center;
+    margin-bottom: 22px;
+  }
+
+  .routine-mobile-eyebrow {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 1.6px;
+    color: #C58A2A;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    display: inline-block;
+  }
+
+  .routine-mobile-title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #0F3B2E;
+    line-height: 1.2;
+    margin: 0 0 10px 0;
+  }
+
+  .routine-mobile-desc {
+    font-size: 0.85rem;
+    line-height: 1.48;
+    color: #1E513B;
+    margin: 0 0 16px 0;
+    max-width: 320px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .routine-mobile-shop-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1.5px solid #C58A2A;
+    color: #A96B21;
+    padding: 9px 24px;
+    border-radius: 9999px;
+    font-size: 0.86rem;
+    font-weight: 600;
+    text-decoration: none;
+    background: #FFFFFF;
+    box-shadow: 0 2px 8px rgba(197, 138, 42, 0.15);
+  }
+
+  .routine-mobile-steps-list {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    text-align: center;
+    gap: 14px;
   }
 
-  .story-left-pixel h2 {
-    font-size: 1.85rem;
-    margin-bottom: 8px;
-  }
-
-  .story-left-pixel p {
-    font-size: 0.9rem;
-    margin-bottom: 18px;
-  }
-
-  .story-center-box {
-    height: 240px;
-    border-left: none;
-    border-right: none;
-    border-top: 1px solid var(--leafora-border);
-    border-bottom: 1px solid var(--leafora-border);
-  }
-
-  .story-right-pixel {
+  .routine-mobile-step-card {
     display: flex;
-    padding: 24px 20px;
     align-items: center;
-    text-align: center;
-    border-left: none;
-    border-top: 1px solid var(--leafora-border);
+    gap: 14px;
+    background: #FFFFFF;
+    border: 1px solid var(--leafora-border);
+    border-radius: 14px;
+    padding: 12px 14px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  }
+
+  .routine-mobile-step-img-box {
+    width: 86px;
+    height: 98px;
+    flex-shrink: 0;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #FAF7F2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .routine-mobile-step-img-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .routine-mobile-step-info {
+    flex: 1;
+    text-align: left;
+  }
+
+  .routine-step-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    color: #FFFFFF;
+    font-size: 0.68rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .routine-step-badge.badge-cleanse {
+    background: #143D2F;
+  }
+
+  .routine-step-badge.badge-treat {
+    background: #C58A2A;
+  }
+
+  .routine-step-badge.badge-protect {
+    background: #E07A5F;
+  }
+
+  .routine-step-heading {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #0F3B2E;
+    margin: 0 0 2px 0;
+  }
+
+  .routine-step-prod-name {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #A96B21;
+    margin-bottom: 3px;
+  }
+
+  .routine-step-detail {
+    font-size: 0.74rem;
+    line-height: 1.35;
+    color: #4B5563;
+    margin: 0;
   }
 }
 
@@ -1472,27 +1600,10 @@
 }
 
 @media (max-width: 480px) {
-  .brand-story-section-pixel {
-    padding: 16px 10px;
-  }
-
-  .brand-story-banner-pixel {
-    border-radius: 16px;
-  }
-
-  .story-left-pixel {
-    padding: 24px 14px;
-  }
-
-  .story-left-pixel h2 {
+  .routine-mobile-title {
     font-size: 1.55rem;
   }
-
-  .story-center-box {
-    height: 190px;
-  }
-
-  .story-right-pixel {
-    padding: 18px 14px;
+  .routine-mobile-step-card {
+    padding: 10px 12px;
   }
 }
