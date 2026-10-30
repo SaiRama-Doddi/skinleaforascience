@@ -1,54 +1,22 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
-  ArrowRight, Leaf, ShieldCheck, Heart, ShoppingBag, Star, 
-  ChevronRight, ChevronLeft, Sparkles, Globe, Share2, MessageCircle, CheckCircle2, Loader2
+  ArrowRight, Leaf, ShieldCheck, FlaskConical, Heart, ShoppingBag, Star, 
+  ChevronRight, Sparkles, CheckCircle2, Loader2
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getProducts, getBanners } from '../services/api';
 import { addToCart } from '../services/cartService';
 import SEO from '../components/SEO';
 import skincareStoryImg from '../assets/skincare_story_showcase.jpg';
-import desktopHero1 from '../assets/hero_section/herocarousel_desktop1.png';
-import desktopHero2 from '../assets/hero_section/herocarousel_desktop2.png';
-import desktopHero3 from '../assets/hero_section/herocarousel_desktop3.png';
-import mobileHero1 from '../assets/hero_section/herocarousel_mobile1.png';
-import mobileHero2 from '../assets/hero_section/herocarousel_mobile2.png';
-import mobileHero3 from '../assets/hero_section/herocarousel_mobile3.png';
+import homepageDesktop from '../assets/hero_section/homepage.jpg';
+import homepageMobile from '../assets/hero_section/homepage-mobile.jpg';
 import './Home.css';
-
-const HERO_CAROUSEL_SLIDES = [
-  {
-    id: 1,
-    desktop: desktopHero1,
-    mobile: mobileHero1,
-    alt: 'LeafOra Life Science - Elevate Your Daily Ritual 10% Niacinamide Serum',
-    link: '/products',
-  },
-  {
-    id: 2,
-    desktop: desktopHero2,
-    mobile: mobileHero2,
-    alt: 'LeafOra Life Science - A Refreshing Start To Clear Skin Salicylic Acid Face Wash',
-    link: '/products',
-  },
-  {
-    id: 3,
-    desktop: desktopHero3,
-    mobile: mobileHero3,
-    alt: 'LeafOra Life Science - Everyday Sun Care SPF 50 PA++++ Ultra-Light Gel Sunscreen',
-    link: '/products',
-  },
-];
 
 export default function Home() {
   const navigate = useNavigate();
   const [toastMsg, setToastMsg] = useState(null);
   const [products, setProducts] = useState([]);
   const [banners, setBanners] = useState([]);
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [isCarouselPaused, setIsCarouselPaused] = useState(false);
-  const [touchStartX, setTouchStartX] = useState(null);
-  const [touchEndX, setTouchEndX] = useState(null);
   const [loadingProds, setLoadingProds] = useState(true);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
@@ -115,48 +83,6 @@ export default function Home() {
       .catch(() => {});
   }, []);
 
-  // Auto rotate hero carousel every 5 seconds (paused on hover / touch)
-  useEffect(() => {
-    if (isCarouselPaused) return;
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % HERO_CAROUSEL_SLIDES.length);
-    }, 5000);
-    return () => clearInterval(timer);
-  }, [isCarouselPaused]);
-
-  const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % HERO_CAROUSEL_SLIDES.length);
-  };
-
-  const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + HERO_CAROUSEL_SLIDES.length) % HERO_CAROUSEL_SLIDES.length);
-  };
-
-  const goToSlide = (idx) => {
-    setCurrentSlide(idx);
-  };
-
-  const handleTouchStart = (e) => {
-    setTouchStartX(e.targetTouches[0].clientX);
-    setTouchEndX(null);
-  };
-
-  const handleTouchMove = (e) => {
-    setTouchEndX(e.targetTouches[0].clientX);
-  };
-
-  const handleTouchEnd = () => {
-    if (!touchStartX || !touchEndX) return;
-    const distance = touchStartX - touchEndX;
-    if (distance > 45) {
-      nextSlide();
-    } else if (distance < -45) {
-      prevSlide();
-    }
-    setTouchStartX(null);
-    setTouchEndX(null);
-  };
-
   const showToast = (msg) => {
     setToastMsg(msg);
     setTimeout(() => setToastMsg(null), 3000);
@@ -181,78 +107,73 @@ export default function Home() {
         </div>
       )}
 
-      {/* 1. HERO CAROUSEL SECTION */}
+      {/* 1. HERO SECTION */}
       <section 
-        className="hero-carousel-container"
+        className="hero-leafora-section"
         aria-label="LeafOra Featured Skincare Collection"
-        onMouseEnter={() => setIsCarouselPaused(true)}
-        onMouseLeave={() => setIsCarouselPaused(false)}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
       >
-        <div 
-          className="hero-carousel-track"
-          style={{ transform: `translateX(-${currentSlide * 100}%)` }}
-        >
-          {HERO_CAROUSEL_SLIDES.map((slide, idx) => (
-            <div 
-              key={slide.id} 
-              className={`hero-carousel-slide ${idx === currentSlide ? 'active' : ''}`}
-            >
-              <Link 
-                to={slide.link} 
-                className="hero-slide-link" 
-                aria-label={slide.alt}
-              >
-                <picture className="hero-slide-picture">
-                  <source media="(max-width: 768px)" srcSet={slide.mobile} />
-                  <img
-                    src={slide.desktop}
-                    alt={slide.alt}
-                    className="hero-slide-img"
-                    loading={idx === 0 ? "eager" : "lazy"}
-                    fetchPriority={idx === 0 ? "high" : "auto"}
-                  />
-                </picture>
-              </Link>
-            </div>
-          ))}
+        <div className="hero-leafora-bg-layer">
+          <picture className="hero-leafora-picture">
+            <source media="(max-width: 768px)" srcSet={homepageMobile} />
+            <img
+              src={homepageDesktop}
+              alt="LeafOra Life Sciences - A Healthier, Brighter You Naturally"
+              className="hero-leafora-bg-img"
+              loading="eager"
+              fetchPriority="high"
+            />
+          </picture>
         </div>
 
-        {/* Previous Navigation Arrow */}
-        <button
-          type="button"
-          className="hero-nav-arrow prev"
-          onClick={(e) => { e.preventDefault(); prevSlide(); }}
-          aria-label="Previous Slide"
-        >
-          <ChevronLeft size={22} />
-        </button>
+        <div className="hero-leafora-content-wrap">
+          <div className="hero-leafora-card">
+            <span className="hero-leafora-eyebrow">
+              NATURAL SCIENCE FOR RADIANT SKIN
+            </span>
+            
+            <h1 className="hero-leafora-title">
+              <span className="hero-leafora-title-green">A Healthier,</span>
+              <span className="hero-leafora-title-green">Brighter You</span>
+              <span className="hero-leafora-title-gold">Naturally</span>
+            </h1>
 
-        {/* Next Navigation Arrow */}
-        <button
-          type="button"
-          className="hero-nav-arrow next"
-          onClick={(e) => { e.preventDefault(); nextSlide(); }}
-          aria-label="Next Slide"
-        >
-          <ChevronRight size={22} />
-        </button>
+            <p className="hero-leafora-desc">
+              Clean skincare essentials with powerful natural ingredients for clear, glowing and healthy skin.
+            </p>
 
-        {/* Indicator Dots */}
-        <div className="hero-carousel-dots" role="tablist" aria-label="Hero Carousel Slides">
-          {HERO_CAROUSEL_SLIDES.map((slide, idx) => (
-            <button
-              key={slide.id}
-              type="button"
-              role="tab"
-              aria-selected={idx === currentSlide}
-              aria-label={`Slide ${idx + 1}`}
-              className={`hero-carousel-dot ${idx === currentSlide ? 'active' : ''}`}
-              onClick={() => goToSlide(idx)}
-            />
-          ))}
+            <div className="hero-leafora-btn-wrap">
+              <Link to="/products" className="hero-leafora-shop-btn">
+                <span>Shop Our Essentials</span>
+                <ArrowRight size={18} strokeWidth={2.2} />
+              </Link>
+            </div>
+
+            <div className="hero-leafora-badges-row">
+              <div className="hero-leafora-badge-item">
+                <div className="hero-leafora-icon-circle">
+                  <Leaf size={22} strokeWidth={1.8} />
+                </div>
+                <div className="hero-leafora-badge-heading">100%</div>
+                <div className="hero-leafora-badge-sub">Natural Ingredients</div>
+              </div>
+
+              <div className="hero-leafora-badge-item">
+                <div className="hero-leafora-icon-circle">
+                  <FlaskConical size={22} strokeWidth={1.8} />
+                </div>
+                <div className="hero-leafora-badge-heading">No Harmful</div>
+                <div className="hero-leafora-badge-sub">Chemicals</div>
+              </div>
+
+              <div className="hero-leafora-badge-item">
+                <div className="hero-leafora-icon-circle">
+                  <ShieldCheck size={22} strokeWidth={1.8} />
+                </div>
+                <div className="hero-leafora-badge-heading">Dermatologically</div>
+                <div className="hero-leafora-badge-sub">Tested</div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
