@@ -472,8 +472,7 @@ export default function ProductDetails() {
         {activeTab === 'details' && (
           <div className="tab-details-grid">
             <div className="tab-left-content">
-              <h3>Product Details</h3>
-              <p>
+              <p style={{ margin: '0 0 14px 0', color: '#475569', fontSize: '0.92rem', lineHeight: 1.65 }}>
                 {product.description || 'Leafora formulation crafted with botanical science to nourish and revitalize your skin naturally.'}
               </p>
 
@@ -511,7 +510,7 @@ export default function ProductDetails() {
         {/* TAB 2: INGREDIENTS */}
         {activeTab === 'ingredients' && (
           <div>
-            <h3 style={{ fontFamily: 'Inter, sans-serif', fontSize: '1.4rem', marginBottom: 16 }}>Ingredients & Formulation</h3>
+            
             
             {product.key_ingredients && (
               <div style={{ marginBottom: 20, padding: 16, background: '#F8F4EE', borderRadius: 10, borderLeft: '4px solid var(--leafora-bronze)' }}>
@@ -549,7 +548,7 @@ export default function ProductDetails() {
         {/* TAB 3: HOW TO USE */}
         {activeTab === 'how_to_use' && (
           <div>
-            <h3 style={{ fontFamily: 'Inter, sans-serif', fontSize: '1.4rem', marginBottom: 16 }}>Directions & Recommended Routine</h3>
+            
             {product.how_to_use ? (
               <div style={{ background: '#F8F4EE', padding: 24, borderRadius: 10, borderLeft: '4px solid var(--leafora-bronze)' }}>
                 <p style={{ fontSize: '0.95rem', color: '#334155', lineHeight: 1.8, whiteSpace: 'pre-line', margin: 0 }}>
@@ -578,7 +577,7 @@ export default function ProductDetails() {
         {/* TAB 4: BENEFITS */}
         {activeTab === 'benefits' && (
           <div>
-            <h3 style={{ fontFamily: 'Inter, sans-serif', fontSize: '1.4rem', marginBottom: 16 }}>Benefits & Clinical Efficacy</h3>
+            
             {product.benefits ? (
               <div style={{ background: '#FAF9F6', padding: 24, borderRadius: 10, border: '1px solid #EFE8DE' }}>
                 <div style={{ fontSize: '0.95rem', color: '#334155', lineHeight: 1.8, whiteSpace: 'pre-line' }}>
@@ -586,7 +585,7 @@ export default function ProductDetails() {
                 </div>
               </div>
             ) : (
-              <ul style={{ paddingLeft: 20, lineHeight: 1.8, color: '#475569' }}>
+              <ul style={{ margin: 0, paddingLeft: 20, lineHeight: 1.8, color: '#475569', fontSize: '0.92rem' }}>
                 <li><strong>98%</strong> reported immediate removal of excess surface oils and makeup residue.</li>
                 <li><strong>95%</strong> noticed smoother skin texture and zero post-wash tightness within 7 days.</li>
                 <li>Dermatologist-tested for high tolerance on acne-prone and reactive skin.</li>
