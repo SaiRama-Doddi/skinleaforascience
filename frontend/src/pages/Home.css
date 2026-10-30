@@ -986,20 +986,22 @@
 .product-img-wrap-pixel {
   position: relative;
   width: 100%;
-  height: 250px;
-  background: #F8F4EE;
-  border-radius: 10px;
+  height: 350px;
+  background: #FAF7F2;
+  border-radius: 12px;
   overflow: hidden;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 12px;
 }
 
 .product-img-wrap-pixel img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  transition: transform 0.3s ease;
 }
 
 .product-brand-pixel {
@@ -1395,49 +1397,55 @@
   }
 }
 
-/* Mobile Layout: 2 Cards Per Row for Bestsellers Section */
+/* Mobile Layout: Column-wise (1 Card Per Row) for Bestsellers Section */
 @media (max-width: 768px) {
   .bestsellers-section-pixel {
-    padding: 36px 14px;
+    padding: 36px 16px;
   }
 
   .bestseller-layout-grid-pixel {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
+    grid-template-columns: 1fr;
+    gap: 20px;
     margin-top: 24px;
+    max-width: 440px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
   }
 
   .product-card-pixel {
-    padding: 10px;
-    border-radius: 12px;
+    padding: 16px;
+    border-radius: 14px;
+    width: 100%;
   }
 
   .product-img-wrap-pixel {
-    height: 140px;
+    height: 320px;
+    padding: 14px;
   }
 
   .product-title-pixel {
-    font-size: 0.88rem;
-    line-height: 1.25;
-    margin: 2px 0 4px 0;
+    font-size: 1rem;
+    line-height: 1.3;
+    margin: 4px 0 6px 0;
   }
 
   .product-stars-pixel {
-    font-size: 0.72rem;
-    gap: 2px;
-    margin-bottom: 6px;
+    font-size: 0.78rem;
+    gap: 3px;
+    margin-bottom: 8px;
   }
 
   .product-price-pixel {
-    font-size: 0.95rem;
+    font-size: 1.05rem;
     font-weight: 700;
   }
 
   .btn-icon-cart-pixel {
-    width: 28px;
-    height: 28px;
-    border-radius: 6px;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
   }
 
   .value-props-row-pixel {
@@ -1447,19 +1455,19 @@
 
 @media (max-width: 380px) {
   .bestsellers-section-pixel {
-    padding: 28px 10px;
+    padding: 28px 12px;
   }
 
   .bestseller-layout-grid-pixel {
-    gap: 8px;
+    gap: 16px;
   }
 
   .product-img-wrap-pixel {
-    height: 125px;
+    height: 280px;
   }
 
   .product-title-pixel {
-    font-size: 0.82rem;
+    font-size: 0.94rem;
   }
 }
 

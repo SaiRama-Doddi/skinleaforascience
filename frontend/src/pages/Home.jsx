@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { 
   ArrowRight, Leaf, ShieldCheck, FlaskConical, Heart, ShoppingBag, Star, 
-  ChevronRight, Sparkles, CheckCircle2, Loader2
+  Sparkles, CheckCircle2, Loader2
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getProducts, getBanners } from '../services/api';
@@ -244,9 +244,6 @@ export default function Home() {
                 Discover our most popular skincare essentials for healthy, radiant skin.
               </p>
             </div>
-            <Link to="/products" className="link-view-all-pixel">
-              View All Products <ChevronRight size={16} />
-            </Link>
           </div>
 
           {loadingProds ? (
