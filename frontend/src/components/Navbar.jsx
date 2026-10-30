@@ -389,6 +389,11 @@ export default function Navbar() {
 
           </div>
 
+
+        </header>
+
+      </div>
+
           {/* MINI CART SLIDE-OUT DRAWER */}
           {isCartOpen && (
             <>
@@ -509,9 +514,6 @@ export default function Navbar() {
               </div>
             </>
           )}
-        </header>
-
-      </div>
 
       {/* MOBILE DRAWER NAVIGATION MENU */}
       {isMobileMenuOpen && (

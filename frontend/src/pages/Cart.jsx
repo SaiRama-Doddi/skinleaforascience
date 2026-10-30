@@ -784,7 +784,7 @@ export default function Cart() {
                     className="cart-checkout-main-btn"
                     onClick={handlePlaceOrderClick}
                   >
-                    Place Order Now →
+                    Proceed to Checkout →
                   </button>
 
                   <div className="cart-trust-badges">
