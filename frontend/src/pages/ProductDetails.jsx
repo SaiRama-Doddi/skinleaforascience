@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { 
-  Star, Heart, ShoppingBag, Truck, RotateCcw, ShieldCheck, CheckCircle2, 
-  ChevronLeft, ChevronRight, Play, Share2, Copy, Check, MapPin, 
+  Star, Heart, ShoppingBag, ShieldCheck, CheckCircle2, 
+  ChevronLeft, ChevronRight, Play, Share2, Copy, Check, 
   ChevronDown, ChevronUp, Sparkles, Leaf, Award, Eye, X
 } from 'lucide-react';
 import { getProductById, getProducts, userToggleWishlist } from '../services/api';
@@ -26,8 +26,6 @@ export default function ProductDetails() {
   const [activeTab, setActiveTab] = useState('details'); // 'details', 'ingredients', 'how_to_use', 'benefits', 'reviews'
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
-  const [pincode, setPincode] = useState('');
-  const [deliveryResult, setDeliveryResult] = useState(null);
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const [expandedFaqIndex, setExpandedFaqIndex] = useState(0);
 
@@ -120,18 +118,6 @@ export default function ProductDetails() {
   const handleNextImage = () => {
     if (!product?.gallery || product.gallery.length <= 1) return;
     setSelectedImgIndex(prev => (prev === product.gallery.length - 1 ? 0 : prev + 1));
-  };
-
-  const handleCheckPincode = (e) => {
-    e.preventDefault();
-    if (pincode.length >= 5) {
-      const today = new Date();
-      today.setDate(today.getDate() + 3);
-      const options = { weekday: 'long', month: 'short', day: 'numeric' };
-      setDeliveryResult(`Est. Delivery by ${today.toLocaleDateString('en-US', options)} (Free Delivery)`);
-    } else {
-      setDeliveryResult('Please enter a valid 5 or 6 digit ZIP / Pincode.');
-    }
   };
 
   const handleShareProduct = () => {
@@ -394,55 +380,6 @@ export default function ProductDetails() {
             </button>
           </div>
 
-        </div>
-      </div>
-
-      {/* FULL WIDTH TRUST & DELIVERY STRIP */}
-      <div className="pdp-trust-delivery-strip">
-        <div className="trust-badges-bar">
-          <div className="trust-item">
-            <Truck size={20} color="var(--leafora-bronze)" />
-            <div>
-              <div className="trust-item-title">Free Shipping</div>
-              <div className="trust-item-sub">On orders above ₹999</div>
-            </div>
-          </div>
-
-          <div className="trust-item">
-            <RotateCcw size={20} color="var(--leafora-bronze)" />
-            <div>
-              <div className="trust-item-title">Easy Returns</div>
-              <div className="trust-item-sub">Hassle-free returns</div>
-            </div>
-          </div>
-
-          <div className="trust-item">
-            <ShieldCheck size={20} color="var(--leafora-bronze)" />
-            <div>
-              <div className="trust-item-title">Secure Payments</div>
-              <div className="trust-item-sub">100% protected</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="delivery-checker-box">
-          <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--leafora-text-dark)', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <MapPin size={16} color="var(--leafora-bronze)" /> Check Delivery & Pincode
-          </span>
-          <form onSubmit={handleCheckPincode} className="pincode-input-row">
-            <input 
-              type="text" 
-              placeholder="Enter Pincode..."
-              value={pincode}
-              onChange={(e) => setPincode(e.target.value)}
-            />
-            <button type="submit" className="btn-check-pincode">Check</button>
-          </form>
-          {deliveryResult && (
-            <div className="delivery-result-text">
-              <CheckCircle2 size={14} /> {deliveryResult}
-            </div>
-          )}
         </div>
       </div>
 
