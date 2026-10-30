@@ -464,9 +464,6 @@ export default function Home() {
                             <p className="routine-step-desc">{st.desc}</p>
                             
                             <div className="routine-step-footer">
-                              <span className="routine-step-price">
-                                ₹{Number(st.product?.price || (idx === 0 ? 499 : 649)).toFixed(2)}
-                              </span>
                               <span className="routine-step-link-text">
                                 View Details <ArrowRight size={13} />
                               </span>
