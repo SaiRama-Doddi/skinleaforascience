@@ -6,7 +6,8 @@ import {
   Shield, Check, UserCheck, Globe, Star
 } from 'lucide-react';
 
-import aboutHeroImg from '../assets/about_hero_showcase.jpg';
+import realProductsHeroDesktop from '../assets/hero_section/homepage.jpg';
+import realProductsHeroMobile from '../assets/hero_section/homepage-mobile.jpg';
 import aboutLabScientistImg from '../assets/about_lab_scientist.jpg';
 import aboutWomanGlowImg from '../assets/about_woman_glow.jpg';
 import aboutLeafDishImg from '../assets/about_leaf_dish.jpg';
@@ -126,7 +127,14 @@ export default function AboutUs() {
 
           <div className="about-hero-media">
             <div className="hero-showcase-frame">
-              <img src={aboutHeroImg} alt="LeafOra Skincare Collection" />
+              <picture>
+                <source media="(max-width: 768px)" srcSet={realProductsHeroMobile} />
+                <img 
+                  src={realProductsHeroDesktop} 
+                  alt="LeafOra Botanical Skincare Products - Salicylic Acid Face Wash, Niacinamide Serum, SPF 50 Sunscreen"
+                  className="about-hero-products-img" 
+                />
+              </picture>
             </div>
           </div>
 
