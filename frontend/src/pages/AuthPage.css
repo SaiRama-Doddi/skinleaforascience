@@ -34,8 +34,8 @@
   margin: 0 auto;
   display: grid;
   grid-template-columns: 1fr 1.05fr;
-  gap: 28px;
-  align-items: flex-start;
+  gap: 32px;
+  align-items: center;
   box-sizing: border-box;
 }
 
@@ -50,9 +50,8 @@
 
 .editorial-product-showcase {
   width: 100%;
-  max-width: 480px;
-  height: 480px;
-  max-height: 520px;
+  max-width: 440px;
+  height: 570px;
   border-radius: 18px;
   overflow: hidden;
   box-shadow: 0 16px 36px -8px rgba(26, 46, 34, 0.08);

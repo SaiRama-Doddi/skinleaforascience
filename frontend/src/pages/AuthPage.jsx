@@ -7,7 +7,7 @@ import {
   Leaf, RefreshCw, Award, Heart, Shield, Users
 } from 'lucide-react';
 import { userLogin, userRegister, userForgotPassword, userResetPassword } from '../services/api';
-import loginProductImg from '../assets/login_botanical_products.jpg';
+import loginProductImg from '../assets/leafora_routine_showcase.jpg';
 import './AuthPage.css';
 
 export default function AuthPage({ initialMode = 'login', onAuthSuccess, isModal = false, onClose }) {
@@ -238,7 +238,7 @@ export default function AuthPage({ initialMode = 'login', onAuthSuccess, isModal
         {/* LEFT COLUMN: BOTANICAL SHOWCASE IMAGE ONLY */}
         <div className="auth-left-editorial">
           <div className="editorial-product-showcase">
-            <img src={loginProductImg} alt="Leafora Botanical Skincare Products" />
+            <img src={loginProductImg} alt="LeafOra Daily Skincare Routine - 3 Simple Steps" />
           </div>
         </div>
 
