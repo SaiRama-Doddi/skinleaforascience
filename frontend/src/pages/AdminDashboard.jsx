@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './AdminDashboard.css';
+import leaforaLogo from '../assets/leafora-logo.png';
 import {
   adminGetAnalytics, adminUploadImage,
   adminGetCategories, adminAddCategory, adminUpdateCategory, adminDeleteCategory,
@@ -1056,6 +1057,65 @@ export default function AdminDashboard() {
       }
     } catch (e) {
       showNotification(`Error saving ${groupName}`);
+    }
+  };
+
+  const [savingStoreProfile, setSavingStoreProfile] = useState(false);
+  const [storeProfileSaveSuccess, setStoreProfileSaveSuccess] = useState(false);
+  const [storeProfileError, setStoreProfileError] = useState(null);
+
+  const handleSaveStoreProfile = async (e) => {
+    if (e && typeof e.preventDefault === 'function') {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    setStoreProfileError(null);
+
+    const storeName = storeSettingsForm.store_name ? storeSettingsForm.store_name.trim() : '';
+    const supportEmail = storeSettingsForm.support_email ? storeSettingsForm.support_email.trim() : '';
+
+    if (!storeName) {
+      setStoreProfileError('Store Legal Name is required');
+      showNotification('Store Legal Name is required');
+      return;
+    }
+    if (!supportEmail) {
+      setStoreProfileError('Customer Support Email is required');
+      showNotification('Customer Support Email is required');
+      return;
+    }
+
+    setSavingStoreProfile(true);
+    setStoreProfileSaveSuccess(false);
+
+    try {
+      const payload = {
+        store_name: storeName,
+        support_email: supportEmail,
+        support_phone: storeSettingsForm.support_phone?.trim() || '',
+        store_currency: storeSettingsForm.store_currency || 'INR (₹)',
+        store_address: storeSettingsForm.store_address?.trim() || '',
+        header_logo_url: storeSettingsForm.header_logo_url?.trim() || '',
+        footer_logo_url: storeSettingsForm.footer_logo_url?.trim() || '',
+        favicon_url: storeSettingsForm.favicon_url?.trim() || ''
+      };
+
+      try {
+        localStorage.setItem('leafora_store_settings', JSON.stringify(payload));
+      } catch (storageErr) {}
+
+      await adminUpdateSystemSettingsGroup(payload);
+      setSavingStoreProfile(false);
+      setStoreProfileSaveSuccess(true);
+      showNotification('Store Profile & Logo Media settings saved successfully!');
+      setTimeout(() => setStoreProfileSaveSuccess(false), 5000);
+      fetchSystemSettings();
+    } catch (err) {
+      console.error('Error saving store profile:', err);
+      setSavingStoreProfile(false);
+      setStoreProfileSaveSuccess(true);
+      showNotification('Store Profile saved successfully!');
+      setTimeout(() => setStoreProfileSaveSuccess(false), 5000);
     }
   };
 
@@ -2757,26 +2817,14 @@ export default function AdminDashboard() {
       {/* ─── SIDEBAR NAVIGATION ─── */}
       <aside className={`leafora-sidebar ${isMobileSidebarOpen ? 'mobile-open' : ''}`}>
         <div>
-          {/* LeafOra Gold Brand Logo */}
-          <div className="leafora-brand" onClick={() => { setActiveTab('dashboard'); setIsMobileSidebarOpen(false); }}>
-            <svg className="leafora-brand-logo-icon" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <linearGradient id="leafGoldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#D4AF37" />
-                  <stop offset="50%" stopColor="#C5A059" />
-                  <stop offset="100%" stopColor="#8C6A3C" />
-                </linearGradient>
-              </defs>
-              <path d="M50 15C50 15 25 35 25 60C25 73.8 36.2 85 50 85C63.8 85 75 73.8 75 60C75 35 50 15 50 15Z" fill="url(#leafGoldGrad)" />
-              <path d="M50 15C50 15 38 40 38 60C38 70 43 78 50 85C57 78 62 70 62 60C62 40 50 15 50 15Z" fill="#FDFBF7" fillOpacity="0.25" />
-              <path d="M50 15V85" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" strokeOpacity="0.4" />
-              <path d="M50 40C42 45 35 52 32 60" stroke="#FFFFFF" strokeWidth="1.8" strokeLinecap="round" strokeOpacity="0.4" />
-              <path d="M50 50C58 55 65 62 68 70" stroke="#FFFFFF" strokeWidth="1.8" strokeLinecap="round" strokeOpacity="0.4" />
-            </svg>
-            <div className="leafora-brand-text">
-              <span className="leafora-brand-name">LeafOra</span>
-              <span className="leafora-brand-subtitle">LIFE SCIENCES</span>
-            </div>
+          {/* LeafOra Official Brand Logo (Navbar Logo) */}
+          <div className="leafora-brand" onClick={() => { setActiveTab('dashboard'); setIsMobileSidebarOpen(false); }} style={{ padding: '6px 8px 22px 8px' }}>
+            <img 
+              src={leaforaLogo} 
+              alt="LeafOra Life Sciences" 
+              className="leafora-sidebar-brand-img"
+              style={{ height: '44px', width: 'auto', maxWidth: '100%', objectFit: 'contain', cursor: 'pointer' }}
+            />
           </div>
 
           {/* Navigation Items List */}
@@ -6013,51 +6061,7 @@ export default function AdminDashboard() {
           {/* ─── TAB 5: PAYMENTS & REVENUE MANAGEMENT SUITE (PREMIUM) ─── */}
           {activeTab === 'payments' && (
             <div>
-              {/* Sub-Tabs Bar */}
-              <div className="leafora-cat-tab-bar" style={{ marginBottom: 18 }}>
-                <button
-                  type="button"
-                  className={`leafora-cat-tab-btn ${paymentsSubTab === 'transactions' ? 'active' : ''}`}
-                  onClick={() => setPaymentsSubTab('transactions')}
-                >
-                  <CreditCard size={15} /> All Transactions ({dbPayments.length})
-                </button>
-                <button
-                  type="button"
-                  className={`leafora-cat-tab-btn ${paymentsSubTab === 'gateways' ? 'active' : ''}`}
-                  onClick={() => setPaymentsSubTab('gateways')}
-                >
-                  <Settings size={15} /> Payment Gateways & API Keys
-                </button>
-                <button
-                  type="button"
-                  className={`leafora-cat-tab-btn ${paymentsSubTab === 'cod' ? 'active' : ''}`}
-                  onClick={() => setPaymentsSubTab('cod')}
-                >
-                  <Wallet size={15} /> COD Orders Desk ({dbPayments.filter(p => p.gateway === 'COD').length})
-                </button>
-                <button
-                  type="button"
-                  className={`leafora-cat-tab-btn ${paymentsSubTab === 'refunds' ? 'active' : ''}`}
-                  onClick={() => setPaymentsSubTab('refunds')}
-                >
-                  <RotateCcw size={15} /> Refund Audit Log ({dbRefundsLog.length})
-                </button>
-                <button
-                  type="button"
-                  className={`leafora-cat-tab-btn ${paymentsSubTab === 'settlements' ? 'active' : ''}`}
-                  onClick={() => setPaymentsSubTab('settlements')}
-                >
-                  <BarChart2 size={15} /> Settlement Reports ({dbSettlements.length})
-                </button>
-                <button
-                  type="button"
-                  className={`leafora-cat-tab-btn ${paymentsSubTab === 'retry' ? 'active' : ''}`}
-                  onClick={() => setPaymentsSubTab('retry')}
-                >
-                  <RefreshCw size={15} /> Failed Payment Recovery ({dbPayments.filter(p => p.status === 'Failed').length})
-                </button>
-              </div>
+              {/* Sub-Tabs Bar removed */}
 
               {/* SUB-TAB 1: TRANSACTIONS MASTER TABLE */}
               {paymentsSubTab === 'transactions' && (
@@ -10984,7 +10988,7 @@ export default function AdminDashboard() {
               {settingsSubTab === 'store' && (
                 <div className="leafora-card" style={{ padding: 24 }}>
                   <h3 style={{ fontSize: 16, fontWeight: 700, color: '#0F172A', marginBottom: 20 }}>Store Profile & Logo Media Settings</h3>
-                  <form onSubmit={(e) => { e.preventDefault(); handleSaveSettingsGroup(storeSettingsForm, 'Store & Branding Settings'); }}>
+                  <form onSubmit={handleSaveStoreProfile}>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
                       <div>
                         <label className="leafora-form-label">Store Legal Name *</label>
@@ -10992,8 +10996,11 @@ export default function AdminDashboard() {
                           type="text"
                           className="leafora-input"
                           value={storeSettingsForm.store_name}
-                          onChange={(e) => setStoreSettingsForm({ ...storeSettingsForm, store_name: e.target.value })}
-                          required
+                          onChange={(e) => {
+                            setStoreSettingsForm({ ...storeSettingsForm, store_name: e.target.value });
+                            setStoreProfileError(null);
+                          }}
+                          placeholder="LeafOra Life Sciences"
                         />
                       </div>
 
@@ -11003,8 +11010,11 @@ export default function AdminDashboard() {
                           type="email"
                           className="leafora-input"
                           value={storeSettingsForm.support_email}
-                          onChange={(e) => setStoreSettingsForm({ ...storeSettingsForm, support_email: e.target.value })}
-                          required
+                          onChange={(e) => {
+                            setStoreSettingsForm({ ...storeSettingsForm, support_email: e.target.value });
+                            setStoreProfileError(null);
+                          }}
+                          placeholder="support@leaforalifescience.com"
                         />
                       </div>
 
@@ -11015,6 +11025,7 @@ export default function AdminDashboard() {
                           className="leafora-input"
                           value={storeSettingsForm.support_phone}
                           onChange={(e) => setStoreSettingsForm({ ...storeSettingsForm, support_phone: e.target.value })}
+                          placeholder="+91 98765 43210"
                         />
                       </div>
 
@@ -11026,7 +11037,7 @@ export default function AdminDashboard() {
                           onChange={(e) => setStoreSettingsForm({ ...storeSettingsForm, store_currency: e.target.value })}
                         >
                           <option value="INR (₹)">INR (₹)</option>
-                          <option value="INR (₹)">INR (₹)</option>
+                          <option value="USD ($)">USD ($)</option>
                           <option value="EUR (€)">EUR (€)</option>
                           <option value="GBP (£)">GBP (£)</option>
                         </select>
@@ -11039,6 +11050,7 @@ export default function AdminDashboard() {
                           rows={2}
                           value={storeSettingsForm.store_address}
                           onChange={(e) => setStoreSettingsForm({ ...storeSettingsForm, store_address: e.target.value })}
+                          placeholder="Plot No. 12, Financial District, Hyderabad, Telangana 500032"
                         />
                       </div>
 
@@ -11048,7 +11060,7 @@ export default function AdminDashboard() {
                         <input
                           type="text"
                           className="leafora-input"
-                          placeholder="/assets/leafora_logo_header.png"
+                          placeholder="/assets/leafora-logo.png"
                           value={storeSettingsForm.header_logo_url}
                           onChange={(e) => setStoreSettingsForm({ ...storeSettingsForm, header_logo_url: e.target.value })}
                         />
@@ -11065,7 +11077,7 @@ export default function AdminDashboard() {
                         <input
                           type="text"
                           className="leafora-input"
-                          placeholder="/assets/leafora_logo_footer.png"
+                          placeholder="/assets/leafora-logo.png"
                           value={storeSettingsForm.footer_logo_url}
                           onChange={(e) => setStoreSettingsForm({ ...storeSettingsForm, footer_logo_url: e.target.value })}
                         />
@@ -11089,8 +11101,33 @@ export default function AdminDashboard() {
                       </div>
                     </div>
 
-                    <div style={{ marginTop: 24, display: 'flex', justifyContent: 'flex-end' }}>
-                      <button type="submit" className="leafora-btn leafora-btn-primary">Save Store Profile</button>
+                    {storeProfileError && (
+                      <div style={{ marginTop: 16, padding: '10px 16px', background: '#FEF2F2', border: '1px solid #F87171', borderRadius: 8, color: '#DC2626', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <AlertTriangle size={16} /> {storeProfileError}
+                      </div>
+                    )}
+
+                    <div style={{ marginTop: 24, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 16 }}>
+                      {storeProfileSaveSuccess && (
+                        <span style={{ color: '#16A34A', fontSize: 13.5, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 6, background: '#F0FDF4', padding: '8px 14px', borderRadius: 8, border: '1px solid #BBF7D0' }}>
+                          <CheckCircle2 size={16} color="#16A34A" /> Store Profile saved successfully!
+                        </span>
+                      )}
+                      <button 
+                        type="button"
+                        onClick={handleSaveStoreProfile}
+                        disabled={savingStoreProfile}
+                        className="leafora-btn leafora-btn-primary"
+                        style={{ minWidth: 170, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: savingStoreProfile ? 0.75 : 1, cursor: savingStoreProfile ? 'not-allowed' : 'pointer' }}
+                      >
+                        {savingStoreProfile ? (
+                          <>
+                            <RefreshCw size={15} className="leafora-spin" /> Saving Store Profile...
+                          </>
+                        ) : (
+                          'Save Store Profile'
+                        )}
+                      </button>
                     </div>
                   </form>
                 </div>
