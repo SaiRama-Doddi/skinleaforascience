@@ -6,7 +6,6 @@ import {
   Search, 
   ShoppingCart, 
   ShoppingBag, 
-  ChevronDown, 
   Truck, 
   Leaf, 
   FlaskConical, 
@@ -16,7 +15,7 @@ import {
   Trash2, 
   Home 
 } from 'lucide-react';
-import { checkHealth, getCategories, getProducts } from '../services/api';
+import { checkHealth, getProducts } from '../services/api';
 import { getCart, getCartCount, getCartSubtotal, updateCartQuantity, removeFromCart, DEFAULT_PRODUCT_IMAGE } from '../services/cartService';
 import leaforaLogo from '../assets/leafora-logo.png';
 import './Navbar.css';
@@ -74,8 +73,6 @@ export default function Navbar() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
-  const [showMegaMenu, setShowMegaMenu] = useState(false);
-  const [categories, setCategories] = useState([]);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const location = useLocation();
@@ -83,7 +80,6 @@ export default function Navbar() {
 
   useEffect(() => {
     setIsMobileMenuOpen(false);
-    setShowMegaMenu(false);
     checkHealth()
       .then((res) => setApiStatus(res?.success ? 'connected' : 'offline'))
       .catch(() => setApiStatus('offline'));
@@ -93,13 +89,6 @@ export default function Navbar() {
     if (savedUser) {
       try { setUser(JSON.parse(savedUser)); } catch (e) {}
     }
-
-    // Fetch categories for Catalog Menu
-    getCategories()
-      .then(res => {
-        if (res && res.data) setCategories(res.data);
-      })
-      .catch(() => {});
 
     // Sync Cart state live
     const updateCartState = () => {
@@ -270,49 +259,13 @@ export default function Navbar() {
                 Home
               </Link>
 
-              {/* Nav Link: Shop Catalog with dropdown chevron */}
-              <div 
-                className="nav-item-dropdown-wrap"
-                onMouseEnter={() => setShowMegaMenu(true)}
-                onMouseLeave={() => setShowMegaMenu(false)}
+              {/* Nav Link: Shop */}
+              <Link 
+                to="/products" 
+                className={`nav-item ${isCatalogActive ? 'active' : ''}`} 
               >
-                <Link 
-                  to="/products" 
-                  className={`nav-item has-dropdown ${isCatalogActive ? 'active' : ''}`} 
-                >
-                  <span>Shop Catalog</span>
-                  <ChevronDown size={14} className={`nav-dropdown-chevron ${showMegaMenu ? 'rotate' : ''}`} />
-                </Link>
-
-                {/* Dropdown Menu on Desktop */}
-                {showMegaMenu && (
-                  <div className="nav-catalog-dropdown">
-                    <Link to="/products" className="catalog-dropdown-item catalog-all-link" onClick={() => setShowMegaMenu(false)}>
-                      All Botanical Skincare →
-                    </Link>
-                    <div className="catalog-dropdown-divider" />
-                    {categories && categories.length > 0 ? (
-                      categories.map((cat, idx) => (
-                        <Link 
-                          key={idx} 
-                          to={`/products?category=${encodeURIComponent(cat.name || cat)}`}
-                          className="catalog-dropdown-item"
-                          onClick={() => setShowMegaMenu(false)}
-                        >
-                          {cat.name || cat}
-                        </Link>
-                      ))
-                    ) : (
-                      <>
-                        <Link to="/products?category=Serums" className="catalog-dropdown-item" onClick={() => setShowMegaMenu(false)}>Face Serums & Treatments</Link>
-                        <Link to="/products?category=Moisturizers" className="catalog-dropdown-item" onClick={() => setShowMegaMenu(false)}>Botanical Moisturisers</Link>
-                        <Link to="/products?category=Cleansers" className="catalog-dropdown-item" onClick={() => setShowMegaMenu(false)}>Cleansers & Toners</Link>
-                        <Link to="/products?category=Sunscreen" className="catalog-dropdown-item" onClick={() => setShowMegaMenu(false)}>Mineral Sunscreens</Link>
-                      </>
-                    )}
-                  </div>
-                )}
-              </div>
+                Shop
+              </Link>
 
               {/* Nav Link: About Us */}
               <Link 
@@ -601,7 +554,7 @@ export default function Navbar() {
                 Home
               </Link>
               <Link to="/products" className={`mobile-nav-link ${isCatalogActive ? 'active' : ''}`} onClick={() => setIsMobileMenuOpen(false)}>
-                Shop Catalog
+                Shop
               </Link>
               <Link to="/about" className={`mobile-nav-link ${isAboutActive ? 'active' : ''}`} onClick={() => setIsMobileMenuOpen(false)}>
                 About Us

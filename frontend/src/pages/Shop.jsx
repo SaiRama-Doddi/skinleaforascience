@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { 
-  Search, Grid, List, Heart, ShoppingBag, Star, 
+  Heart, ShoppingBag, Star, 
   ChevronRight, X, CheckCircle2, ShieldCheck, Leaf, Award, Eye, Sparkles
 } from 'lucide-react';
 import { getProducts, userGetWishlist, userToggleWishlist } from '../services/api';
@@ -240,58 +240,6 @@ export default function Shop() {
 
         {/* PRODUCTS CONTENT AREA */}
         <main className="shop-content-area">
-
-          {/* TOOLBAR ROW */}
-          <div className="shop-toolbar">
-            <span className="results-count">{filteredProducts.length} Products</span>
-
-            <div className="toolbar-controls">
-              {/* In-category Search */}
-              <div className="in-category-search">
-                <Search size={14} color="#94A3B8" />
-                <input 
-                  type="text" 
-                  placeholder="Search in collection..." 
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                {searchQuery && (
-                  <X size={14} color="#94A3B8" style={{ cursor: 'pointer' }} onClick={() => setSearchQuery('')} />
-                )}
-              </div>
-
-              {/* Sort selector */}
-              <div className="sort-dropdown-box">
-                <span>Sort by:</span>
-                <select className="sort-select" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-                  <option value="featured">Featured</option>
-                  <option value="price_asc">Price: Low to High</option>
-                  <option value="price_desc">Price: High to Low</option>
-                  <option value="rating">Highest Rated</option>
-                  <option value="popularity">Most Popular</option>
-                  <option value="newest">Newest First</option>
-                </select>
-              </div>
-
-              {/* Grid / List View Mode Toggle */}
-              <div className="view-mode-toggle">
-                <button 
-                  className={`view-btn ${viewMode === 'grid' ? 'active' : ''}`}
-                  onClick={() => setViewMode('grid')}
-                  title="Grid View"
-                >
-                  <Grid size={16} />
-                </button>
-                <button 
-                  className={`view-btn ${viewMode === 'list' ? 'active' : ''}`}
-                  onClick={() => setViewMode('list')}
-                  title="List View"
-                >
-                  <List size={16} />
-                </button>
-                </div>
-            </div>
-          </div>
 
           {/* PRODUCTS DISPLAY GRID / LIST */}
           {paginatedProducts.length > 0 ? (
