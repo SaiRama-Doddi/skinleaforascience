@@ -1,7 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ShieldCheck, Heart, Mail, Phone, MapPin } from 'lucide-react';
+import { Mail, Phone, MapPin } from 'lucide-react';
 import leaforaLogo from '../assets/leafora-logo.png';
+import './Footer.css';
 
 const socialLinks = [
   {
@@ -65,28 +66,25 @@ const socialLinks = [
 
 export default function Footer() {
   return (
-    <footer style={{ backgroundColor: '#0F3B2E', borderTop: '1px solid rgba(197, 138, 42, 0.25)', paddingTop: 60, paddingBottom: 40, color: '#FFFFFF' }}>
-      <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 40, marginBottom: 48 }}>
+    <footer className="leafora-footer">
+      <div className="footer-container">
+        <div className="footer-main-grid">
           
           {/* Brand Col */}
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+          <div className="footer-brand-col">
+            <Link to="/" className="footer-logo-wrap" aria-label="Leafora Life Sciences Home">
               <img 
                 src={leaforaLogo} 
                 alt="Leafora Life Sciences Logo" 
-                style={{ height: '42px', width: 'auto', objectFit: 'contain' }} 
+                className="footer-logo-img"
               />
-              <span style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.4rem', fontWeight: 700, color: '#FFFFFF' }}>
-                Leafora
-              </span>
-            </div>
+            </Link>
 
-            <p style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 20 }}>
+            <p className="footer-brand-tagline">
               Pure bio-botanical skincare engineered to nurture radiant, healthy skin with zero chemical compromises.
             </p>
 
-            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+            <div className="footer-social-row">
               {socialLinks.map((item) => (
                 <a 
                   key={item.name}
@@ -94,27 +92,8 @@ export default function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   title={item.name}
-                  style={{ 
-                    width: 38, 
-                    height: 38, 
-                    borderRadius: '50%', 
-                    background: item.bg, 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center', 
-                    color: item.color,
-                    boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
-                    transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-                    textDecoration: 'none'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-3px) scale(1.08)';
-                    e.currentTarget.style.boxShadow = '0 6px 12px rgba(0,0,0,0.35)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                    e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.2)';
-                  }}
+                  className="footer-social-btn"
+                  style={{ background: item.bg, color: item.color }}
                 >
                   {item.icon}
                 </a>
@@ -124,50 +103,70 @@ export default function Footer() {
 
           {/* Quick Links */}
           <div>
-            <h4 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.1rem', fontWeight: 600, color: '#FFFFFF', marginBottom: 20 }}>
-              Shop Collections
-            </h4>
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10, fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.9)' }}>
-              <li><a href="#bestsellers" style={{ color: 'inherit', textDecoration: 'none' }}>Bestselling Serums</a></li>
-              <li><a href="#creams" style={{ color: 'inherit', textDecoration: 'none' }}>Nourishing Creams</a></li>
-              <li><a href="#cleansers" style={{ color: 'inherit', textDecoration: 'none' }}>Gentle Cleansers</a></li>
-              <li><a href="#toners" style={{ color: 'inherit', textDecoration: 'none' }}>Hydrating Toners</a></li>
-              <li><a href="#flash-sale" style={{ color: 'inherit', textDecoration: 'none' }}>Flash Sale Deals</a></li>
+            <h4 className="footer-col-title">Shop Collections</h4>
+            <ul className="footer-links-list">
+              <li>
+                <Link to="/products" className="footer-link-item">All Essentials</Link>
+              </li>
+              <li>
+                <Link to="/products?category=Face Wash" className="footer-link-item">Gentle Cleansers</Link>
+              </li>
+              <li>
+                <Link to="/products?category=Face Serum" className="footer-link-item">Brightening Serums</Link>
+              </li>
+              <li>
+                <Link to="/products?category=Sunscreen" className="footer-link-item">Sun Protection (SPF 50)</Link>
+              </li>
+              <li>
+                <Link to="/about" className="footer-link-item">Our Story & Science</Link>
+              </li>
             </ul>
           </div>
 
           {/* Customer Care */}
           <div>
-            <h4 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.1rem', fontWeight: 600, color: '#FFFFFF', marginBottom: 20 }}>
-              Customer Care
-            </h4>
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10, fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.9)' }}>
-              <li><Link to="/shipping-policy" style={{ color: 'inherit', textDecoration: 'none' }}>Shipping & Delivery Policy</Link></li>
-              <li><Link to="/terms-and-conditions" style={{ color: 'inherit', textDecoration: 'none' }}>Terms & Conditions</Link></li>
-              <li><Link to="/privacy-policy" style={{ color: 'inherit', textDecoration: 'none' }}>Privacy Policy</Link></li>
-              <li><Link to="/contact" style={{ color: 'inherit', textDecoration: 'none' }}>Help & Concierge Support</Link></li>
+            <h4 className="footer-col-title">Customer Care</h4>
+            <ul className="footer-links-list">
+              <li>
+                <Link to="/shipping-policy" className="footer-link-item">Shipping & Delivery Policy</Link>
+              </li>
+              <li>
+                <Link to="/terms-and-conditions" className="footer-link-item">Terms & Conditions</Link>
+              </li>
+              <li>
+                <Link to="/privacy-policy" className="footer-link-item">Privacy Policy</Link>
+              </li>
+              <li>
+                <Link to="/contact" className="footer-link-item">Help & Concierge Support</Link>
+              </li>
             </ul>
           </div>
 
           {/* Contact Details */}
           <div>
-            <h4 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.1rem', fontWeight: 600, color: '#FFFFFF', marginBottom: 20 }}>
-              Botanical Care Concierge
-            </h4>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.9)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <Mail size={16} color="#C58A2A" /> care@leaforalifescience.com
+            <h4 className="footer-col-title">Botanical Concierge</h4>
+            <div className="footer-contact-list">
+              <div className="footer-contact-item">
+                <Mail size={16} className="footer-contact-icon" />
+                <a href="mailto:care@leaforalifescience.com" className="footer-contact-link">
+                  care@leaforalifescience.com
+                </a>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <Phone size={16} color="#C58A2A" /> 
-                <a href="https://wa.me/917984915600" target="_blank" rel="noreferrer" style={{ color: '#FFFFFF', textDecoration: 'none' }}>
+              <div className="footer-contact-item">
+                <Phone size={16} className="footer-contact-icon" /> 
+                <a 
+                  href="https://wa.me/917984915600" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="footer-contact-link"
+                >
                   +91 79849 15600 (WhatsApp)
                 </a>
               </div>
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                <MapPin size={16} color="#C58A2A" style={{ marginTop: 3, flexShrink: 0 }} /> 
-                <span style={{ lineHeight: 1.5 }}>
-                  28 HARIKRISHNA SOCIETY, NEAR PASHWANATH TOWNSHEEP, Nikol, Ahmedabad- 382350, Gujarat
+              <div className="footer-contact-item">
+                <MapPin size={16} className="footer-contact-icon" /> 
+                <span>
+                  28 HARIKRISHNA SOCIETY, NEAR PASHWANATH TOWNSHEEP, Nikol, Ahmedabad - 382350, Gujarat
                 </span>
               </div>
             </div>
@@ -175,14 +174,14 @@ export default function Footer() {
         </div>
 
         {/* Bottom Bar */}
-        <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.2)', paddingTop: 24, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 16, fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.9)' }}>
-          <div>
-            © {new Date().getFullYear()} <strong>Leafora Life Science</strong>. All rights reserved. Premium Organic Skincare.
+        <div className="footer-bottom-bar">
+          <div className="footer-bottom-copy">
+            © {new Date().getFullYear()} <strong>Leafora Life Sciences</strong>. All rights reserved. Premium Organic Skincare.
           </div>
-          <div style={{ display: 'flex', gap: 20 }}>
-            <Link to="/privacy-policy" style={{ color: 'inherit', textDecoration: 'none' }}>Privacy Policy</Link>
-            <Link to="/terms-and-conditions" style={{ color: 'inherit', textDecoration: 'none' }}>Terms & Conditions</Link>
-            <Link to="/shipping-policy" style={{ color: 'inherit', textDecoration: 'none' }}>Shipping & Delivery</Link>
+          <div className="footer-bottom-links">
+            <Link to="/privacy-policy" className="footer-bottom-link">Privacy Policy</Link>
+            <Link to="/terms-and-conditions" className="footer-bottom-link">Terms & Conditions</Link>
+            <Link to="/shipping-policy" className="footer-bottom-link">Shipping & Delivery</Link>
           </div>
         </div>
       </div>
