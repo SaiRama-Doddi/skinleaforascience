@@ -307,8 +307,15 @@ const placeUserOrder = async (req, res) => {
       ? `${shipping_address.name ? shipping_address.name + ', ' : ''}${shipping_address.address_line1}${shipping_address.address_line2 ? ', ' + shipping_address.address_line2 : ''}, ${shipping_address.city}, ${shipping_address.state} - ${shipping_address.pincode} (Phone: ${shipping_address.phone || customer_phone})`
       : shipping_address;
 
-    const pm = payment_method || (razorpay_payment_id ? 'Razorpay' : 'COD');
-    const ps = pm === 'COD' ? 'Pending' : 'Paid';
+    if (!razorpay_payment_id) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Online payment via Razorpay is required to complete this order. Cash on Delivery is disabled.' 
+      });
+    }
+
+    const pm = 'Razorpay';
+    const ps = 'Paid';
 
     const [orderResult] = await pool.query(
       `INSERT INTO orders (order_number, customer_name, customer_email, customer_phone, subtotal, shipping_fee, discount_amount, total_amount, status, payment_status, payment_method, razorpay_order_id, razorpay_payment_id, razorpay_signature, shipping_address)
@@ -420,6 +427,79 @@ const placeUserOrder = async (req, res) => {
   }
 };
 
+
+// 10. SUBMIT CONTACT INQUIRY
+const submitContactInquiry = async (req, res) => {
+  try {
+    const { first_name, last_name, email, phone, subject, message } = req.body;
+    if (!first_name || !email || !message) {
+      return res.status(400).json({ success: false, message: 'First name, email, and message are required.' });
+    }
+
+    const fullName = `${first_name} ${last_name || ''}`.trim();
+
+    // Ensure contact_inquiries table exists
+    try {
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS contact_inquiries (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          name VARCHAR(255) NOT NULL,
+          email VARCHAR(255) NOT NULL,
+          phone VARCHAR(50),
+          subject VARCHAR(255) DEFAULT 'General Inquiry',
+          message TEXT NOT NULL,
+          status ENUM('New', 'Read', 'Replied') DEFAULT 'New',
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+      `);
+
+      await pool.query(
+        `INSERT INTO contact_inquiries (name, email, phone, subject, message) VALUES (?, ?, ?, ?, ?)`,
+        [fullName, email.trim().toLowerCase(), phone || '', subject || 'General Inquiry', message]
+      );
+    } catch (dbErr) {
+      console.warn('DB inquiry save warning:', dbErr.message);
+    }
+
+    // Send email notification to store admin
+    try {
+      const { transporter } = require('../services/mailer');
+      const adminEmail = process.env.ADMIN_EMAIL || 'hkahir46@gmail.com';
+      if (transporter) {
+        await transporter.sendMail({
+          from: `"LeafOra Customer Contact" <${process.env.SMTP_USER || 'hkahir46@gmail.com'}>`,
+          to: adminEmail,
+          replyTo: email,
+          subject: `🌿 New Inquiry from ${fullName}: ${subject || 'Website Contact'}`,
+          html: `
+            <div style="font-family: Arial, sans-serif; padding: 24px; color: #1E293B; max-width: 600px; border: 1px solid #E2E8F0; border-radius: 10px;">
+              <h2 style="color: #1A3E2F; border-bottom: 2px solid #C49A45; padding-bottom: 8px; margin-top: 0;">New LeafOra Website Inquiry</h2>
+              <p><strong>Name:</strong> ${fullName}</p>
+              <p><strong>Email:</strong> <a href="mailto:${email}">${email}</a></p>
+              <p><strong>Phone:</strong> ${phone || 'Not provided'}</p>
+              <p><strong>Subject:</strong> ${subject || 'General Inquiry'}</p>
+              <div style="background: #F8F4EE; padding: 16px; border-radius: 8px; margin-top: 16px; border-left: 4px solid #C49A45;">
+                <p style="margin: 0; white-space: pre-wrap; font-size: 14px; line-height: 1.6;">${message}</p>
+              </div>
+              <p style="font-size: 12px; color: #94A3B8; margin-top: 20px;">LeafOra Life Sciences Admin Notification</p>
+            </div>
+          `
+        });
+      }
+    } catch (mailErr) {
+      console.warn('Contact email delivery warning:', mailErr.message);
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `Thank you ${first_name}! Your message has been sent successfully. We will get back to you within 24 hours.`
+    });
+  } catch (error) {
+    console.error('Contact inquiry error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to submit contact message. Please try again.' });
+  }
+};
+
 module.exports = {
   getUserProfile,
   updateUserProfile,
@@ -430,5 +510,6 @@ module.exports = {
   getUserWishlist,
   toggleUserWishlist,
   deleteWishlistItem,
-  placeUserOrder
+  placeUserOrder,
+  submitContactInquiry
 };

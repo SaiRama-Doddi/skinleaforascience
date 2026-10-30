@@ -1,6 +1,6 @@
 // Authentication and Authorization Middleware for Leafora API
 const verifyAdminToken = (req, res, next) => {
-  const authHeader = req.headers.authorization || req.headers['x-admin-token'];
+  const authHeader = req.headers.authorization || req.headers['x-admin-token'] || req.query.token;
 
   if (!authHeader) {
     return res.status(401).json({
@@ -9,7 +9,8 @@ const verifyAdminToken = (req, res, next) => {
     });
   }
 
-  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : authHeader.trim();
+  const tokenStr = typeof authHeader === 'string' ? authHeader : String(authHeader);
+  const token = tokenStr.startsWith('Bearer ') ? tokenStr.slice(7).trim() : tokenStr.trim();
 
   // Validate admin token format
   if (!token || !token.startsWith('leafora_admin_token_')) {

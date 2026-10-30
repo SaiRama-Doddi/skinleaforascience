@@ -70,7 +70,7 @@ const FAQ_DATA = [
     category: 'orders',
     categoryName: 'Orders & Shipping',
     question: 'What payment methods do you accept?',
-    answer: 'We support all major secure payment options through our encrypted Razorpay gateway: UPI (Google Pay, PhonePe, Paytm, BHIM), Credit & Debit Cards (Visa, Mastercard, RuPay), Net Banking (across 50+ banks), and Cash on Delivery (COD) across eligible pin codes.'
+    answer: 'We support all major secure online payment options through our encrypted Razorpay gateway: UPI (Google Pay, PhonePe, Paytm, BHIM), Credit & Debit Cards (Visa, Mastercard, RuPay), Net Banking (across 50+ banks), and leading digital wallets. We operate on a 100% secure prepaid order model.'
   },
   {
     id: 8,

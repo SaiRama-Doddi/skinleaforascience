@@ -6,6 +6,7 @@ import {
   ExternalLink, Sparkles, HelpCircle, X
 } from 'lucide-react';
 import SEO from '../components/SEO';
+import { submitContactForm } from '../services/api';
 import './ContactUs.css';
 
 export default function ContactUs() {
@@ -25,7 +26,7 @@ export default function ContactUs() {
     window.scrollTo(0, 0);
   }, []);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setAlert(null);
 
@@ -35,9 +36,13 @@ export default function ContactUs() {
     }
 
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      setAlert({ type: 'success', text: `Thank you ${form.first_name}! Your message has been sent successfully. We will get back to you within 24 hours.` });
+    try {
+      const res = await submitContactForm(form);
+      const data = res?.data || res;
+      setAlert({ 
+        type: 'success', 
+        text: data?.message || `Thank you ${form.first_name}! Your message has been sent successfully. We will get back to you within 24 hours.` 
+      });
       setForm({
         first_name: '',
         last_name: '',
@@ -46,7 +51,12 @@ export default function ContactUs() {
         subject: 'General Inquiry',
         message: ''
       });
-    }, 800);
+    } catch (err) {
+      const errMsg = err?.response?.data?.message || err?.message || 'Failed to submit inquiry. Please try again or message us on WhatsApp.';
+      setAlert({ type: 'error', text: errMsg });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

@@ -12,10 +12,31 @@ const ALLOWED_ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'hkahir46@gmail.com';
 const sendOtp = async (req, res) => {
   try {
     const { email } = req.body;
-    if (!email || email.trim().toLowerCase() !== ALLOWED_ADMIN_EMAIL.toLowerCase()) {
-      return res.status(400).json({
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Admin email is required.' });
+    }
+
+    const trimmedEmail = email.trim().toLowerCase();
+    let isAuthorized = trimmedEmail === ALLOWED_ADMIN_EMAIL.toLowerCase();
+
+    if (!isAuthorized) {
+      try {
+        const [users] = await pool.query(
+          'SELECT id, email, status FROM admin_users WHERE LOWER(email) = ? AND (status = "Active" OR status = "active")',
+          [trimmedEmail]
+        );
+        if (users && users.length > 0) {
+          isAuthorized = true;
+        }
+      } catch (err) {
+        console.warn('Admin users table query fallback:', err.message);
+      }
+    }
+
+    if (!isAuthorized) {
+      return res.status(403).json({
         success: false,
-        message: `Unauthorized email address. Only ${ALLOWED_ADMIN_EMAIL} can request admin access.`,
+        message: 'Unauthorized email address. Please contact the system administrator for admin access.',
       });
     }
 

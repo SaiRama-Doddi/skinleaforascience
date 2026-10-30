@@ -159,8 +159,8 @@ const loginUser = async (req, res) => {
       });
     }
 
-    // If password hash does not match
-    if (customer.password_hash && customer.password_hash !== hashed) {
+    // If password hash does not match or is missing
+    if (!customer.password_hash || customer.password_hash !== hashed) {
       return res.status(401).json({
         success: false,
         message: 'Invalid email or password. Please check your credentials.'
@@ -175,12 +175,12 @@ const loginUser = async (req, res) => {
       });
     }
 
-    const token = generateToken();
+    const token = `leafora_user_${customer.id}_${generateToken()}`;
     const rememberToken = remember_me ? generateToken() : null;
 
-    if (rememberToken && customer.id) {
+    if (customer.id) {
       try {
-        await pool.query('UPDATE customers SET remember_token = ? WHERE id = ?', [rememberToken, customer.id]);
+        await pool.query('UPDATE customers SET remember_token = ? WHERE id = ?', [token, customer.id]);
       } catch (e) {}
     }
 
@@ -228,20 +228,34 @@ const forgotPassword = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Please enter your registered email address.' });
     }
 
+    // Check if customer exists
+    const [rows] = await pool.query('SELECT id, name, email FROM customers WHERE LOWER(email) = LOWER(?)', [email.trim()]);
+    if (!rows || rows.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'No registered account found with this email address.' 
+      });
+    }
+
     // Generate 6-digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     
+    await pool.query(
+      `UPDATE customers SET reset_otp = ?, reset_otp_expires = DATE_ADD(NOW(), INTERVAL 15 MINUTE) WHERE LOWER(email) = LOWER(?)`,
+      [otp, email.trim()]
+    );
+
+    // Send real email to customer
     try {
-      await pool.query(
-        `UPDATE customers SET reset_otp = ?, reset_otp_expires = DATE_ADD(NOW(), INTERVAL 15 MINUTE) WHERE LOWER(email) = LOWER(?)`,
-        [otp, email.trim()]
-      );
-    } catch (e) {}
+      const { sendCustomerPasswordResetEmail } = require('../services/mailer');
+      await sendCustomerPasswordResetEmail(email.trim(), otp);
+    } catch (mailErr) {
+      console.warn('Failed to send customer password reset email:', mailErr.message);
+    }
 
     return res.status(200).json({
       success: true,
-      message: `A password reset OTP has been sent to ${email}. (Demo OTP: ${otp})`,
-      demo_otp: otp
+      message: `A 6-digit password reset verification code has been sent to ${email.trim()}. Please check your email.`
     });
 
   } catch (error) {
@@ -262,14 +276,32 @@ const resetPassword = async (req, res) => {
       return res.status(400).json({ success: false, message: 'New password must be at least 8 characters long.' });
     }
 
+    // Verify OTP and Expiration
+    const [rows] = await pool.query(
+      'SELECT id, reset_otp, reset_otp_expires FROM customers WHERE LOWER(email) = LOWER(?)',
+      [email.trim()]
+    );
+
+    if (!rows || rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'No registered account found with this email.' });
+    }
+
+    const customer = rows[0];
+
+    if (!customer.reset_otp || customer.reset_otp !== otp.trim()) {
+      return res.status(400).json({ success: false, message: 'Invalid OTP code. Please check the code sent to your email.' });
+    }
+
+    if (!customer.reset_otp_expires || new Date(customer.reset_otp_expires) < new Date()) {
+      return res.status(400).json({ success: false, message: 'The OTP code has expired. Please request a new code.' });
+    }
+
     const hashed = hashPassword(new_password);
 
-    try {
-      await pool.query(
-        `UPDATE customers SET password_hash = ?, reset_otp = NULL, reset_otp_expires = NULL WHERE LOWER(email) = LOWER(?)`,
-        [hashed, email.trim()]
-      );
-    } catch (e) {}
+    await pool.query(
+      `UPDATE customers SET password_hash = ?, reset_otp = NULL, reset_otp_expires = NULL WHERE id = ?`,
+      [hashed, customer.id]
+    );
 
     return res.status(200).json({
       success: true,
@@ -287,17 +319,43 @@ const getCurrentUser = async (req, res) => {
     const authHeader = req.headers.authorization || '';
     const token = authHeader.replace('Bearer ', '').trim();
 
+    if (!token) {
+      return res.status(401).json({ success: false, message: 'Authentication token required.' });
+    }
+
+    let customer = null;
+
+    // Check if token has embedded ID: leafora_user_<id>_<hash>
+    if (token.startsWith('leafora_user_')) {
+      const parts = token.split('_');
+      const custId = parts[2];
+      if (custId) {
+        const [rows] = await pool.query('SELECT * FROM customers WHERE id = ?', [custId]);
+        if (rows && rows[0]) customer = rows[0];
+      }
+    }
+
+    // Fallback query by remember_token
+    if (!customer) {
+      const [rows] = await pool.query('SELECT * FROM customers WHERE remember_token = ?', [token]);
+      if (rows && rows[0]) customer = rows[0];
+    }
+
+    if (!customer) {
+      return res.status(404).json({ success: false, message: 'User session not found. Please log in again.' });
+    }
+
     return res.status(200).json({
       success: true,
       user: {
-        id: 1,
-        name: 'Sai Customer',
-        email: 'user@leaforalifescience.com',
-        phone: '+1 (800) 555-LEAF',
-        wallet_balance: 45.00,
-        loyalty_points: 320,
-        loyalty_tier: 'Gold',
-        avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=SaiCustomer',
+        id: customer.id,
+        name: customer.name,
+        email: customer.email,
+        phone: customer.phone || '',
+        wallet_balance: parseFloat(customer.wallet_balance || 0),
+        loyalty_points: customer.loyalty_points || 0,
+        loyalty_tier: customer.loyalty_tier || 'Silver',
+        avatar_url: customer.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(customer.name)}`,
         token
       }
     });

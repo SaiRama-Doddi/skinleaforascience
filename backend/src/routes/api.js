@@ -39,6 +39,7 @@ router.post('/user/wishlist/toggle', userController.toggleUserWishlist);
 router.post('/user/wishlist', userController.toggleUserWishlist);
 router.delete('/user/wishlist/:id', userController.deleteWishlistItem);
 router.post('/orders/place', userController.placeUserOrder);
+router.post('/contact', userController.submitContactInquiry);
 
 // ─── RAZORPAY PAYMENT ENDPOINTS ───
 router.post('/payments/create-razorpay-order', paymentController.createRazorpayOrder);

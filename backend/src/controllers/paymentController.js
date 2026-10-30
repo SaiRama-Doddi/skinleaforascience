@@ -1,11 +1,28 @@
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
+const { pool } = require('../config/db');
 
-// Initialize Razorpay Instance
-const getRazorpayInstance = () => {
-  const key_id = process.env.RAZORPAY_KEY_ID || 'rzp_test_SwedUUn1KgRMs0';
-  const key_secret = process.env.RAZORPAY_KEY_SECRET || 'xdW2Ry7T67sUK4zMKb3oOsZh';
-  return new Razorpay({ key_id, key_secret });
+// Dynamically fetch active Razorpay credentials from DB (or fallback to env)
+const getRazorpayCredentials = async () => {
+  let key_id = process.env.RAZORPAY_KEY_ID;
+  let key_secret = process.env.RAZORPAY_KEY_SECRET;
+
+  try {
+    const [rows] = await pool.query(
+      "SELECT key_id, key_secret, is_enabled FROM payment_gateways_config WHERE gateway_name = 'Razorpay' AND is_enabled = 1 LIMIT 1"
+    );
+    if (rows && rows.length > 0 && rows[0].key_id && rows[0].key_secret) {
+      key_id = rows[0].key_id.trim();
+      key_secret = rows[0].key_secret.trim();
+    }
+  } catch (e) {
+    // Fallback if table not ready
+  }
+
+  return {
+    key_id: (key_id || 'rzp_test_SwedUUn1KgRMs0').trim(),
+    key_secret: (key_secret || 'xdW2Ry7T67sUK4zMKb3oOsZh').trim()
+  };
 };
 
 // 1. CREATE RAZORPAY ORDER
@@ -21,8 +38,7 @@ const createRazorpayOrder = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Valid payment amount is required.' });
     }
 
-    const key_id = (process.env.RAZORPAY_KEY_ID || 'rzp_test_SwedUUn1KgRMs0').trim();
-    const key_secret = (process.env.RAZORPAY_KEY_SECRET || 'xdW2Ry7T67sUK4zMKb3oOsZh').trim();
+    const { key_id, key_secret } = await getRazorpayCredentials();
     const instance = new Razorpay({ key_id, key_secret });
 
     const amountInPaise = Math.round(numAmount * 100);
@@ -73,8 +89,7 @@ const verifyRazorpayPayment = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Missing Razorpay verification parameters.' });
     }
 
-    const { pool } = require('../config/db');
-    const key_secret = (process.env.RAZORPAY_KEY_SECRET || 'xdW2Ry7T67sUK4zMKb3oOsZh').trim();
+    const { key_secret } = await getRazorpayCredentials();
     
     let isValid = true;
     if (razorpay_signature) {

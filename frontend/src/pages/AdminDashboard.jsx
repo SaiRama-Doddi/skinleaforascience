@@ -39,6 +39,13 @@ import {
 } from 'lucide-react';
 
 export default function AdminDashboard() {
+  // Helper for downloading CSV exports with authentication
+  const openAuthenticatedExport = (baseUrl) => {
+    const token = localStorage.getItem('leafora_admin_token') || '';
+    const sep = baseUrl.includes('?') ? '&' : '?';
+    window.open(`${baseUrl}${sep}token=${encodeURIComponent(token)}`, '_blank');
+  };
+
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
 
@@ -304,7 +311,7 @@ export default function AdminDashboard() {
   };
 
   const handleExportCoupons = () => {
-    window.open(adminExportCouponsUrl, '_blank');
+    openAuthenticatedExport(adminExportCouponsUrl);
   };
 
   // ─── REFERRALS & WALLET STATE ───
@@ -452,11 +459,11 @@ export default function AdminDashboard() {
   };
 
   const handleExportReferrals = () => {
-    window.open(adminExportReferralsUrl, '_blank');
+    openAuthenticatedExport(adminExportReferralsUrl);
   };
 
   const handleExportWalletTransactions = () => {
-    window.open(adminExportWalletTransactionsUrl, '_blank');
+    openAuthenticatedExport(adminExportWalletTransactionsUrl);
   };
 
   // ─── REVIEWS MANAGEMENT STATE & HANDLERS ───
@@ -728,7 +735,7 @@ export default function AdminDashboard() {
   };
 
   const handleExportReviews = () => {
-    window.open(adminExportReviewsUrl, '_blank');
+    openAuthenticatedExport(adminExportReviewsUrl);
   };
 
   // ─── HOMEPAGE CMS & BUILDER STATE & HANDLERS ───
@@ -1186,7 +1193,7 @@ export default function AdminDashboard() {
   };
 
   const handleExportBackup = () => {
-    window.open(adminExportBackupUrl, '_blank');
+    openAuthenticatedExport(adminExportBackupUrl);
   };
 
   // ─── CATEGORY HANDLERS ───
@@ -1398,7 +1405,7 @@ export default function AdminDashboard() {
   };
 
   const handleExportCategories = () => {
-    window.open(adminExportCategoriesUrl, '_blank');
+    openAuthenticatedExport(adminExportCategoriesUrl);
   };
 
   const handleImportCategoriesFile = (e) => {
@@ -1789,7 +1796,7 @@ export default function AdminDashboard() {
   };
 
   const handleExportProducts = () => {
-    window.open(adminExportProductsUrl, '_blank');
+    openAuthenticatedExport(adminExportProductsUrl);
   };
 
   const handleImportProductsFile = (e) => {
@@ -1936,7 +1943,7 @@ export default function AdminDashboard() {
   };
 
   const handleExportCustomers = () => {
-    window.open(adminExportCustomersUrl, '_blank');
+    openAuthenticatedExport(adminExportCustomersUrl);
   };
 
   // ─── ORDERS MANAGEMENT SUITE HANDLERS (VERY PREMIUM) ───
@@ -2094,7 +2101,7 @@ export default function AdminDashboard() {
   };
 
   const handleExportOrders = () => {
-    window.open(adminExportOrdersUrl, '_blank');
+    openAuthenticatedExport(adminExportOrdersUrl);
   };
 
   const handleOpenPrintableDocument = async (order, type) => {
@@ -2489,7 +2496,7 @@ export default function AdminDashboard() {
   };
 
   const handleExportPayments = () => {
-    window.open(adminExportRevenueUrl, '_blank');
+    openAuthenticatedExport(adminExportRevenueUrl);
   };
 
   useEffect(() => {
@@ -6086,7 +6093,7 @@ export default function AdminDashboard() {
                         <option value="Razorpay">Razorpay</option>
                         <option value="Stripe">Stripe</option>
                         <option value="UPI">UPI Direct</option>
-                        <option value="COD">Cash on Delivery</option>
+                        
                       </select>
                       <select
                         className="leafora-cat-select"
@@ -6352,32 +6359,21 @@ export default function AdminDashboard() {
                     </div>
                   </div>
 
-                  {/* Gateway 4: COD Desk Card */}
-                  <div className="leafora-card" style={{ padding: 20, borderTop: '4px solid #D97706' }}>
+                  {/* Gateway 4: COD Disabled */}
+                  <div className="leafora-card" style={{ padding: 20, borderTop: '4px solid #94A3B8', opacity: 0.85 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                      <h4 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#D97706', display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <Wallet size={18} /> Cash on Delivery (COD) Desk
+                      <h4 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#64748B', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <Wallet size={18} /> Cash on Delivery (COD)
                       </h4>
-                      <span className="leafora-badge" style={{ backgroundColor: '#FEF3C7', color: '#D97706' }}>Verified Active</span>
+                      <span className="leafora-badge" style={{ backgroundColor: '#F1F5F9', color: '#64748B' }}>Completely Disabled</span>
                     </div>
 
-                    <p style={{ fontSize: 12.5, color: '#4B5563', marginBottom: 14 }}>
-                      Delivery collection management with phone verification & courier partner deposit reconciliation.
+                    <p style={{ fontSize: 12.5, color: '#64748B', marginBottom: 14 }}>
+                      Store operates strictly on 100% prepaid secure digital orders via Razorpay (UPI, Cards, NetBanking, Wallets).
                     </p>
 
-                    <div style={{ background: '#FAF8F5', border: '1px solid #EFECE6', borderRadius: 8, padding: 12, fontSize: 12, marginBottom: 14 }}>
-                      <div><strong>COD Handling Fee:</strong> ₹0.00 | <strong>Phone Verification:</strong> Enabled</div>
-                    </div>
-
-                    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                      <button
-                        type="button"
-                        className="leafora-cat-btn-primary"
-                        style={{ fontSize: 12 }}
-                        onClick={() => showNotification('COD desk settings updated!')}
-                      >
-                        <Settings size={13} /> Configure COD Fee
-                      </button>
+                    <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, padding: 12, fontSize: 12 }}>
+                      <div><strong>Status:</strong> Disabled across store checkout & order placement.</div>
                     </div>
                   </div>
                 </div>

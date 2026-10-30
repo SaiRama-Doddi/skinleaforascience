@@ -255,6 +255,7 @@ export const userGetWishlist = (email) => api.get('/user/wishlist', { params: { 
 export const userToggleWishlist = (data) => api.post('/user/wishlist/toggle', data);
 export const userDeleteWishlistItem = (id) => api.delete(`/user/wishlist/${id}`);
 export const placeOrder = (orderData) => api.post('/orders/place', orderData);
+export const submitContactForm = (data) => api.post('/contact', data);
 export const createRazorpayOrder = (data) => api.post('/payments/create-razorpay-order', typeof data === 'object' ? data : { amount: data });
 export const verifyRazorpayPayment = (data) => api.post('/payments/verify-razorpay-payment', data);
 

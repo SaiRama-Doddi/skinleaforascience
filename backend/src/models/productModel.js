@@ -44,7 +44,7 @@ class ProductModel {
     }
 
     try {
-      const [rows] = await pool.query('SELECT * FROM products ORDER BY id ASC');
+      const [rows] = await pool.query('SELECT * FROM products WHERE (is_active = 1 OR is_active IS NULL) AND (deleted_at IS NULL) ORDER BY id ASC');
       if (rows && rows.length > 0) {
         const enriched = rows.map(r => ProductModel.parseProductImages(r));
         cachedEnrichedProducts = enriched;

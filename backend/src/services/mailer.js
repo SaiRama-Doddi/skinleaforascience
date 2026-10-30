@@ -119,8 +119,45 @@ const sendOrderConfirmationEmail = async (toEmail, orderDetails) => {
   }
 };
 
+
+const sendCustomerPasswordResetEmail = async (toEmail, otp) => {
+  const mailOptions = {
+    from: `"LeafOra Life Sciences" <${process.env.SMTP_USER || 'hkahir46@gmail.com'}>`,
+    to: toEmail,
+    subject: '🔒 Reset Your LeafOra Account Password',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #E2E8F0; border-radius: 12px; background-color: #FFFFFF;">
+        <div style="text-align: center; margin-bottom: 20px;">
+          <h2 style="color: #1A3E2F; margin: 0; font-size: 24px;">LeafOra Life Sciences</h2>
+          <p style="color: #718096; font-size: 14px; margin-top: 4px;">Pure Botanical Heritage & Organic Science</p>
+        </div>
+        <hr style="border: none; border-top: 1px solid #EDF2F7; margin: 20px 0;" />
+        <p style="font-size: 16px; color: #2D3748;">Hello,</p>
+        <p style="font-size: 15px; color: #4A5568; line-height: 1.6;">We received a request to reset your password for your LeafOra customer account. Please use the verification code below to set a new password:</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <span style="font-size: 34px; font-weight: 800; letter-spacing: 8px; color: #A67C52; background-color: #F8F4EE; padding: 14px 32px; border-radius: 8px; border: 2px dashed #C49A45; display: inline-block;">${otp}</span>
+        </div>
+        <p style="font-size: 14px; color: #718096; text-align: center;">This code is valid for <strong>15 minutes</strong>. If you did not request this change, you can safely ignore this email.</p>
+        <hr style="border: none; border-top: 1px solid #EDF2F7; margin: 24px 0;" />
+        <p style="font-size: 12px; color: #A0AEC0; text-align: center;">© 2026 LeafOra Life Sciences • Nikol, Ahmedabad, Gujarat</p>
+      </div>
+    `,
+  };
+
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log('✉️ Password Reset Email sent:', info.messageId);
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error('⚠️ Nodemailer failed to send password reset email:', error.message);
+    return { success: false, error: error.message };
+  }
+};
+
 module.exports = { 
+  transporter,
   sendOtpEmail,
   sendWelcomeRegistrationEmail,
-  sendOrderConfirmationEmail 
+  sendOrderConfirmationEmail,
+  sendCustomerPasswordResetEmail
 };
