@@ -348,6 +348,22 @@
   margin-top: 1px;
 }
 
+.hero-title-line1 {
+  display: block;
+}
+
+.hero-leafora-title-line2 {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+/* Hide mobile extra badges on desktop */
+.hero-badge-mobile-extra {
+  display: none !important;
+}
+
 
 .hero-leafora-desc {
   font-size: clamp(0.9rem, 1.05vw, 1rem);
@@ -504,8 +520,8 @@
     z-index: 2;
     width: 100%;
     height: 100%;
-    /* Graceful spacing so content sits cleanly in the left sunlit area */
-    padding: 34px 18px 0 18px;
+    /* Extra top space so NATURAL SCIENCE FOR RADIANT SKIN breathes gracefully below the navbar */
+    padding: 50px 18px 0 18px;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -525,46 +541,60 @@
     border-radius: 0;
   }
 
-  /* Chic Eyebrow Badge */
+  /* Chic Eyebrow Badge with Extra Top Space */
   .hero-leafora-eyebrow {
     font-size: 0.65rem;
     font-weight: 750;
     letter-spacing: 1.4px;
     color: #143D2F;
-    margin-top: 4px;
-    margin-bottom: 6px;
+    margin-top: 8px;
+    margin-bottom: 8px;
     display: inline-block;
     text-transform: uppercase;
   }
 
-  /* 3-Line High-End Editorial Title */
+  /* 2-Line Editorial Title:
+     Line 1: A Healthier,
+     Line 2: Brighter You, Naturally (comes in one line) */
   .hero-leafora-title {
     display: flex !important;
     flex-direction: column !important;
     align-items: flex-start !important;
     font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
-    font-size: clamp(1.4rem, 5.2vw, 1.75rem) !important;
+    font-size: clamp(1.22rem, 4.4vw, 1.48rem) !important;
     font-weight: 700 !important;
-    line-height: 1.15 !important;
-    letter-spacing: -0.02em !important;
+    line-height: 1.2 !important;
+    letter-spacing: -0.015em !important;
     margin: 0 0 14px 0 !important;
     text-align: left !important;
   }
 
-  .hero-leafora-title-green {
+  .hero-title-line1 {
     display: block !important;
+    font-weight: 700 !important;
+    color: #0E3628 !important;
+  }
+
+  .hero-leafora-title-line2 {
+    display: inline-flex !important;
+    align-items: baseline !important;
+    flex-wrap: nowrap !important;
+    gap: 5px !important;
+    white-space: nowrap !important;
+  }
+
+  .hero-leafora-title-green {
     font-weight: 700 !important;
     color: #0E3628 !important;
   }
 
   .hero-leafora-title-gold {
-    display: block !important;
+    display: inline !important;
     font-family: 'Playfair Display', 'Cormorant Garamond', Georgia, serif !important;
     font-style: italic !important;
     font-weight: 600 !important;
     color: #0E3628 !important;
-    font-size: 1.06em !important;
-    margin-top: 2px !important;
+    font-size: 1.05em !important;
   }
 
   /* Hide long paragraph on mobile to keep focus on luxury imagery */
@@ -573,7 +603,7 @@
   }
 
   .hero-leafora-btn-wrap {
-    margin-bottom: 20px;
+    margin-bottom: 18px;
     display: block;
   }
 
@@ -581,7 +611,7 @@
   .hero-leafora-shop-btn {
     background: linear-gradient(135deg, #144633 0%, #0A2E21 100%);
     color: #FFFFFF;
-    padding: 9px 22px;
+    padding: 8.5px 22px;
     font-size: 0.84rem;
     font-weight: 600;
     letter-spacing: 0.3px;
@@ -598,14 +628,14 @@
     transform: scale(0.97);
   }
 
-  /* Sleek Frosted Luxury Micro-Pills for Trust Badges */
+  /* Sleek Frosted Luxury Micro-Pills for All 5 Trust Badges */
   .hero-leafora-badges-row {
     display: flex !important;
     flex-direction: column !important;
     align-items: flex-start !important;
-    gap: 7px !important;
+    gap: 6px !important;
     width: auto !important;
-    max-width: 180px !important;
+    max-width: 185px !important;
     padding: 0 !important;
     margin-top: 2px !important;
   }
@@ -620,9 +650,14 @@
     -webkit-backdrop-filter: blur(10px) !important;
     border: 1px solid rgba(215, 205, 190, 0.8) !important;
     border-radius: 20px !important;
-    padding: 4px 11px 4px 5px !important;
+    padding: 3.5px 10px 3.5px 5px !important;
     box-shadow: 0 2px 7px rgba(14, 54, 40, 0.05) !important;
     width: fit-content !important;
+  }
+
+  /* Show extra 2 points on mobile */
+  .hero-badge-mobile-extra {
+    display: inline-flex !important;
   }
 
   .hero-leafora-icon-circle {
@@ -652,7 +687,7 @@
   }
 
   .hero-leafora-badge-heading {
-    font-size: 0.70rem !important;
+    font-size: 0.69rem !important;
     font-weight: 750 !important;
     color: #0E3628 !important;
     line-height: 1 !important;
@@ -661,7 +696,7 @@
   }
 
   .hero-leafora-badge-sub {
-    font-size: 0.65rem !important;
+    font-size: 0.64rem !important;
     font-weight: 600 !important;
     color: #335445 !important;
     line-height: 1 !important;
@@ -672,21 +707,26 @@
 
 @media (max-width: 400px) {
   .hero-leafora-content-wrap {
-    padding: 28px 14px 0 14px;
+    padding: 42px 14px 0 14px;
+  }
+  .hero-leafora-eyebrow {
+    margin-top: 6px;
+    margin-bottom: 6px;
+    font-size: 0.62rem;
   }
   .hero-leafora-title {
-    font-size: 1.3rem !important;
-    margin-bottom: 11px !important;
+    font-size: 1.18rem !important;
+    margin-bottom: 12px !important;
   }
   .hero-leafora-btn-wrap {
-    margin-bottom: 16px;
+    margin-bottom: 14px;
   }
   .hero-leafora-shop-btn {
     padding: 7px 18px;
     font-size: 0.80rem;
   }
   .hero-leafora-badges-row {
-    gap: 6px !important;
+    gap: 5px !important;
   }
   .hero-leafora-badge-item {
     padding: 3px 8px 3px 4px !important;
@@ -702,10 +742,10 @@
     height: 11px !important;
   }
   .hero-leafora-badge-heading {
-    font-size: 0.66rem !important;
+    font-size: 0.65rem !important;
   }
   .hero-leafora-badge-sub {
-    font-size: 0.61rem !important;
+    font-size: 0.60rem !important;
   }
 }
 

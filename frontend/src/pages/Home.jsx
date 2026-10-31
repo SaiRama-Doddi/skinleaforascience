@@ -134,9 +134,11 @@ export default function Home() {
             </span>
             
             <h1 className="hero-leafora-title">
-              <span className="hero-leafora-title-green">A Healthier, </span>
-              <span className="hero-leafora-title-green">Brighter You </span>
-              <span className="hero-leafora-title-gold">Naturally</span>
+              <span className="hero-leafora-title-green hero-title-line1">A Healthier,</span>
+              <span className="hero-leafora-title-line2">
+                <span className="hero-leafora-title-green">Brighter You, </span>
+                <span className="hero-leafora-title-gold">Naturally</span>
+              </span>
             </h1>
 
             <p className="hero-leafora-desc">
@@ -178,6 +180,27 @@ export default function Home() {
                 <div className="hero-leafora-badge-text-box">
                   <div className="hero-leafora-badge-heading">Dermatologically</div>
                   <div className="hero-leafora-badge-sub">Tested</div>
+                </div>
+              </div>
+
+              {/* Extra 2 Points in Mobile (Cascading into open bottom-left area) */}
+              <div className="hero-leafora-badge-item hero-badge-mobile-extra">
+                <div className="hero-leafora-icon-circle">
+                  <Heart size={20} strokeWidth={1.8} />
+                </div>
+                <div className="hero-leafora-badge-text-box">
+                  <div className="hero-leafora-badge-heading">100%</div>
+                  <div className="hero-leafora-badge-sub">Cruelty Free</div>
+                </div>
+              </div>
+
+              <div className="hero-leafora-badge-item hero-badge-mobile-extra">
+                <div className="hero-leafora-icon-circle">
+                  <Sparkles size={20} strokeWidth={1.8} />
+                </div>
+                <div className="hero-leafora-badge-text-box">
+                  <div className="hero-leafora-badge-heading">Suitable for</div>
+                  <div className="hero-leafora-badge-sub">All Skin Types</div>
                 </div>
               </div>
             </div>
