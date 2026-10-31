@@ -182,23 +182,6 @@ export default function Home() {
               </div>
             </div>
           </div>
-
-          {/* Luxury Floating Social Proof Seal in Mobile (Circled Bottom-Left Spot) */}
-          <Link to="/products" className="hero-mobile-floating-badge" aria-label="Explore 1200+ Reviews and Products">
-            <div className="hero-floating-top">
-              <div className="hero-floating-stars">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} size={11} fill="#C58A2A" color="#C58A2A" />
-                ))}
-              </div>
-              <span className="hero-floating-score">4.9 / 5</span>
-            </div>
-            <div className="hero-floating-title">1,200+ Happy Customers</div>
-            <div className="hero-floating-highlight">
-              <Sparkles size={11} color="#144633" />
-              <span>Dermatologist Formulated</span>
-            </div>
-          </Link>
         </div>
       </section>
 

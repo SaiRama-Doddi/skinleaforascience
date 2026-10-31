@@ -348,10 +348,6 @@
   margin-top: 1px;
 }
 
-/* Hide Mobile Floating Social Proof Badge on Desktop */
-.hero-mobile-floating-badge {
-  display: none;
-}
 
 .hero-leafora-desc {
   font-size: clamp(0.9rem, 1.05vw, 1rem);
@@ -508,7 +504,7 @@
     z-index: 2;
     width: 100%;
     height: 100%;
-    /* Extra top space so the content clears the top navbar gracefully */
+    /* Graceful spacing so content sits cleanly in the left sunlit area */
     padding: 34px 18px 0 18px;
     display: flex;
     flex-direction: column;
@@ -529,229 +525,187 @@
     border-radius: 0;
   }
 
-  /* Mobile top space for EYEBROW */
+  /* Chic Eyebrow Badge */
   .hero-leafora-eyebrow {
     font-size: 0.65rem;
-    font-weight: 700;
-    letter-spacing: 1.3px;
+    font-weight: 750;
+    letter-spacing: 1.4px;
     color: #143D2F;
-    margin-top: 6px;
-    margin-bottom: 5px;
-    display: block;
+    margin-top: 4px;
+    margin-bottom: 6px;
+    display: inline-block;
+    text-transform: uppercase;
   }
 
-  /* One-line title on mobile */
+  /* 3-Line High-End Editorial Title */
   .hero-leafora-title {
-    display: block;
-    font-size: clamp(1.12rem, 4.3vw, 1.45rem);
-    font-weight: 600;
-    line-height: 1.22;
-    letter-spacing: -0.015em;
-    margin: 0 0 10px 0;
-    text-align: left;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+    font-size: clamp(1.4rem, 5.2vw, 1.75rem) !important;
+    font-weight: 700 !important;
+    line-height: 1.15 !important;
+    letter-spacing: -0.02em !important;
+    margin: 0 0 14px 0 !important;
+    text-align: left !important;
   }
 
-  .hero-leafora-title-green,
-  .hero-leafora-title-gold {
-    display: inline !important;
-    font-weight: 600;
+  .hero-leafora-title-green {
+    display: block !important;
+    font-weight: 700 !important;
     color: #0E3628 !important;
   }
 
   .hero-leafora-title-gold {
-    font-family: 'Playfair Display', 'Cormorant Garamond', Georgia, serif;
-    font-style: italic;
-    font-weight: 600;
+    display: block !important;
+    font-family: 'Playfair Display', 'Cormorant Garamond', Georgia, serif !important;
+    font-style: italic !important;
+    font-weight: 600 !important;
+    color: #0E3628 !important;
+    font-size: 1.06em !important;
+    margin-top: 2px !important;
   }
 
-  /* Hide paragraph text on mobile */
+  /* Hide long paragraph on mobile to keep focus on luxury imagery */
   .hero-leafora-desc {
     display: none !important;
   }
 
   .hero-leafora-btn-wrap {
-    margin-bottom: 24px;
+    margin-bottom: 20px;
     display: block;
   }
 
+  /* Refined Luxury CTA Button with Subtle Gold Border */
   .hero-leafora-shop-btn {
-    padding: 8px 20px;
-    font-size: 0.82rem;
+    background: linear-gradient(135deg, #144633 0%, #0A2E21 100%);
+    color: #FFFFFF;
+    padding: 9px 22px;
+    font-size: 0.84rem;
     font-weight: 600;
+    letter-spacing: 0.3px;
+    border-radius: 25px;
+    border: 1px solid rgba(197, 138, 42, 0.45);
+    box-shadow: 0 4px 14px rgba(10, 46, 33, 0.28);
+    display: inline-flex;
+    align-items: center;
     gap: 7px;
-    box-shadow: 0 3px 12px rgba(14, 54, 40, 0.28);
+    transition: all 0.2s ease;
   }
 
-  /* Column-wise badges on the left side in the empty sun-dappled space */
+  .hero-leafora-shop-btn:active {
+    transform: scale(0.97);
+  }
+
+  /* Sleek Frosted Luxury Micro-Pills for Trust Badges */
   .hero-leafora-badges-row {
     display: flex !important;
     flex-direction: column !important;
     align-items: flex-start !important;
-    justify-content: flex-start !important;
-    gap: 14px !important;
+    gap: 7px !important;
     width: auto !important;
-    max-width: 155px !important;
+    max-width: 180px !important;
     padding: 0 !important;
+    margin-top: 2px !important;
   }
 
   .hero-leafora-badge-item {
-    display: flex !important;
+    display: inline-flex !important;
     flex-direction: row !important;
     align-items: center !important;
-    text-align: left !important;
-    gap: 9px !important;
-    width: auto !important;
+    gap: 7px !important;
+    background: rgba(255, 255, 255, 0.88) !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(215, 205, 190, 0.8) !important;
+    border-radius: 20px !important;
+    padding: 4px 11px 4px 5px !important;
+    box-shadow: 0 2px 7px rgba(14, 54, 40, 0.05) !important;
+    width: fit-content !important;
   }
 
   .hero-leafora-icon-circle {
-    width: 32px !important;
-    height: 32px !important;
-    min-width: 32px !important;
-    margin-bottom: 0 !important;
-    background: rgba(14, 54, 40, 0.08) !important;
+    width: 22px !important;
+    height: 22px !important;
+    min-width: 22px !important;
+    border-radius: 50% !important;
+    background: #0E3628 !important;
+    color: #FFFFFF !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 0 !important;
   }
 
   .hero-leafora-icon-circle svg {
-    width: 15px !important;
-    height: 15px !important;
+    width: 12px !important;
+    height: 12px !important;
+    stroke: #FFFFFF !important;
   }
 
   .hero-leafora-badge-text-box {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: baseline !important;
+    gap: 3px !important;
   }
 
   .hero-leafora-badge-heading {
-    font-size: 0.72rem !important;
-    font-weight: 700 !important;
+    font-size: 0.70rem !important;
+    font-weight: 750 !important;
     color: #0E3628 !important;
-    line-height: 1.15 !important;
-    margin-bottom: 1px !important;
+    line-height: 1 !important;
+    margin: 0 !important;
     white-space: nowrap !important;
   }
 
   .hero-leafora-badge-sub {
-    font-size: 0.64rem !important;
-    font-weight: 500 !important;
-    color: #2D4A3E !important;
-    line-height: 1.15 !important;
+    font-size: 0.65rem !important;
+    font-weight: 600 !important;
+    color: #335445 !important;
+    line-height: 1 !important;
+    margin: 0 !important;
     white-space: nowrap !important;
-  }
-
-  /* Luxury Floating Social Proof Seal in Mobile (Circled Bottom-Left Spot) */
-  .hero-mobile-floating-badge {
-    display: flex !important;
-    flex-direction: column;
-    position: absolute;
-    left: 16px;
-    bottom: 22px;
-    z-index: 5;
-    background: rgba(255, 255, 255, 0.94);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(215, 205, 190, 0.9);
-    border-radius: 12px;
-    padding: 7px 11px;
-    box-shadow: 0 4px 16px rgba(14, 54, 40, 0.12), 0 1px 3px rgba(0, 0, 0, 0.05);
-    text-decoration: none;
-    max-width: 148px;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    pointer-events: auto;
-  }
-
-  .hero-mobile-floating-badge:active {
-    transform: scale(0.97);
-  }
-
-  .hero-floating-top {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    margin-bottom: 2px;
-  }
-
-  .hero-floating-stars {
-    display: flex;
-    align-items: center;
-    gap: 1.5px;
-  }
-
-  .hero-floating-score {
-    font-size: 0.68rem;
-    font-weight: 750;
-    color: #143D2F;
-    letter-spacing: -0.01em;
-    line-height: 1;
-  }
-
-  .hero-floating-title {
-    font-size: 0.70rem;
-    font-weight: 700;
-    color: #0E3628;
-    line-height: 1.2;
-    margin-bottom: 3px;
-    white-space: nowrap;
-  }
-
-  .hero-floating-highlight {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 0.60rem;
-    font-weight: 600;
-    color: #1B4D3E;
-    line-height: 1.1;
-    background: rgba(20, 61, 47, 0.06);
-    padding: 2px 5px;
-    border-radius: 4px;
-    width: fit-content;
-  }
-
-  .hero-floating-highlight svg {
-    flex-shrink: 0;
   }
 }
 
 @media (max-width: 400px) {
   .hero-leafora-content-wrap {
-    padding: 30px 14px 0 14px;
+    padding: 28px 14px 0 14px;
   }
   .hero-leafora-title {
-    font-size: 1.12rem;
+    font-size: 1.3rem !important;
+    margin-bottom: 11px !important;
   }
   .hero-leafora-btn-wrap {
-    margin-bottom: 20px;
+    margin-bottom: 16px;
   }
   .hero-leafora-shop-btn {
     padding: 7px 18px;
-    font-size: 0.78rem;
+    font-size: 0.80rem;
   }
   .hero-leafora-badges-row {
-    gap: 12px !important;
-    max-width: 145px !important;
+    gap: 6px !important;
+  }
+  .hero-leafora-badge-item {
+    padding: 3px 8px 3px 4px !important;
+    gap: 5px !important;
+  }
+  .hero-leafora-icon-circle {
+    width: 20px !important;
+    height: 20px !important;
+    min-width: 20px !important;
+  }
+  .hero-leafora-icon-circle svg {
+    width: 11px !important;
+    height: 11px !important;
   }
   .hero-leafora-badge-heading {
-    font-size: 0.68rem !important;
+    font-size: 0.66rem !important;
   }
   .hero-leafora-badge-sub {
-    font-size: 0.6rem !important;
-  }
-  .hero-mobile-floating-badge {
-    left: 12px;
-    bottom: 16px;
-    padding: 6px 9px;
-    max-width: 135px;
-  }
-  .hero-floating-score {
-    font-size: 0.64rem;
-  }
-  .hero-floating-title {
-    font-size: 0.65rem;
-  }
-  .hero-floating-highlight {
-    font-size: 0.56rem;
-    padding: 1.5px 4px;
+    font-size: 0.61rem !important;
   }
 }
 
