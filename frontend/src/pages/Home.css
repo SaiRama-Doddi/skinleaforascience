@@ -126,6 +126,353 @@
 
 /* Mobile & Tablet Layout: Horizontal Swipe Slider */
 @media (max-width: 768px) {
+  .category-section-pixel {
+    padding: 24px 12px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .category-container-pixel {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .category-flex-header-pixel {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 18px;
+    gap: 8px;
+  }
+
+  .single-line-title {
+    font-size: 1.22rem !important;
+    white-space: nowrap !important;
+  }
+
+  .link-view-all-pixel {
+    font-size: 0.78rem;
+    white-space: nowrap;
+  }
+
+  .category-scroll-wrapper {
+    display: flex;
+    gap: 16px;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    padding: 8px 4px 16px 4px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    width: 100%;
+  }
+
+  .category-scroll-wrapper::-webkit-scrollbar {
+    display: none;
+  }
+
+  .category-scroll-wrapper .category-pill-card-pixel {
+    flex: 0 0 auto;
+    width: 105px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .category-circle-box-pixel {
+    width: 72px;
+    height: 72px;
+  }
+
+  .category-circle-box-pixel img {
+    width: 50px;
+    height: 50px;
+  }
+
+  .category-pill-name-pixel {
+    font-size: 0.8rem;
+    line-height: 1.2;
+    text-align: center;
+    font-weight: 600;
+  }
+}
+
+@media (max-width: 380px) {
+  .single-line-title {
+    font-size: 1.1rem !important;
+  }
+
+  .category-circle-box-pixel {
+    width: 66px;
+    height: 66px;
+  }
+
+  .category-circle-box-pixel img {
+    width: 44px;
+    height: 44px;
+  }
+
+  .category-pill-name-pixel {
+    font-size: 0.76rem;
+  }
+}
+
+.section-title-serif-pixel {
+  font-family: 'Inter', sans-serif;
+  font-size: 2.7rem;
+  font-weight: 700;
+  color: #1F2937;
+  line-height: 1.18;
+  margin-bottom: 12px;
+}
+
+.section-desc-pixel {
+  font-size: 1rem;
+  color: var(--leafora-text-muted);
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+/* Bronze Button Pill */
+.btn-bronze-pill-pixel {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background-color: var(--leafora-bronze);
+  color: #FFFFFF;
+  font-weight: 600;
+  font-size: 0.92rem;
+  padding: 12px 28px;
+  border-radius: 30px;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 14px rgba(166, 124, 82, 0.25);
+}
+
+.btn-bronze-pill-pixel:hover {
+  background-color: var(--leafora-bronze-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(166, 124, 82, 0.35);
+}
+
+/* 1. HERO SECTION */
+.hero-leafora-section {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  height: calc(100vh - 85px);
+  min-height: 480px;
+  max-height: 640px;
+  background-color: #FAF4EB;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+}
+
+.hero-leafora-bg-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.hero-leafora-picture {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.hero-leafora-bg-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: right center;
+  display: block;
+}
+
+.hero-leafora-content-wrap {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 32px 48px;
+  display: flex;
+  align-items: center;
+}
+
+.hero-leafora-card {
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+}
+
+.hero-leafora-eyebrow {
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  color: #143D2F;
+  margin-bottom: 10px;
+  display: inline-block;
+}
+
+.hero-leafora-title {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: clamp(2rem, 3.4vw, 2.9rem);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+  margin: 0 0 12px 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.hero-leafora-title-green {
+  font-weight: 600;
+  color: #0E3628;
+}
+
+.hero-leafora-title-gold {
+  font-family: 'Playfair Display', 'Cormorant Garamond', Georgia, serif;
+  font-style: italic;
+  font-weight: 500;
+  color: #0E3628;
+  letter-spacing: -0.01em;
+  margin-top: 1px;
+}
+
+/* Hide Mobile Floating Social Proof Badge on Desktop */
+.hero-mobile-floating-badge {
+  display: none;
+}
+
+.hero-leafora-desc {
+  font-size: clamp(0.9rem, 1.05vw, 1rem);
+  line-height: 1.48;
+  color: #234939;
+  max-width: 430px;
+  margin: 0 0 20px 0;
+  font-weight: 400;
+}
+
+.hero-leafora-btn-wrap {
+  margin-bottom: 22px;
+}
+
+.hero-leafora-shop-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: #0E3628;
+  color: #FFFFFF;
+  padding: 11px 28px;
+  border-radius: 9999px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: 0 4px 14px rgba(14, 54, 40, 0.25);
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  cursor: pointer;
+}
+
+.hero-leafora-shop-btn:hover {
+  background: #09261C;
+  color: #FFFFFF;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(14, 54, 40, 0.35);
+}
+
+.hero-leafora-shop-btn svg {
+  transition: transform 0.2s ease;
+}
+
+.hero-leafora-shop-btn:hover svg {
+  transform: translateX(4px);
+}
+
+.hero-leafora-badges-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.hero-leafora-badge-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 95px;
+}
+
+.hero-leafora-icon-circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(14, 54, 40, 0.08);
+  color: #0E3628;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 6px;
+  transition: transform 0.25s ease, background 0.25s ease;
+}
+
+.hero-leafora-badge-item:hover .hero-leafora-icon-circle {
+  transform: scale(1.08);
+  background: rgba(14, 54, 40, 0.14);
+}
+
+.hero-leafora-badge-heading {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: #0E3628;
+  line-height: 1.25;
+  margin-bottom: 2px;
+  white-space: nowrap;
+}
+
+.hero-leafora-badge-sub {
+  font-size: 0.74rem;
+  font-weight: 500;
+  color: #2D4A3E;
+  line-height: 1.2;
+}
+
+/* Responsive Media Queries */
+@media (max-width: 1080px) {
+  .hero-leafora-section {
+    height: calc(100vh - 80px);
+    max-height: 580px;
+    min-height: 460px;
+  }
+  .hero-leafora-content-wrap {
+    padding: 24px 32px;
+  }
+  .hero-leafora-card {
+    max-width: 440px;
+    background: rgba(250, 246, 239, 0.82);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    padding: 24px 22px;
+    border-radius: 18px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
+  }
+  .hero-leafora-badges-row {
+    gap: 18px;
+  }
+  .hero-leafora-badge-item {
+    width: 88px;
+  }
+}
+
+@media (max-width: 768px) {
   .hero-leafora-section {
     width: 100%;
     max-width: 100%;
@@ -139,7 +486,6 @@
     align-items: flex-start;
     justify-content: flex-start;
     padding: 0;
-    background-color: #FAF4EB;
   }
 
   .hero-leafora-bg-layer {
@@ -147,7 +493,6 @@
     inset: 0;
     width: 100%;
     height: 100%;
-    z-index: 1;
   }
 
   .hero-leafora-bg-img {
@@ -158,24 +503,17 @@
     display: block;
   }
 
-  /* Seamless ambient luxury gradient scrim to provide 100% crisp readability */
   .hero-leafora-content-wrap {
     position: relative;
     z-index: 2;
     width: 100%;
-    padding: 22px 18px 0 18px;
+    height: 100%;
+    /* Extra top space so the content clears the top navbar gracefully */
+    padding: 34px 18px 0 18px;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     justify-content: flex-start;
-    background: linear-gradient(
-      180deg,
-      rgba(250, 247, 242, 0.95) 0%,
-      rgba(250, 247, 242, 0.90) 36%,
-      rgba(250, 247, 242, 0.65) 54%,
-      rgba(250, 247, 242, 0) 74%
-    );
-    pointer-events: auto;
   }
 
   .hero-leafora-card {
@@ -191,187 +529,229 @@
     border-radius: 0;
   }
 
-  /* Luxury Eyebrow Badge Pill */
+  /* Mobile top space for EYEBROW */
   .hero-leafora-eyebrow {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.66rem;
-    font-weight: 750;
-    letter-spacing: 1.4px;
-    text-transform: uppercase;
-    color: #9E6E38; /* Warm luxury gold bronze */
-    background: rgba(255, 255, 255, 0.92);
-    border: 1px solid rgba(197, 138, 42, 0.35);
-    padding: 4px 11px;
-    border-radius: 20px;
-    box-shadow: 0 2px 6px rgba(158, 110, 56, 0.08);
-    margin-top: 2px;
-    margin-bottom: 7px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 1.3px;
+    color: #143D2F;
+    margin-top: 6px;
+    margin-bottom: 5px;
+    display: block;
   }
 
-  /* Editorial Title with Luxury Serif & Radiant Gold */
+  /* One-line title on mobile */
   .hero-leafora-title {
     display: block;
-    font-family: 'Playfair Display', Georgia, serif;
-    font-size: clamp(1.42rem, 5.8vw, 1.85rem);
-    font-weight: 700;
-    line-height: 1.2;
+    font-size: clamp(1.12rem, 4.3vw, 1.45rem);
+    font-weight: 600;
+    line-height: 1.22;
     letter-spacing: -0.015em;
-    margin: 0 0 6px 0;
+    margin: 0 0 10px 0;
     text-align: left;
-    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.9);
   }
 
-  .hero-leafora-title-green {
-    display: inline;
-    color: #0E3628;
-    font-weight: 700;
+  .hero-leafora-title-green,
+  .hero-leafora-title-gold {
+    display: inline !important;
+    font-weight: 600;
+    color: #0E3628 !important;
   }
 
   .hero-leafora-title-gold {
-    display: inline;
-    font-family: 'Playfair Display', Georgia, serif;
+    font-family: 'Playfair Display', 'Cormorant Garamond', Georgia, serif;
     font-style: italic;
-    color: #B88A3E;
     font-weight: 600;
-    margin-left: 4px;
   }
 
-  /* Concise 1-line luxury narrative description */
+  /* Hide paragraph text on mobile */
   .hero-leafora-desc {
-    display: block !important;
-    font-size: 0.78rem;
-    line-height: 1.45;
-    color: #2D4A3E;
-    font-weight: 500;
-    max-width: 330px;
-    margin: 0 0 12px 0;
+    display: none !important;
   }
 
   .hero-leafora-btn-wrap {
-    margin-bottom: 12px;
+    margin-bottom: 24px;
     display: block;
   }
 
   .hero-leafora-shop-btn {
-    background: linear-gradient(135deg, #144633 0%, #0A2E21 100%);
-    color: #FFFFFF;
-    padding: 9px 22px;
-    font-size: 0.84rem;
+    padding: 8px 20px;
+    font-size: 0.82rem;
     font-weight: 600;
-    letter-spacing: 0.25px;
-    border-radius: 25px;
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    box-shadow: 0 4px 14px rgba(10, 46, 33, 0.32);
     gap: 7px;
-    display: inline-flex;
-    align-items: center;
-    transition: all 0.2s ease;
+    box-shadow: 0 3px 12px rgba(14, 54, 40, 0.28);
   }
 
-  .hero-leafora-shop-btn:active {
-    transform: scale(0.97);
-  }
-
-  /* Horizontal Trust Badges Row (Chic Frosted Mini Pills) */
+  /* Column-wise badges on the left side in the empty sun-dappled space */
   .hero-leafora-badges-row {
     display: flex !important;
-    flex-direction: row !important;
-    flex-wrap: wrap !important;
-    align-items: center !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
     justify-content: flex-start !important;
-    gap: 7px !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    margin-top: 2px !important;
+    gap: 14px !important;
+    width: auto !important;
+    max-width: 155px !important;
     padding: 0 !important;
   }
 
   .hero-leafora-badge-item {
-    display: inline-flex !important;
+    display: flex !important;
     flex-direction: row !important;
     align-items: center !important;
-    gap: 6px !important;
-    background: rgba(255, 255, 255, 0.94) !important;
-    backdrop-filter: blur(10px) !important;
-    -webkit-backdrop-filter: blur(10px) !important;
-    border: 1px solid rgba(222, 214, 202, 0.85) !important;
-    padding: 4px 10px !important;
-    border-radius: 20px !important;
-    box-shadow: 0 2px 7px rgba(14, 54, 40, 0.07) !important;
+    text-align: left !important;
+    gap: 9px !important;
     width: auto !important;
   }
 
   .hero-leafora-icon-circle {
-    width: 20px !important;
-    height: 20px !important;
-    min-width: 20px !important;
-    border-radius: 50% !important;
-    background: #0E3628 !important;
-    color: #FFFFFF !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    margin: 0 !important;
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    margin-bottom: 0 !important;
+    background: rgba(14, 54, 40, 0.08) !important;
   }
 
   .hero-leafora-icon-circle svg {
-    width: 11px !important;
-    height: 11px !important;
-    stroke: #FFFFFF !important;
+    width: 15px !important;
+    height: 15px !important;
   }
 
   .hero-leafora-badge-text-box {
-    display: flex !important;
-    flex-direction: row !important;
-    align-items: baseline !important;
-    gap: 3px !important;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   .hero-leafora-badge-heading {
-    font-size: 0.70rem !important;
-    font-weight: 750 !important;
+    font-size: 0.72rem !important;
+    font-weight: 700 !important;
     color: #0E3628 !important;
-    line-height: 1 !important;
-    margin: 0 !important;
+    line-height: 1.15 !important;
+    margin-bottom: 1px !important;
     white-space: nowrap !important;
   }
 
   .hero-leafora-badge-sub {
-    font-size: 0.65rem !important;
-    font-weight: 600 !important;
-    color: #4A6356 !important;
-    line-height: 1 !important;
-    margin: 0 !important;
+    font-size: 0.64rem !important;
+    font-weight: 500 !important;
+    color: #2D4A3E !important;
+    line-height: 1.15 !important;
     white-space: nowrap !important;
+  }
+
+  /* Luxury Floating Social Proof Seal in Mobile (Circled Bottom-Left Spot) */
+  .hero-mobile-floating-badge {
+    display: flex !important;
+    flex-direction: column;
+    position: absolute;
+    left: 16px;
+    bottom: 22px;
+    z-index: 5;
+    background: rgba(255, 255, 255, 0.94);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(215, 205, 190, 0.9);
+    border-radius: 12px;
+    padding: 7px 11px;
+    box-shadow: 0 4px 16px rgba(14, 54, 40, 0.12), 0 1px 3px rgba(0, 0, 0, 0.05);
+    text-decoration: none;
+    max-width: 148px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    pointer-events: auto;
+  }
+
+  .hero-mobile-floating-badge:active {
+    transform: scale(0.97);
+  }
+
+  .hero-floating-top {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 2px;
+  }
+
+  .hero-floating-stars {
+    display: flex;
+    align-items: center;
+    gap: 1.5px;
+  }
+
+  .hero-floating-score {
+    font-size: 0.68rem;
+    font-weight: 750;
+    color: #143D2F;
+    letter-spacing: -0.01em;
+    line-height: 1;
+  }
+
+  .hero-floating-title {
+    font-size: 0.70rem;
+    font-weight: 700;
+    color: #0E3628;
+    line-height: 1.2;
+    margin-bottom: 3px;
+    white-space: nowrap;
+  }
+
+  .hero-floating-highlight {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.60rem;
+    font-weight: 600;
+    color: #1B4D3E;
+    line-height: 1.1;
+    background: rgba(20, 61, 47, 0.06);
+    padding: 2px 5px;
+    border-radius: 4px;
+    width: fit-content;
+  }
+
+  .hero-floating-highlight svg {
+    flex-shrink: 0;
   }
 }
 
 @media (max-width: 400px) {
   .hero-leafora-content-wrap {
-    padding: 18px 12px 0 12px;
+    padding: 30px 14px 0 14px;
   }
   .hero-leafora-title {
-    font-size: 1.32rem;
+    font-size: 1.12rem;
   }
-  .hero-leafora-desc {
-    font-size: 0.74rem;
-    max-width: 280px;
+  .hero-leafora-btn-wrap {
+    margin-bottom: 20px;
   }
   .hero-leafora-shop-btn {
-    padding: 8px 18px;
-    font-size: 0.80rem;
+    padding: 7px 18px;
+    font-size: 0.78rem;
   }
-  .hero-leafora-badge-item {
-    padding: 3px 8px !important;
-    gap: 5px !important;
+  .hero-leafora-badges-row {
+    gap: 12px !important;
+    max-width: 145px !important;
   }
   .hero-leafora-badge-heading {
-    font-size: 0.66rem !important;
+    font-size: 0.68rem !important;
   }
   .hero-leafora-badge-sub {
-    font-size: 0.60rem !important;
+    font-size: 0.6rem !important;
+  }
+  .hero-mobile-floating-badge {
+    left: 12px;
+    bottom: 16px;
+    padding: 6px 9px;
+    max-width: 135px;
+  }
+  .hero-floating-score {
+    font-size: 0.64rem;
+  }
+  .hero-floating-title {
+    font-size: 0.65rem;
+  }
+  .hero-floating-highlight {
+    font-size: 0.56rem;
+    padding: 1.5px 4px;
   }
 }
 
