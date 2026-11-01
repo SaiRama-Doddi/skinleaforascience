@@ -199,8 +199,11 @@
   z-index: 40;
 }
 
-.leafora-search-box {
+.leafora-search-box,
+.leafora-cat-search-box {
   position: relative;
+  display: flex;
+  align-items: center;
   width: 420px;
   max-width: 100%;
 }
@@ -210,29 +213,59 @@
   left: 14px;
   top: 50%;
   transform: translateY(-50%);
-  color: #9CA3AF;
+  color: #94A3B8;
   width: 16px;
   height: 16px;
   pointer-events: none;
+  transition: color 0.2s ease;
+  z-index: 2;
 }
 
-.leafora-search-input {
+.leafora-search-input,
+.leafora-search-box input,
+.leafora-cat-search-box input {
   width: 100%;
-  background-color: #F5F4F0;
-  border: 1px solid #E7E4DD;
-  border-radius: 30px;
-  padding: 9px 16px 9px 40px;
+  height: 42px;
+  background-color: #FFFFFF;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 10px;
+  padding: 0 16px 0 42px;
   font-size: 13.5px;
   font-family: inherit;
-  color: #111827;
+  color: #1F2937;
   outline: none;
-  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
 }
 
-.leafora-search-input:focus {
+.leafora-search-input::placeholder,
+.leafora-search-box input::placeholder,
+.leafora-cat-search-box input::placeholder {
+  color: #94A3B8;
+  font-weight: 400;
+}
+
+.leafora-search-input:focus,
+.leafora-search-box input:focus,
+.leafora-cat-search-box input:focus {
   background-color: #FFFFFF;
-  border-color: #C5A059;
-  box-shadow: 0 0 0 3px rgba(197, 160, 89, 0.15);
+  border-color: #C58A2A;
+  box-shadow: 0 0 0 3px rgba(197, 138, 42, 0.16), 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.leafora-search-box:focus-within .leafora-search-icon,
+.leafora-cat-search-box:focus-within .leafora-search-icon {
+  color: #C58A2A;
+}
+
+/* Sleek pill look for Admin Top Header search bar */
+.leafora-header .leafora-search-input {
+  border-radius: 24px;
+  background-color: #F8FAFC;
+}
+.leafora-header .leafora-search-input:focus {
+  background-color: #FFFFFF;
 }
 
 .leafora-header-right {
@@ -1120,49 +1153,180 @@ input.leafora-input:focus {
   align-items: center;
 }
 
-.leafora-cat-input {
+.leafora-cat-input,
+.leafora-input {
   flex: 1;
-  padding: 9px 14px;
-  border-radius: 8px;
-  border: 1px solid #E5E7EB;
-  font-size: 13px;
-  color: #111827;
+  height: 42px;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: 1.5px solid #E2E8F0;
+  font-size: 13.5px;
+  color: #1F2937;
   outline: none;
   background-color: #FFFFFF;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
 }
 
-.leafora-cat-input:focus {
-  border-color: #A37F3F;
+.leafora-cat-input:focus,
+.leafora-input:focus {
+  border-color: #C58A2A;
+  box-shadow: 0 0 0 3px rgba(197, 138, 42, 0.16), 0 2px 6px rgba(0, 0, 0, 0.04);
 }
 
-.leafora-cat-btn-primary {
-  background-color: #A87B34;
+/* Modern Select Dropdown Filters */
+.leafora-cat-select,
+.leafora-select,
+.leafora-select-btn,
+.leafora-cat-toolbar-row select {
+  height: 42px;
+  padding: 0 36px 0 14px;
+  background-color: #FFFFFF;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 14px;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 10px;
+  font-size: 13px;
+  font-family: inherit;
+  font-weight: 500;
+  color: #334155;
+  cursor: pointer;
+  outline: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+  white-space: nowrap;
+}
+
+.leafora-cat-select:hover,
+.leafora-select:hover,
+.leafora-select-btn:hover,
+.leafora-cat-toolbar-row select:hover {
+  border-color: #CBD5E1;
+  background-color: #F8FAFC;
+}
+
+.leafora-cat-select:focus,
+.leafora-select:focus,
+.leafora-select-btn:focus,
+.leafora-cat-toolbar-row select:focus {
+  border-color: #C58A2A;
+  background-color: #FFFFFF;
+  box-shadow: 0 0 0 3px rgba(197, 138, 42, 0.16);
+}
+
+/* Primary Button Design */
+.leafora-cat-btn-primary,
+.leafora-btn-primary {
+  height: 42px;
+  background: linear-gradient(135deg, #0E3628 0%, #174E3B 100%);
   color: #FFFFFF;
-  border: none;
-  padding: 9px 18px;
-  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 0 20px;
+  border-radius: 10px;
   font-weight: 600;
   font-size: 13px;
   cursor: pointer;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  transition: background-color 0.2s ease;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 2px 8px rgba(14, 54, 40, 0.2);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  text-decoration: none;
+  box-sizing: border-box;
+  white-space: nowrap;
 }
 
-.leafora-cat-btn-primary:hover {
-  background-color: #936A2A;
+.leafora-cat-btn-primary:hover,
+.leafora-btn-primary:hover {
+  background: linear-gradient(135deg, #09261C 0%, #123D2C 100%);
+  transform: translateY(-1.5px);
+  box-shadow: 0 6px 16px rgba(14, 54, 40, 0.32);
+  border-color: #C58A2A;
+  color: #FFFFFF;
 }
 
-.leafora-cat-btn-secondary {
-  background-color: #E5E7EB;
+.leafora-cat-btn-primary:active,
+.leafora-btn-primary:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(14, 54, 40, 0.15);
+}
+
+/* Secondary Button Design */
+.leafora-cat-btn-secondary,
+.leafora-btn-secondary {
+  height: 42px;
+  background-color: #FFFFFF;
   color: #374151;
-  border: none;
-  padding: 9px 14px;
-  border-radius: 8px;
+  border: 1.5px solid #E2E8F0;
+  padding: 0 18px;
+  border-radius: 10px;
   font-weight: 600;
   font-size: 13px;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  text-decoration: none;
+  box-sizing: border-box;
+  white-space: nowrap;
+}
+
+.leafora-cat-btn-secondary:hover,
+.leafora-btn-secondary:hover {
+  background-color: #F8FAFC;
+  border-color: #CBD5E1;
+  color: #0E3628;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.leafora-cat-btn-secondary:active,
+.leafora-btn-secondary:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+/* Table Action Buttons */
+.leafora-action-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid #E2E8F0;
+  background-color: #FFFFFF;
+  color: #475569;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.leafora-action-btn.view:hover {
+  background-color: #F0FDF4;
+  border-color: #86EFAC;
+  color: #166534;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(22, 101, 52, 0.15);
+}
+
+.leafora-action-btn.delete:hover {
+  background-color: #FEF2F2;
+  border-color: #FCA5A5;
+  color: #991B1B;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(153, 27, 27, 0.15);
 }
 
 /* ─── PRODUCT FORM & 5-SLOT MULTI-IMAGE UPLOADER ─── */
