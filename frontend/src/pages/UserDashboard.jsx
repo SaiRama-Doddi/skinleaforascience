@@ -255,13 +255,6 @@ export default function UserDashboard() {
 
       {/* DASHBOARD TOP HEADER BANNER */}
       <div className="dashboard-header-card">
-        <div className="user-avatar-box">
-          <img 
-            src={user?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user?.name || 'Customer')}`} 
-            alt={user?.name} 
-          />
-        </div>
-
         <div className="user-welcome-info">
           <h1>Welcome, {user?.first_name || user?.name || 'Valued Customer'}!</h1>
           <p className="user-email-text">{user?.email}</p>

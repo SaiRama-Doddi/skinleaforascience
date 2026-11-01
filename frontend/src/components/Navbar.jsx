@@ -352,12 +352,8 @@ export default function Navbar() {
                 </Link>
               ) : (
                 <div className="user-badge-nav">
-                  <Link to="/dashboard" className="user-profile-link">
-                    <img 
-                      src={user.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.name || 'User')}`} 
-                      alt={user.name} 
-                      className="user-avatar-img"
-                    />
+                  <Link to="/dashboard" className="user-profile-link" title="My Account">
+                    <User size={19} strokeWidth={1.8} className="signin-user-icon" />
                     <span className="desktop-only user-display-name">
                       {user.first_name || (user.name ? user.name.split(' ')[0] : 'Account')}
                     </span>
