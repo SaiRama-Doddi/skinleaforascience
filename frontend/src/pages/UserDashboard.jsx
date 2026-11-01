@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { 
-  User, MapPin, Package, Heart, LogOut, Edit3, Plus, Trash2, CheckCircle2, 
+  Menu, User, MapPin, Package, Heart, LogOut, Edit3, Plus, Trash2, CheckCircle2, 
   Clock, ShieldCheck, Phone, Mail, Award, ChevronRight, Check, AlertCircle, ShoppingBag, Eye, X, Navigation
 } from 'lucide-react';
 import { 
@@ -17,7 +17,8 @@ export default function UserDashboard() {
   const [searchParams] = useSearchParams();
   const tabParam = searchParams.get('tab');
 
-  const [activeTab, setActiveTab] = useState(tabParam || 'profile'); // 'profile' | 'addresses' | 'orders' | 'wishlist'
+  const [activeTab, setActiveTab] = useState(tabParam || 'profile');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false); // 'profile' | 'addresses' | 'orders' | 'wishlist'
 
   // User Auth State
   const [user, setUser] = useState(null);
@@ -262,68 +263,102 @@ export default function UserDashboard() {
         </div>
 
         <div className="user-welcome-info">
-          <h1>Welcome, {user?.first_name || user?.name || 'Valued Member'}!</h1>
-          <p>{user?.email} • Member Tier: <span className="tier-badge">{user?.loyalty_tier || 'Silver Member'}</span></p>
+          <h1>Welcome, {user?.first_name || user?.name || 'Valued Customer'}!</h1>
+          <p className="user-email-text">{user?.email}</p>
         </div>
 
-        <div className="dashboard-quick-stats">
-          <div className="stat-pill">
-            <Award size={18} color="var(--leafora-bronze)" />
-            <div>
-              <span className="stat-val">{user?.loyalty_points || 100}</span>
-              <span className="stat-lbl">Rewards Points</span>
-            </div>
-          </div>
+        {/* Mobile quick button to open account navigation drawer */}
+        <button 
+          className="mobile-header-menu-btn" 
+          onClick={() => setMobileMenuOpen(true)}
+          aria-label="Open Account Menu"
+        >
+          <Menu size={18} />
+          <span>Menu</span>
+        </button>
+      </div>
 
-          <div className="stat-pill">
-            <ShoppingBag size={18} color="var(--leafora-bronze)" />
-            <div>
-              <span className="stat-val">₹{Number(user?.wallet_balance || 0).toFixed(2)}</span>
-              <span className="stat-lbl">Wallet Cash</span>
-            </div>
-          </div>
+      {/* MOBILE ACTIVE TAB BAR (Shown on mobile devices) */}
+      <div className="dashboard-mobile-nav-bar">
+        <div className="mobile-active-tab-title">
+          {activeTab === 'profile' && <><User size={18} color="var(--leafora-bronze)" /> <span>Personal Details</span></>}
+          {activeTab === 'addresses' && <><MapPin size={18} color="var(--leafora-bronze)" /> <span>Delivery Address Details</span></>}
+          {activeTab === 'orders' && <><Package size={18} color="var(--leafora-bronze)" /> <span>Previous Orders</span></>}
+          {activeTab === 'wishlist' && <><Heart size={18} color="var(--leafora-bronze)" /> <span>Wishlist Favorites</span></>}
         </div>
+        <button 
+          className="dashboard-mobile-toggle-btn" 
+          onClick={() => setMobileMenuOpen(true)}
+          aria-label="Switch Account Tab"
+        >
+          <Menu size={16} />
+          <span>Switch Menu</span>
+        </button>
       </div>
 
       {/* MAIN TWO-COLUMN DASHBOARD LAYOUT */}
       <div className="dashboard-main-grid">
         
-        {/* LEFT TAB NAVIGATION SIDEBAR */}
-        <div className="dashboard-tabs-sidebar">
+        {/* MOBILE DRAWER BACKDROP */}
+        <div 
+          className={`dashboard-sidebar-backdrop ${mobileMenuOpen ? 'open' : ''}`}
+          onClick={() => setMobileMenuOpen(false)}
+          aria-hidden="true"
+        />
+
+        {/* LEFT TAB NAVIGATION SIDEBAR / MOBILE SLIDE-IN DRAWER */}
+        <aside className={`dashboard-tabs-sidebar ${mobileMenuOpen ? 'mobile-open' : ''}`}>
+          <div className="mobile-sidebar-drawer-header">
+            <div className="drawer-title-wrap">
+              <User size={18} color="var(--leafora-bronze)" />
+              <h3>Account Menu</h3>
+            </div>
+            <button 
+              className="mobile-drawer-close-btn"
+              onClick={() => setMobileMenuOpen(false)}
+              aria-label="Close menu"
+            >
+              <X size={20} />
+            </button>
+          </div>
+
           <button 
             className={`dashboard-nav-item ${activeTab === 'profile' ? 'active' : ''}`}
-            onClick={() => setActiveTab('profile')}
+            onClick={() => { setActiveTab('profile'); setMobileMenuOpen(false); }}
           >
             <User size={18} /> Personal Details
           </button>
 
           <button 
             className={`dashboard-nav-item ${activeTab === 'addresses' ? 'active' : ''}`}
-            onClick={() => setActiveTab('addresses')}
+            onClick={() => { setActiveTab('addresses'); setMobileMenuOpen(false); }}
           >
             <MapPin size={18} /> Delivery Address Details
           </button>
 
           <button 
             className={`dashboard-nav-item ${activeTab === 'orders' ? 'active' : ''}`}
-            onClick={() => setActiveTab('orders')}
+            onClick={() => { setActiveTab('orders'); setMobileMenuOpen(false); }}
           >
             <Package size={18} /> Previous Orders
           </button>
 
           <button 
             className={`dashboard-nav-item ${activeTab === 'wishlist' ? 'active' : ''}`}
-            onClick={() => setActiveTab('wishlist')}
+            onClick={() => { setActiveTab('wishlist'); setMobileMenuOpen(false); }}
           >
             <Heart size={18} /> Wishlist Favorites
           </button>
 
           <hr style={{ border: 'none', borderTop: '1px solid #EFE8DE', margin: '12px 0' }} />
 
-          <button className="dashboard-nav-item logout-btn" onClick={handleLogout}>
+          <button 
+            className="dashboard-nav-item logout-btn" 
+            onClick={() => { setMobileMenuOpen(false); handleLogout(); }}
+          >
             <LogOut size={18} /> Sign Out
           </button>
-        </div>
+        </aside>
 
         {/* RIGHT TAB CONTENT AREA */}
         <div className="dashboard-content-panel">
