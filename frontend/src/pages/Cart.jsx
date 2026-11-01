@@ -790,7 +790,6 @@ export default function Cart() {
                   <div className="cart-trust-badges">
                     <div className="trust-item"><ShieldCheck size={16} color="#15803D" /> 100% Secure Checkout</div>
                     <div className="trust-item"><Sparkles size={16} color="#A67C52" /> Pure Herbal Formulations</div>
-                    <div className="trust-item"><CheckCircle2 size={16} color="#2563EB" /> 7-Day Easy Returns</div>
                   </div>
                 </div>
               </div>
