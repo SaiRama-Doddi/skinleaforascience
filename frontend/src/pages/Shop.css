@@ -540,14 +540,17 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), 
+              box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1), 
+              border-color 0.35s ease;
+  will-change: transform, box-shadow;
   position: relative;
 }
 
 .shop-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 24px rgba(166, 124, 82, 0.08);
-  border-color: #E2D5C5;
+  transform: translateY(-6px);
+  box-shadow: 0 16px 32px rgba(15, 59, 46, 0.12), 0 4px 12px rgba(197, 138, 42, 0.08);
+  border-color: #C58A2A;
 }
 
 /* Image Container */
@@ -565,15 +568,43 @@
   padding: 12px;
 }
 
-.card-img-container img {
+.card-img-container .card-img-primary {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  transition: transform 0.4s ease;
+  opacity: 1;
+  transform: scale(1);
+  transition: opacity 0.42s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.48s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
-.shop-card:hover .card-img-container img {
+.card-img-container .card-img-secondary {
+  position: absolute;
+  inset: 12px;
+  width: calc(100% - 24px);
+  height: calc(100% - 24px);
+  object-fit: contain;
+  opacity: 0;
+  transform: scale(0.96);
+  transition: opacity 0.42s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.48s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  pointer-events: none;
+}
+
+.shop-card:hover .card-img-primary,
+.shop-list-card:hover .card-img-primary {
+  opacity: 0;
   transform: scale(1.05);
+}
+
+.shop-card:hover .card-img-secondary,
+.shop-list-card:hover .card-img-secondary {
+  opacity: 1;
+  transform: scale(1.03);
+}
+
+.shop-card:hover .card-img-primary:only-child,
+.shop-list-card:hover .card-img-primary:only-child {
+  opacity: 1;
+  transform: scale(1.08);
 }
 
 /* Badges */

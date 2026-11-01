@@ -17,6 +17,7 @@ import Faq from './pages/Faq';
 import TermsConditions from './pages/TermsConditions';
 import ShippingPolicy from './pages/ShippingPolicy';
 import PrivacyPolicy from './pages/PrivacyPolicy';
+import ScrollToTopButton from './components/ScrollToTopButton';
 
 // Guard for Admin Dashboard
 function AdminProtectedRoute({ children }) {
@@ -107,6 +108,9 @@ function Layout() {
         </Routes>
       </main>
       {!isAdminRoute && !isAuthPage && <Footer />}
+
+      {/* Floating Scroll-to-Top Button */}
+      {!isAdminRoute && <ScrollToTopButton />}
 
       {/* Floating Sticky WhatsApp Chat Button */}
       {!isAdminRoute && (

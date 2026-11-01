@@ -637,27 +637,42 @@ export default function ProductDetails() {
         </div>
 
         <div className="related-products-grid">
-          {relatedProducts.map(item => (
-            <div 
-              key={item.id} 
-              className="shop-card"
-              onClick={() => {
-                navigate(`/products/${item.id}`);
-                window.scrollTo({ top: 0, behavior: 'instant' });
-              }}
-              style={{ cursor: 'pointer' }}
-            >
-              <div className="card-img-container">
-                <button className="btn-wishlist-heart" onClick={(e) => { e.stopPropagation(); showToast('Saved to Wishlist ♥'); }}><Heart size={16} /></button>
-                <img 
-                  src={item.image_url || item.image || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZHg9IjEwMCIgZmlsbD0iI0YzRjRGNiIvPjwvc3ZnPg=='} 
-                  alt={item.name} 
-                  onError={(e) => {
-                    e.currentTarget.onerror = null;
-                    e.currentTarget.src = botanicalProductsPhoto;
-                  }}
-                />
-              </div>
+          {relatedProducts.map(item => {
+            const relPrimary = item.image_url || item.image || (Array.isArray(item.images) && item.images[0]) || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZHg9IjEwMCIgZmlsbD0iI0YzRjRGNiIvPjwvc3ZnPg==';
+            const relSecondary = Array.isArray(item.images) && item.images.length > 1 ? item.images[1] : null;
+
+            return (
+              <div 
+                key={item.id} 
+                className="shop-card"
+                onClick={() => {
+                  navigate(`/products/${item.id}`);
+                  window.scrollTo({ top: 0, behavior: 'instant' });
+                }}
+                style={{ cursor: 'pointer' }}
+              >
+                <div className="card-img-container">
+                  <button className="btn-wishlist-heart" onClick={(e) => { e.stopPropagation(); showToast('Saved to Wishlist ♥'); }}><Heart size={16} /></button>
+                  <img 
+                    src={relPrimary} 
+                    alt={item.name} 
+                    className="card-img-primary"
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = botanicalProductsPhoto;
+                    }}
+                  />
+                  {relSecondary && (
+                    <img 
+                      src={relSecondary} 
+                      alt={`${item.name} alternate view`} 
+                      className="card-img-secondary"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                  )}
+                </div>
               <div className="shop-card-info">
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, marginBottom: 2 }}>
                   <span className="shop-card-brand">{item.brand || 'Leafora Life Sciences'}</span>
@@ -685,7 +700,8 @@ export default function ProductDetails() {
                 <ShoppingBag size={14} /> Add to Cart
               </button>
             </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 

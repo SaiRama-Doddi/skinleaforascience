@@ -288,75 +288,160 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* ───────────────────────────────────────────────────────────── */
-/* GLOBAL TEXT TRANSITION & REVEAL ANIMATIONS FOR ALL PAGES */
+/* GLOBAL TEXT, COMPONENT & CARD TRANSITION ANIMATIONS */
 /* ───────────────────────────────────────────────────────────── */
 
-/* Keyframe for smooth upward text reveal */
-@keyframes textRevealUp {
+/* Keyframe for Left-to-Right Entrance */
+@keyframes fadeInLeft {
   0% {
     opacity: 0;
-    transform: translateY(22px);
+    transform: translate3d(-32px, 0, 0);
   }
   100% {
     opacity: 1;
-    transform: translateY(0);
+    transform: translate3d(0, 0, 0);
   }
 }
 
-/* Keyframe for subtle page route fade-in */
-@keyframes pageRouteFade {
+/* Keyframe for Right-to-Left Entrance */
+@keyframes fadeInRight {
   0% {
     opacity: 0;
-    transform: translateY(12px);
+    transform: translate3d(32px, 0, 0);
   }
   100% {
     opacity: 1;
-    transform: translateY(0);
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* Keyframe for Top-to-Bottom Entrance */
+@keyframes fadeInDown {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, -26px, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* Keyframe for Bottom-to-Top Entrance */
+@keyframes fadeInUp {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 26px, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* Keyframe for Smooth Scale Entrance */
+@keyframes scaleInSmooth {
+  0% {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 
 /* Apply route transition to main content */
 .main-content {
-  animation: pageRouteFade 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fadeInUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Page headings animation */
+/* Directional Text & Content Animations */
 h1, .page-title, .hero-title, .contact-hero-title, .shop-hero h1, .about-hero h1 {
-  animation: textRevealUp 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fadeInLeft 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.section-tag, .contact-tag, .faq-tag, .shop-tag-badge, .about-tag-badge {
+  animation: fadeInDown 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 h2, .section-title, .form-card-header h2, .info-card-header h2, .map-card-header h2 {
-  animation: textRevealUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.08s forwards;
+  animation: fadeInLeft 0.65s cubic-bezier(0.16, 1, 0.3, 1) 0.08s forwards;
 }
 
-h3, h4, .section-tag, .contact-tag, .faq-tag, .map-sublabel {
-  animation: textRevealUp 0.55s cubic-bezier(0.16, 1, 0.3, 1) 0.04s forwards;
+h3, h4, .map-sublabel {
+  animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards;
 }
 
 p, .hero-sub, .form-card-header p, .info-card-header p, .faq-banner-left p {
-  animation: textRevealUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.12s forwards;
+  animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.12s forwards;
 }
 
-/* Reusable Utility Animation Classes for any element */
-.animate-text-reveal {
-  animation: textRevealUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+/* Directional Utility Classes */
+.animate-fade-left {
+  animation: fadeInLeft 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-.animate-delay-1 {
-  animation-delay: 0.1s;
+.animate-fade-right {
+  animation: fadeInRight 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-.animate-delay-2 {
-  animation-delay: 0.2s;
+.animate-fade-down {
+  animation: fadeInDown 0.65s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-.animate-delay-3 {
-  animation-delay: 0.3s;
+.animate-fade-up {
+  animation: fadeInUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-scale-in {
+  animation: scaleInSmooth 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Stagger Delays */
+.animate-delay-1 { animation-delay: 0.1s; }
+.animate-delay-2 { animation-delay: 0.2s; }
+.animate-delay-3 { animation-delay: 0.3s; }
+.animate-delay-4 { animation-delay: 0.4s; }
+
+/* ───────────────────────────────────────────────────────────── */
+/* UNIVERSAL CARD HOVER & TRANSITION EFFECTS */
+/* ───────────────────────────────────────────────────────────── */
+.product-card-pixel,
+.shop-card,
+.shop-list-card,
+.category-pill-card-pixel,
+.routine-step-row-item,
+.routine-product-pod,
+.feature-card,
+.feature-item,
+.review-card-pixel,
+.tab-card-body,
+.user-dashboard-card,
+.glass-panel {
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), 
+              box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1), 
+              border-color 0.32s ease,
+              background-color 0.25s ease !important;
+  will-change: transform, box-shadow;
+}
+
+.product-card-pixel:hover,
+.shop-card:hover,
+.shop-list-card:hover,
+.category-pill-card-pixel:hover,
+.routine-step-row-item:hover,
+.feature-card:hover,
+.review-card-pixel:hover {
+  transform: translateY(-6px) !important;
+  box-shadow: 0 16px 36px rgba(15, 59, 46, 0.12), 0 4px 12px rgba(197, 138, 42, 0.08) !important;
+  border-color: #C58A2A !important;
 }
 
 /* Respect user motion preferences for accessibility */
 @media (prefers-reduced-motion: reduce) {
-  h1, h2, h3, h4, h5, h6, p, .main-content, .animate-text-reveal {
+  h1, h2, h3, h4, h5, h6, p, .main-content, 
+  .animate-fade-left, .animate-fade-right, .animate-fade-down, .animate-fade-up {
     animation: none !important;
     transform: none !important;
     opacity: 1 !important;

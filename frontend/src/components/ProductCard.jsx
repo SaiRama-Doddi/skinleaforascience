@@ -11,15 +11,19 @@ export default function ProductCard({ product }) {
     : [product.image_url || product.image || SVG_PLACEHOLDER];
 
   const [selectedImgIndex, setSelectedImgIndex] = useState(0);
-  const currentImg = images[selectedImgIndex] || images[0] || SVG_PLACEHOLDER;
+  const [isHovered, setIsHovered] = useState(false);
+  const primaryImg = images[selectedImgIndex] || images[0] || SVG_PLACEHOLDER;
+  const secondaryImg = images.length > 1 ? images[(selectedImgIndex + 1) % images.length] : null;
 
   return (
     <div 
       className="glass-panel" 
       onClick={() => navigate(`/products/${product.id}`)}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       style={{ 
         padding: 20, 
-        transition: 'all 0.3s ease', 
+        transition: 'all 0.35s cubic-bezier(0.16, 1, 0.3, 1)', 
         display: 'flex', 
         flexDirection: 'column', 
         justifyContent: 'space-between',
@@ -45,7 +49,7 @@ export default function ProductCard({ product }) {
         {/* Product Image Display & Gallery Selector */}
         <div style={{ position: 'relative', width: '100%', height: 160, borderRadius: 10, overflow: 'hidden', marginBottom: 14, background: '#111827' }}>
           <img 
-            src={currentImg} 
+            src={primaryImg} 
             alt={product.name} 
             loading="lazy"
             decoding="async"
@@ -53,8 +57,37 @@ export default function ProductCard({ product }) {
               e.currentTarget.onerror = null;
               e.currentTarget.src = SVG_PLACEHOLDER;
             }}
-            style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'all 0.3s ease' }} 
+            style={{ 
+              width: '100%', 
+              height: '100%', 
+              objectFit: 'cover', 
+              transition: 'opacity 0.4s ease, transform 0.45s ease',
+              opacity: isHovered && secondaryImg ? 0 : 1,
+              transform: isHovered ? 'scale(1.06)' : 'scale(1)'
+            }} 
           />
+          {secondaryImg && (
+            <img 
+              src={secondaryImg} 
+              alt={`${product.name} alternate view`} 
+              loading="lazy"
+              decoding="async"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }}
+              style={{ 
+                position: 'absolute',
+                inset: 0,
+                width: '100%', 
+                height: '100%', 
+                objectFit: 'cover', 
+                transition: 'opacity 0.4s ease, transform 0.45s ease',
+                opacity: isHovered ? 1 : 0,
+                transform: isHovered ? 'scale(1.02)' : 'scale(0.96)',
+                pointerEvents: 'none'
+              }} 
+            />
+          )}
           {images.length > 1 && (
             <span style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.65)', color: '#fff', fontSize: '0.7rem', padding: '2px 8px', borderRadius: 12, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
               <ImageIcon size={10} /> {images.length} Images

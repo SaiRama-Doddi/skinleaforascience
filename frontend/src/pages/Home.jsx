@@ -38,7 +38,8 @@ export default function Home() {
       net_quantity: '100g',
       price: 499,
       reviews: 40,
-      image_url: dbProduct1
+      image_url: dbProduct1,
+      images: [dbProduct1, dbProduct2]
     },
     {
       id: 2,
@@ -47,7 +48,8 @@ export default function Home() {
       net_quantity: '30ml',
       price: 649,
       reviews: 54,
-      image_url: dbProduct2
+      image_url: dbProduct2,
+      images: [dbProduct2, dbProduct3]
     },
     {
       id: 3,
@@ -56,7 +58,8 @@ export default function Home() {
       net_quantity: '50g',
       price: 649,
       reviews: 68,
-      image_url: dbProduct3
+      image_url: dbProduct3,
+      images: [dbProduct3, dbProduct1]
     }
   ];
 
@@ -279,23 +282,39 @@ export default function Home() {
           ) : products.length > 0 ? (
             /* Grid Layout: 3 Bestseller Database Products */
             <div className="bestseller-layout-grid-pixel">
-              {products.slice(0, 3).map(item => (
-                <div 
-                  key={item.id} 
-                  className="product-card-pixel"
-                  onClick={() => navigate(`/products/${item.id}`)}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <div className="product-img-wrap-pixel">
-                    <img 
-                      src={item.image_url || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNGM0Y0RjYiLz48cGF0aCBkPSJNNTAgMjAgQzMwIDIwIDIwIDQwIDIwIDYwIEMyMCA4MCAzMCA5MCA1MCA5MCBDNzAgOTAgODAgODAgODAgNjAgQzgwIDQwIDcwIDIwIDUwIDIwIFoiIGZpbGw9IiNBNjdDNTIiIG9wYWNpdHk9IjAuNCIvPjwvc3ZnPg=='} 
-                      alt={item.name} 
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNGM0Y0RjYiLz48cGF0aCBkPSJNNTAgMjAgQzMwIDIwIDIwIDQwIDIwIDYwIEMyMCA4MCAzMCA5MCA1MCA5MCBDNzAgOTAgODAgODAgODAgNjAgQzgwIDQwIDcwIDIwIDUwIDIwIFoiIGZpbGw9IiNBNjdDNTIiIG9wYWNpdHk9IjAuNCIvPjwvc3ZnPg==';
-                      }}
-                    />
-                  </div>
+              {products.slice(0, 3).map(item => {
+                const primaryImg = item.image_url || (Array.isArray(item.images) && item.images[0]) || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNGM0Y0RjYiLz48cGF0aCBkPSJNNTAgMjAgQzMwIDIwIDIwIDQwIDIwIDYwIEMyMCA4MCAzMCA5MCA1MCA5MCBDNzAgOTAgODAgODAgODAgNjAgQzgwIDQwIDcwIDIwIDUwIDIwIFoiIGZpbGw9IiNBNjdDNTIiIG9wYWNpdHk9IjAuNCIvPjwvc3ZnPg==';
+                const secondaryImg = (Array.isArray(item.images) && item.images.length > 1 && item.images[1])
+                  || (item.id === 1 ? dbProduct2 : (item.id === 2 ? dbProduct3 : (item.id === 3 ? dbProduct1 : null)));
+
+                return (
+                  <div 
+                    key={item.id} 
+                    className="product-card-pixel"
+                    onClick={() => navigate(`/products/${item.id}`)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <div className="product-img-wrap-pixel">
+                      <img 
+                        src={primaryImg} 
+                        alt={item.name} 
+                        className="product-img-primary"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNGM0Y0RjYiLz48cGF0aCBkPSJNNTAgMjAgQzMwIDIwIDIwIDQwIDIwIDYwIEMyMCA4MCAzMCA5MCA1MCA5MCBDNzAgOTAgODAgODAgODAgNjAgQzgwIDQwIDcwIDIwIDUwIDIwIFoiIGZpbGw9IiNBNjdDNTIiIG9wYWNpdHk9IjAuNCIvPjwvc3ZnPg==';
+                        }}
+                      />
+                      {secondaryImg && (
+                        <img 
+                          src={secondaryImg} 
+                          alt={`${item.name} alternate view`} 
+                          className="product-img-secondary"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      )}
+                    </div>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, marginBottom: 2 }}>
                       <span className="product-brand-pixel">{item.brand || 'Leafora Life Sciences'}</span>
@@ -322,7 +341,8 @@ export default function Home() {
                     </button>
                   </div>
                 </div>
-              ))}
+              );
+            })}
             </div>
           ) : (
             <div style={{ padding: '30px 0', textAlign: 'center', color: '#78716C', fontSize: '0.95rem' }}>

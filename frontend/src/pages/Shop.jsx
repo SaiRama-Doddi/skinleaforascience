@@ -9,6 +9,9 @@ import { addToCart } from '../services/cartService';
 import SEO from '../components/SEO';
 import skincareStoryPhoto from '../assets/skincare_story_showcase.jpg';
 import botanicalProductsPhoto from '../assets/login_botanical_products.jpg';
+import dbProduct1 from '../assets/db_product_1.jpg';
+import dbProduct2 from '../assets/db_product_2.jpg';
+import dbProduct3 from '../assets/db_product_3.jpg';
 import './Shop.css';
 
 export default function Shop() {
@@ -244,38 +247,58 @@ export default function Shop() {
           {/* PRODUCTS DISPLAY GRID / LIST */}
           {paginatedProducts.length > 0 ? (
             <div className={viewMode === 'grid' ? 'shop-products-grid' : 'shop-products-list'}>
-              {paginatedProducts.map(product => (
-                <div 
-                  key={product.id} 
-                  className={viewMode === 'grid' ? 'shop-card' : 'shop-list-card'}
-                  onClick={() => navigate(`/products/${product.id}`)}
-                  style={{ cursor: 'pointer' }}
-                >
-                  
-                  {/* Image Container */}
-                  <div className="card-img-container">
-                    {product.badge && (
-                      <span className={`shop-card-badge badge-${product.badgeType || 'bestseller'}`}>
-                        {product.badge}
-                      </span>
-                    )}
+              {paginatedProducts.map(product => {
+                const primaryImg = product.image_url || product.image || (Array.isArray(product.images) && product.images[0]) || botanicalProductsPhoto;
+                const secondaryImg = (Array.isArray(product.images) && product.images.length > 1 && product.images[1])
+                  || (product.gallery && product.gallery[1])
+                  || (product.id === 1 ? dbProduct2 : (product.id === 2 ? dbProduct3 : (product.id === 3 ? dbProduct1 : null)))
+                  || (primaryImg === botanicalProductsPhoto ? skincareStoryPhoto : botanicalProductsPhoto);
 
-                    <button 
-                      className={`btn-wishlist-heart ${wishlist.includes(product.id) ? 'active' : ''}`}
-                      onClick={(e) => { e.stopPropagation(); toggleWishlist(product.id, e); }}
-                      title="Add to Wishlist"
-                    >
-                      <Heart size={16} fill={wishlist.includes(product.id) ? '#E53E3E' : 'none'} />
-                    </button>
-                    <img 
-                      src={product.image} 
-                      alt={product.name} 
-                      onError={(e) => {
-                        e.currentTarget.onerror = null;
-                        e.currentTarget.src = botanicalProductsPhoto;
-                      }}
-                    />
-                  </div>
+                return (
+                  <div 
+                    key={product.id} 
+                    className={viewMode === 'grid' ? 'shop-card' : 'shop-list-card'}
+                    onClick={() => navigate(`/products/${product.id}`)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    
+                    {/* Image Container with Smooth Hover Transition */}
+                    <div className="card-img-container">
+                      {product.badge && (
+                        <span className={`shop-card-badge badge-${product.badgeType || 'bestseller'}`}>
+                          {product.badge}
+                        </span>
+                      )}
+
+                      <button 
+                        className={`btn-wishlist-heart ${wishlist.includes(product.id) ? 'active' : ''}`}
+                        onClick={(e) => { e.stopPropagation(); toggleWishlist(product.id, e); }}
+                        title="Add to Wishlist"
+                      >
+                        <Heart size={16} fill={wishlist.includes(product.id) ? '#E53E3E' : 'none'} />
+                      </button>
+
+                      <img 
+                        src={primaryImg} 
+                        alt={product.name} 
+                        className="card-img-primary"
+                        onError={(e) => {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = botanicalProductsPhoto;
+                        }}
+                      />
+
+                      {secondaryImg && (
+                        <img 
+                          src={secondaryImg} 
+                          alt={`${product.name} alternate view`} 
+                          className="card-img-secondary"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      )}
+                    </div>
 
                   {/* Card Info */}
                   <div className="shop-card-info">
@@ -321,7 +344,8 @@ export default function Shop() {
                   </div>
 
                 </div>
-              ))}
+              );
+            })}
             </div>
           ) : (
             <div style={{ background: '#FFFFFF', padding: 48, borderRadius: 12, textAlign: 'center', border: '1px solid var(--leafora-border)' }}>
