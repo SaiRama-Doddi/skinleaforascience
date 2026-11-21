@@ -9,6 +9,10 @@ const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 
 const app = express();
 
+// Hostinger runs Node behind one reverse proxy; trust it so req.ip is the real
+// client IP (required for per-IP rate limiting).
+app.set('trust proxy', Number(process.env.TRUST_PROXY_HOPS || 1));
+
 // Middleware
 app.use(compression());
 app.use(
@@ -16,16 +20,40 @@ app.use(
     contentSecurityPolicy: false, // Allow single page app inline styles/assets
   })
 );
+
+// CORS: only explicitly configured origins (comma-separated CLIENT_URL).
+// The SPA is served from the same origin, so it needs no CORS at all.
+const allowedOrigins = String(process.env.CLIENT_URL || '')
+  .split(',')
+  .map((o) => o.trim().replace(/\/$/, ''))
+  .filter(Boolean);
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || '*',
+    origin: allowedOrigins.length ? allowedOrigins : false,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-    credentials: true,
   })
 );
-app.use(morgan('dev'));
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
+
+// Large bodies (base64 images, CSV imports) are only accepted on authenticated admin routes.
+const largeJson = express.json({ limit: '25mb' });
+const smallJson = express.json({ limit: '1mb' });
+const largeForm = express.urlencoded({ extended: true, limit: '25mb' });
+const smallForm = express.urlencoded({ extended: true, limit: '1mb' });
+app.use((req, res, next) => {
+  const isAdmin = req.path.startsWith('/api/admin');
+  (isAdmin ? largeJson : smallJson)(req, res, (err) => {
+    if (err) return next(err);
+    (isAdmin ? largeForm : smallForm)(req, res, next);
+  });
+});
+
+// Uploaded media is user content: forbid it from running scripts if opened directly.
+app.use(['/uploads', '/api/media'], (req, res, next) => {
+  res.setHeader('Content-Security-Policy', "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox");
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  next();
+});
 
 // Static file caching options for high performance asset loading
 const staticCacheOptions = {
@@ -52,7 +80,10 @@ app.use('/uploads', express.static(uploadsDir, staticCacheOptions));
 // Dynamic Media & Uploads Handler - Serves from Disk OR MySQL Database
 app.get(['/uploads/:filename', '/api/media/:filename'], async (req, res, next) => {
   const filename = req.params.filename;
-  if (!filename) return next();
+  // Params are URL-decoded, so "..%2F..%2F.env" would otherwise escape the uploads dir
+  if (!filename || filename !== path.basename(filename) || !/^[\w.\-]+$/.test(filename) || filename.startsWith('.')) {
+    return next();
+  }
 
   // 1. Check physical disk locations
   const diskCandidates = [
@@ -137,10 +168,18 @@ const getFrontendBuildDir = () => {
   return path.resolve(path.join(__dirname, '../public'));
 };
 
-// Serve static frontend build assets from all candidate folders
+// The repo root holds a copy of index.html + assets/ for Hostinger, but it also holds
+// all source code. Only expose its assets/ folder, never the root itself.
+const rootDirs = [...new Set([path.resolve(__dirname, '../../'), path.resolve(process.cwd())])];
+rootDirs.forEach((dir) => {
+  const assetsDir = path.join(dir, 'assets');
+  if (fs.existsSync(assetsDir)) {
+    app.use('/assets', express.static(assetsDir, staticCacheOptions));
+  }
+});
+
+// Serve static frontend build folders (these contain only build output)
 const candidateDirs = [
-  path.join(__dirname, '../../'),
-  process.cwd(),
   path.join(__dirname, '../public'),
   path.join(process.cwd(), 'backend/public'),
   path.join(__dirname, '../../dist'),

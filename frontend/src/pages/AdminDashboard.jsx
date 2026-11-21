@@ -24,6 +24,7 @@ import {
   adminGetSystemUsers, adminCreateSystemUser, adminUpdateSystemUser, adminDeleteSystemUser,
   adminGetSystemRoles, adminUpdateSystemRole,
   adminGetActivityLogs, adminGetLoginHistory, adminExportBackupUrl,
+  adminLogout,
 } from '../services/api';
 import {
   LayoutDashboard, Grid, Package, ShoppingCart, CreditCard, Users,
@@ -2505,11 +2506,7 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => {
-    let token = localStorage.getItem('leafora_admin_token');
-    if (!token) {
-      token = 'demo_admin_session_token';
-      localStorage.setItem('leafora_admin_token', token);
-    }
+    if (!localStorage.getItem('leafora_admin_token')) return;
     fetchDashboardData();
   }, []);
 
@@ -2561,7 +2558,8 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await adminLogout();
     localStorage.removeItem('leafora_admin_token');
     localStorage.removeItem('leafora_admin_user');
     navigate('/admin/login');
@@ -6257,8 +6255,8 @@ export default function AdminDashboard() {
                     </p>
 
                     <div style={{ background: '#FAF8F5', border: '1px solid #EFECE6', borderRadius: 8, padding: 12, fontSize: 12, marginBottom: 14 }}>
-                      <div style={{ marginBottom: 6 }}><strong>Razorpay Key ID:</strong> <code style={{ color: '#0369A1' }}>rzp_test_SwedUUn1KgRMs0</code></div>
-                      <div><strong>Razorpay Key Secret:</strong> <code style={{ color: '#0369A1' }}>xdW2Ry7T67sUK4zMKb3oOsZh</code></div>
+                      <div style={{ marginBottom: 6 }}><strong>Razorpay Key ID:</strong> <code style={{ color: '#0369A1' }}>Configured via server environment</code></div>
+                      <div><strong>Razorpay Key Secret:</strong> <code style={{ color: '#0369A1' }}>•••••••• (stored on server)</code></div>
                     </div>
 
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
@@ -6270,9 +6268,9 @@ export default function AdminDashboard() {
                           setShowGatewayConfigModal({ gateway_name: 'Razorpay' });
                           setGatewayForm({
                             gateway_name: 'Razorpay',
-                            key_id: 'rzp_test_SwedUUn1KgRMs0',
-                            key_secret: 'xdW2Ry7T67sUK4zMKb3oOsZh',
-                            webhook_secret: 'whsec_rzp_live_99210',
+                            key_id: '',
+                            key_secret: '',
+                            webhook_secret: '',
                             environment: 'test',
                             is_active: true
                           });

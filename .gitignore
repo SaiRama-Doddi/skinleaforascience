@@ -8,10 +8,13 @@ build/
 # dist/ (Tracked for GitHub deployment)
 frontend/dist-ssr/
 
-# Environment variables
-backend/.env
-frontend/.env
-*.env.local
+# Environment variables (never commit real credentials)
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
 
 # Logs and system files
 *.log

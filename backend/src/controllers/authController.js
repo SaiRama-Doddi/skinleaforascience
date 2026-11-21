@@ -1,15 +1,15 @@
 const { pool } = require('../config/db');
-const crypto = require('crypto');
-
-// Password Hashing Helper
-const hashPassword = (password) => {
-  return crypto.createHash('sha256').update(password + 'LEAFORA_SALT_2026').digest('hex');
-};
-
-// Generate Random Token Helper
-const generateToken = () => {
-  return crypto.randomBytes(32).toString('hex');
-};
+const {
+  hashPassword,
+  verifyPassword,
+  isLegacyHash,
+  generateOtp,
+  createSession,
+  revokeSession,
+  revokeAllSessions,
+  hit,
+  resetHits,
+} = require('../services/security');
 
 const { sendWelcomeRegistrationEmail } = require('../services/mailer');
 
@@ -55,11 +55,10 @@ const registerUser = async (req, res) => {
       return res.status(400).json({ success: false, message: 'An account with this email address already exists. Please sign in instead.' });
     }
 
-    const hashed = hashPassword(password);
-    const token = generateToken();
+    const hashed = await hashPassword(password);
     const signupBonus = 10.00; // Welcome reward
 
-    let insertId = Date.now();
+    let insertId = null;
     try {
       const [result] = await pool.query(
         `INSERT INTO customers (name, first_name, last_name, email, phone, password_hash, terms_accepted_at, wallet_balance, loyalty_points, status)
@@ -84,6 +83,12 @@ const registerUser = async (req, res) => {
         console.error('Register DB fallback query error:', err2.message);
       }
     }
+
+    if (!insertId) {
+      return res.status(500).json({ success: false, message: 'Could not create your account right now. Please try again shortly.' });
+    }
+
+    const { token } = await createSession('customer', { subjectId: insertId, email: email.trim().toLowerCase(), req });
 
     // Send Registration Welcome Email via Nodemailer
     try {
@@ -136,7 +141,6 @@ const loginUser = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Please provide both email address and password.' });
     }
 
-    const hashed = hashPassword(password);
     let customer = null;
 
     try {
@@ -151,16 +155,9 @@ const loginUser = async (req, res) => {
       console.warn('Login DB query fallback:', e.message);
     }
 
-    // If customer not found in DB
-    if (!customer) {
-      return res.status(404).json({
-        success: false,
-        message: 'No account found with this email. Please create an account first.'
-      });
-    }
-
-    // If password hash does not match or is missing
-    if (!customer.password_hash || customer.password_hash !== hashed) {
+    // Same response for unknown email and wrong password, so accounts can't be enumerated
+    const passwordOk = customer ? await verifyPassword(password, customer.password_hash) : false;
+    if (!customer || !passwordOk) {
       return res.status(401).json({
         success: false,
         message: 'Invalid email or password. Please check your credentials.'
@@ -175,14 +172,17 @@ const loginUser = async (req, res) => {
       });
     }
 
-    const token = `leafora_user_${customer.id}_${generateToken()}`;
-    const rememberToken = remember_me ? generateToken() : null;
-
-    if (customer.id) {
+    // Transparently upgrade legacy SHA-256 hashes to scrypt
+    if (isLegacyHash(customer.password_hash)) {
       try {
-        await pool.query('UPDATE customers SET remember_token = ? WHERE id = ?', [token, customer.id]);
-      } catch (e) {}
+        await pool.query('UPDATE customers SET password_hash = ? WHERE id = ?', [await hashPassword(password), customer.id]);
+      } catch (e) {
+        console.warn('Password hash upgrade skipped:', e.message);
+      }
     }
+
+    const { token } = await createSession('customer', { subjectId: customer.id, email: customer.email, req });
+    const rememberToken = null;
 
     // Log Login Attempt
     try {
@@ -230,16 +230,15 @@ const forgotPassword = async (req, res) => {
 
     // Check if customer exists
     const [rows] = await pool.query('SELECT id, name, email FROM customers WHERE LOWER(email) = LOWER(?)', [email.trim()]);
+    const genericMessage = `If an account exists for ${email.trim()}, a 6-digit password reset code has been sent. Please check your email.`;
     if (!rows || rows.length === 0) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'No registered account found with this email address.' 
-      });
+      return res.status(200).json({ success: true, message: genericMessage });
     }
 
-    // Generate 6-digit OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    
+    // Generate 6-digit OTP (cryptographically secure)
+    const otp = generateOtp();
+    resetHits(`reset-otp:${email.trim().toLowerCase()}`);
+
     await pool.query(
       `UPDATE customers SET reset_otp = ?, reset_otp_expires = DATE_ADD(NOW(), INTERVAL 15 MINUTE) WHERE LOWER(email) = LOWER(?)`,
       [otp, email.trim()]
@@ -253,10 +252,7 @@ const forgotPassword = async (req, res) => {
       console.warn('Failed to send customer password reset email:', mailErr.message);
     }
 
-    return res.status(200).json({
-      success: true,
-      message: `A 6-digit password reset verification code has been sent to ${email.trim()}. Please check your email.`
-    });
+    return res.status(200).json({ success: true, message: genericMessage });
 
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message || 'Error requesting password reset.' });
@@ -283,12 +279,18 @@ const resetPassword = async (req, res) => {
     );
 
     if (!rows || rows.length === 0) {
-      return res.status(404).json({ success: false, message: 'No registered account found with this email.' });
+      return res.status(400).json({ success: false, message: 'Invalid OTP code. Please check the code sent to your email.' });
     }
 
     const customer = rows[0];
 
-    if (!customer.reset_otp || customer.reset_otp !== otp.trim()) {
+    if (!customer.reset_otp || customer.reset_otp !== String(otp).trim()) {
+      // Max 5 wrong guesses per code; after that the code is burned and a new one must be requested
+      const { allowed } = hit(`reset-otp:${email.trim().toLowerCase()}`, 5, 15 * 60 * 1000);
+      if (!allowed) {
+        await pool.query('UPDATE customers SET reset_otp = NULL, reset_otp_expires = NULL WHERE id = ?', [customer.id]);
+        return res.status(429).json({ success: false, message: 'Too many incorrect codes. Please request a new password reset code.' });
+      }
       return res.status(400).json({ success: false, message: 'Invalid OTP code. Please check the code sent to your email.' });
     }
 
@@ -296,12 +298,16 @@ const resetPassword = async (req, res) => {
       return res.status(400).json({ success: false, message: 'The OTP code has expired. Please request a new code.' });
     }
 
-    const hashed = hashPassword(new_password);
+    const hashed = await hashPassword(new_password);
 
     await pool.query(
-      `UPDATE customers SET password_hash = ?, reset_otp = NULL, reset_otp_expires = NULL WHERE id = ?`,
+      `UPDATE customers SET password_hash = ?, reset_otp = NULL, reset_otp_expires = NULL, remember_token = NULL WHERE id = ?`,
       [hashed, customer.id]
     );
+    resetHits(`reset-otp:${email.trim().toLowerCase()}`);
+
+    // Sign out every existing session after a password reset
+    try { await revokeAllSessions('customer', customer.id); } catch (e) {}
 
     return res.status(200).json({
       success: true,
@@ -313,55 +319,36 @@ const resetPassword = async (req, res) => {
   }
 };
 
-// 5. GET CURRENT USER PROFILE
+// 5. GET CURRENT USER PROFILE (route is protected by requireUser)
 const getCurrentUser = async (req, res) => {
+  const customer = req.user;
+  return res.status(200).json({
+    success: true,
+    user: {
+      id: customer.id,
+      name: customer.name,
+      email: customer.email,
+      phone: customer.phone || '',
+      wallet_balance: parseFloat(customer.wallet_balance || 0),
+      loyalty_points: customer.loyalty_points || 0,
+      loyalty_tier: customer.loyalty_tier || 'Silver',
+      avatar_url: customer.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(customer.name)}`,
+      token: req.authToken
+    }
+  });
+};
+
+// 6. LOGOUT (revoke the current session; route is protected by requireUser)
+const logoutUser = async (req, res) => {
   try {
-    const authHeader = req.headers.authorization || '';
-    const token = authHeader.replace('Bearer ', '').trim();
-
-    if (!token) {
-      return res.status(401).json({ success: false, message: 'Authentication token required.' });
+    await revokeSession(req.authToken);
+    if (req.user && req.user.remember_token === req.authToken) {
+      await pool.query('UPDATE customers SET remember_token = NULL WHERE id = ?', [req.user.id]);
     }
-
-    let customer = null;
-
-    // Check if token has embedded ID: leafora_user_<id>_<hash>
-    if (token.startsWith('leafora_user_')) {
-      const parts = token.split('_');
-      const custId = parts[2];
-      if (custId) {
-        const [rows] = await pool.query('SELECT * FROM customers WHERE id = ?', [custId]);
-        if (rows && rows[0]) customer = rows[0];
-      }
-    }
-
-    // Fallback query by remember_token
-    if (!customer) {
-      const [rows] = await pool.query('SELECT * FROM customers WHERE remember_token = ?', [token]);
-      if (rows && rows[0]) customer = rows[0];
-    }
-
-    if (!customer) {
-      return res.status(404).json({ success: false, message: 'User session not found. Please log in again.' });
-    }
-
-    return res.status(200).json({
-      success: true,
-      user: {
-        id: customer.id,
-        name: customer.name,
-        email: customer.email,
-        phone: customer.phone || '',
-        wallet_balance: parseFloat(customer.wallet_balance || 0),
-        loyalty_points: customer.loyalty_points || 0,
-        loyalty_tier: customer.loyalty_tier || 'Silver',
-        avatar_url: customer.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(customer.name)}`,
-        token
-      }
-    });
-  } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+  } catch (e) {
+    console.warn('Logout notice:', e.message);
   }
+  return res.status(200).json({ success: true, message: 'Signed out successfully.' });
 };
 
 module.exports = {
@@ -369,5 +356,6 @@ module.exports = {
   loginUser,
   forgotPassword,
   resetPassword,
-  getCurrentUser
+  getCurrentUser,
+  logoutUser
 };

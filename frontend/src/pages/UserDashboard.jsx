@@ -6,7 +6,8 @@ import {
 } from 'lucide-react';
 import { 
   userGetProfile, userUpdateProfile, userGetAddresses, userAddAddress, 
-  userDeleteAddress, userGetOrders, userGetWishlist, userDeleteWishlistItem, userToggleWishlist
+  userDeleteAddress, userGetOrders, userGetWishlist, userDeleteWishlistItem, userToggleWishlist,
+  userLogout
 } from '../services/api';
 import { addToCart } from '../services/cartService';
 import { detectLiveLocation } from '../services/locationService';
@@ -228,6 +229,7 @@ export default function UserDashboard() {
 
   // Logout
   const handleLogout = () => {
+    userLogout();
     localStorage.removeItem('leafora_user_token');
     localStorage.removeItem('leafora_user_profile');
     showToast('Signed out successfully.');

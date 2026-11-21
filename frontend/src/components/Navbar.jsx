@@ -15,7 +15,7 @@ import {
   Trash2, 
   Home 
 } from 'lucide-react';
-import { checkHealth, getProducts } from '../services/api';
+import { checkHealth, getProducts, userLogout } from '../services/api';
 import { getCart, getCartCount, getCartSubtotal, updateCartQuantity, removeFromCart, DEFAULT_PRODUCT_IMAGE } from '../services/cartService';
 import leaforaLogo from '../assets/leafora-logo.png';
 import './Navbar.css';
@@ -141,6 +141,7 @@ export default function Navbar() {
   };
 
   const handleLogout = () => {
+    userLogout();
     localStorage.removeItem('leafora_user_token');
     localStorage.removeItem('leafora_user_profile');
     setUser(null);

@@ -11,12 +11,18 @@ if (rawHost === 'srv1473.hstgr.io' || rawHost.includes('hstgr.io')) {
   rawHost = '127.0.0.1';
 }
 
+// Credentials must come from the environment (.env locally, hPanel env vars on Hostinger)
+const missingDbVars = ['DB_USER', 'DB_PASSWORD', 'DB_NAME'].filter((k) => !process.env[k]);
+if (missingDbVars.length) {
+  console.error('❌ Missing database environment variables: ' + missingDbVars.join(', '));
+}
+
 // Create connection pool for MySQL
 const pool = mysql.createPool({
   host: rawHost,
-  user: process.env.DB_USER || 'u858419112_leafora',
-  password: process.env.DB_PASSWORD || 'Leaforalifescience@123',
-  database: process.env.DB_NAME || 'u858419112_leafora',
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
   port: Number(process.env.DB_PORT) || 3306,
   waitForConnections: true,
   connectionLimit: Number(process.env.DB_CONNECTION_LIMIT) || 10,

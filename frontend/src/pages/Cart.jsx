@@ -5,7 +5,7 @@ import {
   MapPin, Plus, Check, CreditCard, X, ChevronRight, AlertCircle, Phone, User, Navigation, Lock
 } from 'lucide-react';
 import { getCart, getCartSubtotal, updateCartQuantity, removeFromCart, clearCart, DEFAULT_PRODUCT_IMAGE } from '../services/cartService';
-import { userGetAddresses, userAddAddress, placeOrder, createRazorpayOrder, verifyRazorpayPayment } from '../services/api';
+import { userGetAddresses, userAddAddress, createRazorpayOrder, verifyRazorpayPayment } from '../services/api';
 import { detectLiveLocation } from '../services/locationService';
 import './Cart.css';
 
@@ -229,20 +229,22 @@ export default function Cart() {
       }
 
       // 1. Create Razorpay backend order
+      // The server re-prices the cart from the database; only ids + quantities are sent
       const rzpOrderRes = await createRazorpayOrder({
-        amount: totalAmount,
-        currency: 'INR',
-        customer_email: user?.email,
-        customer_phone: finalAddress.phone || user?.phone || '9999999999'
+        items: cartItems.map(item => ({ id: item.id, quantity: Number(item.quantity) || 1 }))
       });
 
       if (!rzpOrderRes || !rzpOrderRes.success) {
         throw new Error(rzpOrderRes?.message || 'Could not initialize payment order.');
       }
 
-      const orderKeyId = (rzpOrderRes.key_id || 'rzp_test_SwedUUn1KgRMs0').trim();
+      const orderKeyId = String(rzpOrderRes.key_id || '').trim();
       const orderId = rzpOrderRes.order_id || rzpOrderRes.order?.id;
-      const orderAmount = rzpOrderRes.amount || rzpOrderRes.order?.amount || Math.round(totalAmount * 100);
+      const orderAmount = rzpOrderRes.amount || rzpOrderRes.order?.amount;
+      const chargedTotal = Number(rzpOrderRes.total_amount) || orderAmount / 100;
+      if (!orderKeyId || !orderId || !orderAmount) {
+        throw new Error('Could not initialize payment order.');
+      }
       const orderCurrency = rzpOrderRes.currency || rzpOrderRes.order?.currency || 'INR';
 
       // 2. Launch Razorpay Standard Checkout Popup
@@ -271,19 +273,15 @@ export default function Cart() {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
-              customer_email: user?.email,
-              shipping_address: finalAddress,
-              items: cartItems,
-              total_amount: totalAmount,
-              payment_method: 'Razorpay Online'
+              shipping_address: finalAddress
             });
 
             if (verifyRes && verifyRes.success) {
               clearCart();
               setShowCheckoutModal(false);
               setOrderPlacedData({
-                order_number: verifyRes.order_number || verifyRes.order_id || `LFA-${Date.now().toString().slice(-6)}`,
-                total_amount: totalAmount,
+                order_number: verifyRes.order_number || verifyRes.order_id,
+                total_amount: Number(verifyRes.total_amount) || chargedTotal,
                 payment_id: response.razorpay_payment_id
               });
               showToast('🎉 Order placed successfully! Thank you.');

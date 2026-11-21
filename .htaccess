@@ -16,6 +16,10 @@
   RewriteEngine On
   RewriteBase /
 
+  # Never expose source code, config or secrets if Apache serves this folder directly
+  RewriteRule ^(backend|frontend|node_modules|tmp|build|scripts)(/.*)?$ - [F,L]
+  RewriteRule ^(\.env.*|\.git.*|server\.js|app\.js|package(-lock)?\.json|README\.md)$ - [F,L]
+
   # Stop rewriting if index.html is already requested
   RewriteRule ^index\.html$ - [L]
 

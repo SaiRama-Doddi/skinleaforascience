@@ -6,14 +6,14 @@ const transporter = nodemailer.createTransport({
   port: Number(process.env.SMTP_PORT) || 587,
   secure: false, // true for 465, false for 587
   auth: {
-    user: process.env.SMTP_USER || 'hkahir46@gmail.com',
-    pass: process.env.SMTP_PASS || 'upqc hajb cury cnaf',
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
   },
 });
 
 const sendOtpEmail = async (toEmail, otp) => {
   const mailOptions = {
-    from: `"Leafora Life Science Admin Security" <${process.env.SMTP_USER || 'hkahir46@gmail.com'}>`,
+    from: `"Leafora Life Science Admin Security" <${process.env.SMTP_USER}>`,
     to: toEmail,
     subject: '🔑 Your Leafora Life Science Admin Login OTP',
     html: `
@@ -47,7 +47,7 @@ const sendOtpEmail = async (toEmail, otp) => {
 
 const sendWelcomeRegistrationEmail = async (toEmail, firstName) => {
   const mailOptions = {
-    from: `"Leafora Life Sciences" <${process.env.SMTP_USER || 'hkahir46@gmail.com'}>`,
+    from: `"Leafora Life Sciences" <${process.env.SMTP_USER}>`,
     to: toEmail,
     subject: '🌱 Account Registered Successfully - Welcome to Leafora Life Sciences!',
     html: `
@@ -87,7 +87,7 @@ const sendWelcomeRegistrationEmail = async (toEmail, firstName) => {
 
 const sendOrderConfirmationEmail = async (toEmail, orderDetails) => {
   const mailOptions = {
-    from: `"Leafora Orders" <${process.env.SMTP_USER || 'hkahir46@gmail.com'}>`,
+    from: `"Leafora Orders" <${process.env.SMTP_USER}>`,
     to: toEmail,
     subject: `🛍️ Order Confirmed #${orderDetails.order_number} - Leafora Life Sciences`,
     html: `
@@ -122,7 +122,7 @@ const sendOrderConfirmationEmail = async (toEmail, orderDetails) => {
 
 const sendCustomerPasswordResetEmail = async (toEmail, otp) => {
   const mailOptions = {
-    from: `"LeafOra Life Sciences" <${process.env.SMTP_USER || 'hkahir46@gmail.com'}>`,
+    from: `"LeafOra Life Sciences" <${process.env.SMTP_USER}>`,
     to: toEmail,
     subject: '🔒 Reset Your LeafOra Account Password',
     html: `

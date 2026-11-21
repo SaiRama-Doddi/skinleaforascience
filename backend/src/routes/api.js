@@ -6,7 +6,18 @@ const authController = require('../controllers/authController');
 
 const userController = require('../controllers/userController');
 const paymentController = require('../controllers/paymentController');
-const { verifyAdminToken } = require('../middleware/authMiddleware');
+const { verifyAdminToken, requireUser } = require('../middleware/authMiddleware');
+const { rateLimit } = require('../services/security');
+
+const MIN = 60 * 1000;
+const bodyEmail = (req) => req.body && req.body.email;
+const loginLimiter = rateLimit({ name: 'login', max: 10, windowMs: 15 * MIN, keyFn: bodyEmail, message: 'Too many login attempts. Please wait 15 minutes and try again.' });
+const registerLimiter = rateLimit({ name: 'register', max: 5, windowMs: 60 * MIN });
+const resetLimiter = rateLimit({ name: 'pwreset', max: 5, windowMs: 15 * MIN, keyFn: bodyEmail });
+const adminOtpSendLimiter = rateLimit({ name: 'admin-otp-send', max: 5, windowMs: 15 * MIN, keyFn: bodyEmail });
+const adminOtpVerifyLimiter = rateLimit({ name: 'admin-otp-verify', max: 10, windowMs: 15 * MIN, keyFn: bodyEmail });
+const contactLimiter = rateLimit({ name: 'contact', max: 5, windowMs: 60 * MIN });
+const checkoutLimiter = rateLimit({ name: 'checkout', max: 20, windowMs: 15 * MIN });
 
 const router = express.Router();
 
@@ -21,13 +32,15 @@ router.get('/banners', adminController.getHomepageBanners);
 router.get('/homepage/banners', adminController.getHomepageBanners);
 
 // ─── USER AUTHENTICATION ENDPOINTS ───
-router.post('/auth/register', authController.registerUser);
-router.post('/auth/login', authController.loginUser);
-router.post('/auth/forgot-password', authController.forgotPassword);
-router.post('/auth/reset-password', authController.resetPassword);
-router.get('/auth/me', authController.getCurrentUser);
+router.post('/auth/register', registerLimiter, authController.registerUser);
+router.post('/auth/login', loginLimiter, authController.loginUser);
+router.post('/auth/forgot-password', resetLimiter, authController.forgotPassword);
+router.post('/auth/reset-password', resetLimiter, authController.resetPassword);
+router.get('/auth/me', requireUser, authController.getCurrentUser);
+router.post('/auth/logout', requireUser, authController.logoutUser);
 
-// ─── USER DASHBOARD & CHECKOUT ENDPOINTS ───
+// ─── USER DASHBOARD & CHECKOUT ENDPOINTS (signed-in customer only) ───
+router.use('/user', requireUser);
 router.get('/user/profile', userController.getUserProfile);
 router.put('/user/profile', userController.updateUserProfile);
 router.get('/user/addresses', userController.getUserAddresses);
@@ -38,16 +51,16 @@ router.get('/user/wishlist', userController.getUserWishlist);
 router.post('/user/wishlist/toggle', userController.toggleUserWishlist);
 router.post('/user/wishlist', userController.toggleUserWishlist);
 router.delete('/user/wishlist/:id', userController.deleteWishlistItem);
-router.post('/orders/place', userController.placeUserOrder);
-router.post('/contact', userController.submitContactInquiry);
+router.post('/contact', contactLimiter, userController.submitContactInquiry);
 
 // ─── RAZORPAY PAYMENT ENDPOINTS ───
-router.post('/payments/create-razorpay-order', paymentController.createRazorpayOrder);
-router.post('/payments/verify-razorpay-payment', paymentController.verifyRazorpayPayment);
+// Orders are only ever created by verify-razorpay-payment, after signature verification.
+router.post('/payments/create-razorpay-order', requireUser, checkoutLimiter, paymentController.createRazorpayOrder);
+router.post('/payments/verify-razorpay-payment', requireUser, paymentController.verifyRazorpayPayment);
 
 // ─── ADMIN AUTHENTICATION ───
-router.post('/admin/send-otp', adminController.sendOtp);
-router.post('/admin/verify-otp', adminController.verifyOtp);
+router.post('/admin/send-otp', adminOtpSendLimiter, adminController.sendOtp);
+router.post('/admin/verify-otp', adminOtpVerifyLimiter, adminController.verifyOtp);
 
 // Protect all admin endpoints with admin token verification
 router.use('/admin', (req, res, next) => {
@@ -56,6 +69,8 @@ router.use('/admin', (req, res, next) => {
   }
   return verifyAdminToken(req, res, next);
 });
+
+router.post('/admin/logout', adminController.adminLogout);
 
 // ─── ADMIN DASHBOARD ANALYTICS & UPLOADS ───
 router.get('/admin/analytics', adminController.getAnalytics);
@@ -210,17 +225,7 @@ router.post('/admin/shiprocket/ndr/:id/resolve', adminController.resolveShiprock
 router.get('/admin/shiprocket/manifests', adminController.getShiprocketManifests);
 router.post('/admin/shiprocket/generate-manifest', adminController.generateShiprocketManifest);
 
-// ─── SYSTEM SETTINGS & SYSTEM ADMIN ROUTES ───
-router.get('/admin/system/settings', adminController.getSystemSettings);
-router.put('/admin/system/settings', adminController.updateSystemSettingsGroup);
-router.get('/admin/system/users', adminController.getSystemUsers);
-router.post('/admin/system/users', adminController.createSystemUser);
-router.put('/admin/system/users/:id', adminController.updateSystemUser);
-router.delete('/admin/system/users/:id', adminController.deleteSystemUser);
-router.get('/admin/system/roles', adminController.getSystemRoles);
-router.put('/admin/system/roles/:id', adminController.updateSystemRole);
-router.get('/admin/system/activity-logs', adminController.getActivityLogs);
-router.get('/admin/system/login-history', adminController.getLoginHistory);
+// Alias kept for older admin builds
 router.get('/admin/system/export-backup', adminController.exportSystemBackup);
 
 module.exports = router;

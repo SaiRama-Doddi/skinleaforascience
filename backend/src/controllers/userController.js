@@ -1,17 +1,16 @@
 const { pool } = require('../config/db');
-const { sendOrderConfirmationEmail } = require('../services/mailer');
+const { escapeHtml } = require('../services/security');
+
+// All handlers except submitContactInquiry are mounted behind `requireUser`,
+// so `req.user` is the signed-in customer. Client-supplied `email` / `customer_id`
+// parameters are ignored: a customer can only ever read or change their own data.
 
 // 1. GET USER PROFILE
 const getUserProfile = async (req, res) => {
   try {
-    const { email } = req.query;
-    if (!email) {
-      return res.status(400).json({ success: false, message: 'User email is required.' });
-    }
-
     const [rows] = await pool.query(
-      'SELECT id, name, first_name, last_name, email, phone, wallet_balance, loyalty_points, loyalty_tier, avatar_url, created_at FROM customers WHERE LOWER(email) = LOWER(?)',
-      [email.trim()]
+      'SELECT id, name, first_name, last_name, email, phone, wallet_balance, loyalty_points, loyalty_tier, avatar_url, created_at FROM customers WHERE id = ?',
+      [req.user.id]
     );
 
     if (rows.length === 0) {
@@ -32,23 +31,23 @@ const getUserProfile = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching user profile:', error);
-    return res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: 'Could not load your profile.' });
   }
 };
 
 // 2. UPDATE USER PROFILE
 const updateUserProfile = async (req, res) => {
   try {
-    const { email, first_name, last_name, phone } = req.body;
-    if (!email) {
-      return res.status(400).json({ success: false, message: 'User email is required.' });
-    }
-
+    const { first_name, last_name, phone } = req.body;
     const fullName = `${first_name || ''} ${last_name || ''}`.trim();
 
+    if (!fullName) {
+      return res.status(400).json({ success: false, message: 'Please enter your name.' });
+    }
+
     await pool.query(
-      `UPDATE customers SET first_name = ?, last_name = ?, name = ?, phone = ? WHERE LOWER(email) = LOWER(?)`,
-      [first_name || '', last_name || '', fullName, phone || '', email.trim()]
+      `UPDATE customers SET first_name = ?, last_name = ?, name = ?, phone = ? WHERE id = ?`,
+      [first_name || '', last_name || '', fullName, phone || '', req.user.id]
     );
 
     return res.status(200).json({
@@ -57,28 +56,16 @@ const updateUserProfile = async (req, res) => {
     });
   } catch (error) {
     console.error('Error updating user profile:', error);
-    return res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: 'Could not update your profile.' });
   }
 };
 
 // 3. GET USER ADDRESSES
 const getUserAddresses = async (req, res) => {
   try {
-    const { customer_id, email } = req.query;
-
-    let custId = customer_id;
-    if (!custId && email) {
-      const [rows] = await pool.query('SELECT id FROM customers WHERE LOWER(email) = LOWER(?)', [email.trim()]);
-      if (rows.length > 0) custId = rows[0].id;
-    }
-
-    if (!custId) {
-      return res.status(200).json({ success: true, count: 0, data: [], addresses: [] });
-    }
-
     const [addresses] = await pool.query(
       'SELECT * FROM customer_addresses WHERE customer_id = ? ORDER BY is_default DESC, id DESC',
-      [custId]
+      [req.user.id]
     );
 
     return res.status(200).json({
@@ -89,35 +76,22 @@ const getUserAddresses = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching user addresses:', error);
-    return res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: 'Could not load your addresses.' });
   }
 };
 
 // 4. ADD USER ADDRESS
 const addUserAddress = async (req, res) => {
   try {
-    const { customer_id, email, name, phone, type, address_line1, address_line2, city, state, pincode, is_default } = req.body;
-
-    let custId = customer_id;
-    if (!custId && email) {
-      const [rows] = await pool.query('SELECT id FROM customers WHERE LOWER(email) = LOWER(?)', [email.trim()]);
-      if (rows.length > 0) {
-        custId = rows[0].id;
-      } else {
-        const [newCust] = await pool.query(
-          'INSERT INTO customers (name, email, phone, status) VALUES (?, ?, ?, ?)',
-          [name || 'Customer', email.trim().toLowerCase(), phone || '', 'Active']
-        );
-        custId = newCust.insertId;
-      }
-    }
+    const { name, phone, type, address_line1, address_line2, city, state, pincode, is_default } = req.body;
+    const custId = req.user.id;
 
     if (!address_line1 || !city || !state || !pincode) {
       return res.status(400).json({ success: false, message: 'Street address, city, state, and pincode are required.' });
     }
 
     // If marked default, unset existing default addresses
-    if (is_default && custId) {
+    if (is_default) {
       await pool.query('UPDATE customer_addresses SET is_default = 0 WHERE customer_id = ?', [custId]);
     }
 
@@ -125,7 +99,7 @@ const addUserAddress = async (req, res) => {
       `INSERT INTO customer_addresses (customer_id, name, phone, type, address_line1, address_line2, city, state, pincode, is_default)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
-        custId || 1,
+        custId,
         name || '',
         phone || '',
         type || 'Shipping',
@@ -148,38 +122,42 @@ const addUserAddress = async (req, res) => {
     });
   } catch (error) {
     console.error('Error adding user address:', error);
-    return res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: 'Could not save the address.' });
   }
 };
 
 // 5. DELETE USER ADDRESS
 const deleteUserAddress = async (req, res) => {
   try {
-    const { id } = req.params;
-    await pool.query('DELETE FROM customer_addresses WHERE id = ?', [id]);
+    const [result] = await pool.query(
+      'DELETE FROM customer_addresses WHERE id = ? AND customer_id = ?',
+      [req.params.id, req.user.id]
+    );
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Address not found.' });
+    }
     return res.status(200).json({ success: true, message: 'Address removed successfully.' });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: 'Could not remove the address.' });
   }
 };
 
 // 6. GET USER ORDERS HISTORY
 const getUserOrders = async (req, res) => {
   try {
-    const { email } = req.query;
-    if (!email) {
-      return res.status(200).json({ success: true, orders: [] });
-    }
-
     const [orders] = await pool.query(
       `SELECT * FROM orders WHERE LOWER(customer_email) = LOWER(?) AND deleted_at IS NULL ORDER BY created_at DESC`,
-      [email.trim()]
+      [req.user.email]
     );
 
-    // Attach order items for each order
-    for (let order of orders) {
-      const [items] = await pool.query('SELECT * FROM order_items WHERE order_id = ?', [order.id]);
-      order.items = items || [];
+    if (orders.length > 0) {
+      const [items] = await pool.query(
+        'SELECT * FROM order_items WHERE order_id IN (?)',
+        [orders.map((o) => o.id)]
+      );
+      for (const order of orders) {
+        order.items = items.filter((it) => it.order_id === order.id);
+      }
     }
 
     return res.status(200).json({
@@ -188,29 +166,18 @@ const getUserOrders = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching user orders:', error);
-    return res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: 'Could not load your orders.' });
   }
 };
 
 // 7. GET USER WISHLIST
 const getUserWishlist = async (req, res) => {
   try {
-    const { customer_id, email } = req.query;
-    let custId = customer_id;
-    if (!custId && email) {
-      const [rows] = await pool.query('SELECT id FROM customers WHERE LOWER(email) = LOWER(?)', [email.trim()]);
-      if (rows.length > 0) custId = rows[0].id;
-    }
-
-    if (!custId) {
-      return res.status(200).json({ success: true, wishlist: [] });
-    }
-
     const [wishlistItems] = await pool.query(
       `SELECT w.id as wishlist_id, p.* FROM customer_wishlist w
        JOIN products p ON w.product_id = p.id
        WHERE w.customer_id = ? ORDER BY w.created_at DESC`,
-      [custId]
+      [req.user.id]
     );
 
     return res.status(200).json({
@@ -219,29 +186,19 @@ const getUserWishlist = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching user wishlist:', error);
-    return res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: 'Could not load your wishlist.' });
   }
 };
 
 // 7b. TOGGLE USER WISHLIST ITEM
 const toggleUserWishlist = async (req, res) => {
   try {
-    const { email, customer_id, product_id } = req.body;
+    const { product_id } = req.body;
+    const custId = req.user.id;
     if (!product_id) {
       return res.status(400).json({ success: false, message: 'Product ID is required.' });
     }
 
-    let custId = customer_id;
-    if (!custId && email) {
-      const [rows] = await pool.query('SELECT id FROM customers WHERE LOWER(email) = LOWER(?)', [email.trim()]);
-      if (rows.length > 0) custId = rows[0].id;
-    }
-
-    if (!custId) {
-      return res.status(400).json({ success: false, message: 'User account not found.' });
-    }
-
-    // Check if already in wishlist
     const [existing] = await pool.query(
       'SELECT id FROM customer_wishlist WHERE customer_id = ? AND product_id = ?',
       [custId, product_id]
@@ -254,181 +211,31 @@ const toggleUserWishlist = async (req, res) => {
         action: 'removed',
         message: 'Item removed from your Wishlist'
       });
-    } else {
-      await pool.query('INSERT INTO customer_wishlist (customer_id, product_id) VALUES (?, ?)', [custId, product_id]);
-      return res.status(200).json({
-        success: true,
-        action: 'added',
-        message: 'Item added to your Wishlist ♥'
-      });
     }
+
+    await pool.query('INSERT INTO customer_wishlist (customer_id, product_id) VALUES (?, ?)', [custId, product_id]);
+    return res.status(200).json({
+      success: true,
+      action: 'added',
+      message: 'Item added to your Wishlist ♥'
+    });
   } catch (error) {
     console.error('Error toggling wishlist:', error);
-    return res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: 'Could not update your wishlist.' });
   }
 };
 
 // 7c. DELETE WISHLIST ITEM BY ID
 const deleteWishlistItem = async (req, res) => {
   try {
-    const { id } = req.params;
-    await pool.query('DELETE FROM customer_wishlist WHERE id = ?', [id]);
+    await pool.query('DELETE FROM customer_wishlist WHERE id = ? AND customer_id = ?', [req.params.id, req.user.id]);
     return res.status(200).json({ success: true, message: 'Item removed from wishlist.' });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: 'Could not remove the item.' });
   }
 };
 
-// 8. PLACE USER ORDER
-const placeUserOrder = async (req, res) => {
-  try {
-    const { 
-      customer_name, 
-      customer_email, 
-      customer_phone, 
-      shipping_address, 
-      items, 
-      subtotal, 
-      shipping_fee, 
-      discount_amount, 
-      total_amount, 
-      payment_method,
-      razorpay_order_id,
-      razorpay_payment_id,
-      razorpay_signature
-    } = req.body;
-
-    if (!customer_email || !items || items.length === 0) {
-      return res.status(400).json({ success: false, message: 'Order details and items are required.' });
-    }
-
-    const orderNumber = `ORD-${Date.now().toString().slice(-6)}`;
-    const formattedAddress = typeof shipping_address === 'object' 
-      ? `${shipping_address.name ? shipping_address.name + ', ' : ''}${shipping_address.address_line1}${shipping_address.address_line2 ? ', ' + shipping_address.address_line2 : ''}, ${shipping_address.city}, ${shipping_address.state} - ${shipping_address.pincode} (Phone: ${shipping_address.phone || customer_phone})`
-      : shipping_address;
-
-    if (!razorpay_payment_id) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Online payment via Razorpay is required to complete this order. Cash on Delivery is disabled.' 
-      });
-    }
-
-    const pm = 'Razorpay';
-    const ps = 'Paid';
-
-    const [orderResult] = await pool.query(
-      `INSERT INTO orders (order_number, customer_name, customer_email, customer_phone, subtotal, shipping_fee, discount_amount, total_amount, status, payment_status, payment_method, razorpay_order_id, razorpay_payment_id, razorpay_signature, shipping_address)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Pending', ?, ?, ?, ?, ?, ?)`,
-      [
-        orderNumber,
-        customer_name || customer_email.split('@')[0],
-        customer_email.trim().toLowerCase(),
-        customer_phone || '',
-        subtotal || total_amount,
-        shipping_fee || 0.00,
-        discount_amount || 0.00,
-        total_amount,
-        ps,
-        pm,
-        razorpay_order_id || null,
-        razorpay_payment_id || null,
-        razorpay_signature || null,
-        formattedAddress
-      ]
-    );
-
-    const orderId = orderResult.insertId;
-
-    // Insert order items and automatically reduce product stock
-    for (const item of items) {
-      const qty = item.quantity || 1;
-      await pool.query(
-        `INSERT INTO order_items (order_id, product_id, product_name, product_image, price, quantity, total_price)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [
-          orderId,
-          item.id,
-          item.name,
-          item.image_url || item.image || '',
-          item.price,
-          qty,
-          (item.price * qty)
-        ]
-      );
-
-      // Deduct quantity from products stock table automatically
-      if (item.id) {
-        await pool.query(
-          `UPDATE products SET stock = GREATEST(0, stock - ?) WHERE id = ?`,
-          [qty, item.id]
-        );
-      }
-    }
-
-    // Insert Payment Log Entry in Database
-    try {
-      await pool.query(
-        `INSERT INTO payments (order_id, order_number, customer_name, customer_email, transaction_id, amount, payment_method, gateway, razorpay_order_id, razorpay_payment_id, razorpay_signature, status)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          orderId,
-          orderNumber,
-          customer_name || customer_email.split('@')[0],
-          customer_email.trim().toLowerCase(),
-          razorpay_payment_id || `TXN_${Date.now()}`,
-          total_amount,
-          pm,
-          pm === 'Razorpay' ? 'Razorpay' : 'COD',
-          razorpay_order_id || null,
-          razorpay_payment_id || null,
-          razorpay_signature || null,
-          ps === 'Paid' ? 'Success' : 'Pending'
-        ]
-      );
-    } catch (e) {
-      console.warn('Could not insert payment record:', e.message);
-    }
-
-    // Insert Timeline Event
-    await pool.query(
-      `INSERT INTO order_timeline (order_id, title, description, status)
-       VALUES (?, 'Order Placed', ?, 'Pending')`,
-      [orderId, `Order #${orderNumber} placed successfully via ${pm}.`]
-    );
-
-    // Trigger confirmation email
-    try {
-      sendOrderConfirmationEmail(customer_email, {
-        order_number: orderNumber,
-        total_amount,
-        shipping_address: formattedAddress
-      });
-    } catch (e) {
-      console.warn('Order confirmation email trigger failed:', e.message);
-    }
-
-    return res.status(201).json({
-      success: true,
-      message: 'Order placed successfully!',
-      order: {
-        id: orderId,
-        order_number: orderNumber,
-        total_amount,
-        status: 'Pending',
-        payment_method: pm,
-        payment_status: ps
-      }
-    });
-
-  } catch (error) {
-    console.error('Error placing order:', error);
-    return res.status(500).json({ success: false, message: error.message });
-  }
-};
-
-
-// 10. SUBMIT CONTACT INQUIRY
+// 8. SUBMIT CONTACT INQUIRY (public)
 const submitContactInquiry = async (req, res) => {
   try {
     const { first_name, last_name, email, phone, subject, message } = req.body;
@@ -436,9 +243,17 @@ const submitContactInquiry = async (req, res) => {
       return res.status(400).json({ success: false, message: 'First name, email, and message are required.' });
     }
 
-    const fullName = `${first_name} ${last_name || ''}`.trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(String(email).trim())) {
+      return res.status(400).json({ success: false, message: 'Please enter a valid email address.' });
+    }
+    if (String(message).length > 5000) {
+      return res.status(400).json({ success: false, message: 'Message is too long (max 5000 characters).' });
+    }
 
-    // Ensure contact_inquiries table exists
+    const fullName = `${first_name} ${last_name || ''}`.trim();
+    let saved = false;
+
     try {
       await pool.query(`
         CREATE TABLE IF NOT EXISTS contact_inquiries (
@@ -457,37 +272,51 @@ const submitContactInquiry = async (req, res) => {
         `INSERT INTO contact_inquiries (name, email, phone, subject, message) VALUES (?, ?, ?, ?, ?)`,
         [fullName, email.trim().toLowerCase(), phone || '', subject || 'General Inquiry', message]
       );
+      saved = true;
     } catch (dbErr) {
-      console.warn('DB inquiry save warning:', dbErr.message);
+      console.error('DB inquiry save error:', dbErr.message);
     }
 
-    // Send email notification to store admin
+    // Email notification to the store admin. All user input is HTML-escaped.
+    let mailed = false;
     try {
       const { transporter } = require('../services/mailer');
-      const adminEmail = process.env.ADMIN_EMAIL || 'hkahir46@gmail.com';
-      if (transporter) {
+      const adminEmail = process.env.ADMIN_EMAIL;
+      if (transporter && adminEmail) {
+        const safe = {
+          name: escapeHtml(fullName),
+          email: escapeHtml(email),
+          phone: escapeHtml(phone || 'Not provided'),
+          subject: escapeHtml(subject || 'General Inquiry'),
+          message: escapeHtml(message),
+        };
         await transporter.sendMail({
-          from: `"LeafOra Customer Contact" <${process.env.SMTP_USER || 'hkahir46@gmail.com'}>`,
+          from: `"LeafOra Customer Contact" <${process.env.SMTP_USER}>`,
           to: adminEmail,
           replyTo: email,
-          subject: `🌿 New Inquiry from ${fullName}: ${subject || 'Website Contact'}`,
+          subject: `New Inquiry from ${fullName.replace(/[\r\n]/g, ' ')}: ${String(subject || 'Website Contact').replace(/[\r\n]/g, ' ')}`,
           html: `
             <div style="font-family: Arial, sans-serif; padding: 24px; color: #1E293B; max-width: 600px; border: 1px solid #E2E8F0; border-radius: 10px;">
               <h2 style="color: #1A3E2F; border-bottom: 2px solid #C49A45; padding-bottom: 8px; margin-top: 0;">New LeafOra Website Inquiry</h2>
-              <p><strong>Name:</strong> ${fullName}</p>
-              <p><strong>Email:</strong> <a href="mailto:${email}">${email}</a></p>
-              <p><strong>Phone:</strong> ${phone || 'Not provided'}</p>
-              <p><strong>Subject:</strong> ${subject || 'General Inquiry'}</p>
+              <p><strong>Name:</strong> ${safe.name}</p>
+              <p><strong>Email:</strong> <a href="mailto:${safe.email}">${safe.email}</a></p>
+              <p><strong>Phone:</strong> ${safe.phone}</p>
+              <p><strong>Subject:</strong> ${safe.subject}</p>
               <div style="background: #F8F4EE; padding: 16px; border-radius: 8px; margin-top: 16px; border-left: 4px solid #C49A45;">
-                <p style="margin: 0; white-space: pre-wrap; font-size: 14px; line-height: 1.6;">${message}</p>
+                <p style="margin: 0; white-space: pre-wrap; font-size: 14px; line-height: 1.6;">${safe.message}</p>
               </div>
               <p style="font-size: 12px; color: #94A3B8; margin-top: 20px;">LeafOra Life Sciences Admin Notification</p>
             </div>
           `
         });
+        mailed = true;
       }
     } catch (mailErr) {
-      console.warn('Contact email delivery warning:', mailErr.message);
+      console.error('Contact email delivery error:', mailErr.message);
+    }
+
+    if (!saved && !mailed) {
+      return res.status(500).json({ success: false, message: 'Failed to submit contact message. Please try again.' });
     }
 
     return res.status(200).json({
@@ -510,6 +339,5 @@ module.exports = {
   getUserWishlist,
   toggleUserWishlist,
   deleteWishlistItem,
-  placeUserOrder,
   submitContactInquiry
 };

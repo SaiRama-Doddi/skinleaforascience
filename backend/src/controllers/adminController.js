@@ -4,131 +4,152 @@ const { pool } = require('../config/db');
 const { sendOtpEmail } = require('../services/mailer');
 const ProductModel = require('../models/productModel');
 
-const ALLOWED_ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'hkahir46@gmail.com';
+const { generateOtp, safeEqual, createSession, revokeSession, ensureSecurityTables } = require('../services/security');
+
+const ALLOWED_ADMIN_EMAIL = String(process.env.ADMIN_EMAIL || '').trim().toLowerCase();
 
 // ─── AUTHENTICATION ───
 
 // 1. Send OTP
-const sendOtp = async (req, res) => {
+const isAuthorizedAdminEmail = async (email) => {
+  if (ALLOWED_ADMIN_EMAIL && email === ALLOWED_ADMIN_EMAIL) return true;
   try {
-    const { email } = req.body;
-    if (!email) {
-      return res.status(400).json({ success: false, message: 'Admin email is required.' });
-    }
+    const [users] = await pool.query(
+      'SELECT id FROM admin_users WHERE LOWER(email) = ? AND LOWER(status) = "active" LIMIT 1',
+      [email]
+    );
+    return users.length > 0;
+  } catch (err) {
+    console.warn('Admin users table query notice:', err.message);
+    return false;
+  }
+};
 
-    const trimmedEmail = email.trim().toLowerCase();
-    let isAuthorized = trimmedEmail === ALLOWED_ADMIN_EMAIL.toLowerCase();
+const sendOtp = async (req, res) => {
+  const email = String(req.body.email || '').trim().toLowerCase();
+  if (!email) {
+    return res.status(400).json({ success: false, message: 'Admin email is required.' });
+  }
 
-    if (!isAuthorized) {
-      try {
-        const [users] = await pool.query(
-          'SELECT id, email, status FROM admin_users WHERE LOWER(email) = ? AND (status = "Active" OR status = "active")',
-          [trimmedEmail]
-        );
-        if (users && users.length > 0) {
-          isAuthorized = true;
-        }
-      } catch (err) {
-        console.warn('Admin users table query fallback:', err.message);
-      }
-    }
-
-    if (!isAuthorized) {
+  try {
+    if (!(await isAuthorizedAdminEmail(email))) {
       return res.status(403).json({
         success: false,
         message: 'Unauthorized email address. Please contact the system administrator for admin access.',
       });
     }
 
-    // Generate random 6-digit OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
+    const otp = generateOtp();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
+    // Invalidate any previous unused codes for this email, then store the new one
+    await pool.query('UPDATE otp_codes SET is_used = 1 WHERE email = ? AND is_used = 0', [email]);
+    await pool.query('INSERT INTO otp_codes (email, otp, expires_at) VALUES (?, ?, ?)', [email, otp, expiresAt]);
     try {
-      // Store in DB
-      await pool.query(
-        'INSERT INTO otp_codes (email, otp, expires_at) VALUES (?, ?, ?)',
-        [email, otp, expiresAt]
-      );
       await pool.query(
         'INSERT INTO admin_logs (admin_email, action, details) VALUES (?, ?, ?)',
-        [email, 'REQUEST_OTP', `Generated OTP ${otp}`]
+        [email, 'REQUEST_OTP', `OTP requested from ${req.ip}`]
       );
-    } catch (dbErr) {
-      console.warn('DB OTP log notice:', dbErr.message);
+    } catch (e) {}
+
+    const mailResult = await sendOtpEmail(email, otp);
+    if (mailResult && mailResult.success === false) {
+      return res.status(502).json({ success: false, message: 'Could not send the OTP email. Please try again shortly.' });
     }
 
-    // Try sending email via Nodemailer
-    try {
-      await sendOtpEmail(email, otp);
-    } catch (mErr) {
-      console.warn('Mailer notice:', mErr.message);
-    }
-
-    return res.status(200).json({
-      success: true,
-      message: `OTP sent to ${email} successfully!`,
-    });
+    return res.status(200).json({ success: true, message: `OTP sent to ${email} successfully!` });
   } catch (error) {
     console.error('Send OTP error:', error);
-    return res.status(200).json({
-      success: true,
-      message: `OTP sent to ${email} successfully!`,
-    });
+    return res.status(500).json({ success: false, message: 'Could not send OTP. Please try again.' });
   }
 };
 
-// 2. Verify OTP
-const verifyOtp = async (req, res) => {
-  try {
-    const { email, otp } = req.body;
+// 2. Verify OTP → issues a server-side admin session
+const MAX_OTP_ATTEMPTS = 5;
 
-    if (!email || !otp) {
-      return res.status(400).json({ success: false, message: 'Email and OTP are required' });
+const verifyOtp = async (req, res) => {
+  const email = String(req.body.email || '').trim().toLowerCase();
+  const otp = String(req.body.otp || '').trim();
+
+  if (!email || !otp) {
+    return res.status(400).json({ success: false, message: 'Email and OTP are required' });
+  }
+
+  try {
+    await ensureSecurityTables();
+
+    const [rows] = await pool.query(
+      'SELECT * FROM otp_codes WHERE email = ? AND is_used = 0 AND expires_at > NOW() ORDER BY id DESC LIMIT 1',
+      [email]
+    );
+    const record = rows[0];
+
+    if (!record || !safeEqual(record.otp, otp)) {
+      if (record) {
+        const attempts = (record.failed_attempts || 0) + 1;
+        await pool.query(
+          'UPDATE otp_codes SET failed_attempts = ?, is_used = IF(? >= ?, 1, is_used) WHERE id = ?',
+          [attempts, attempts, MAX_OTP_ATTEMPTS, record.id]
+        );
+        if (attempts >= MAX_OTP_ATTEMPTS) {
+          return res.status(429).json({ success: false, message: 'Too many incorrect codes. Please request a new OTP.' });
+        }
+      }
+      try {
+        await pool.query(
+          'INSERT INTO login_history (admin_email, ip_address, browser, status) VALUES (?, ?, ?, ?)',
+          [email, req.ip, String(req.headers['user-agent'] || '').slice(0, 250), 'Failed']
+        );
+      } catch (e) {}
+      return res.status(400).json({ success: false, message: 'Invalid or expired OTP code' });
     }
 
-    let isValid = false;
+    // Re-check authorization in case the admin was deactivated after requesting the code
+    if (!(await isAuthorizedAdminEmail(email))) {
+      return res.status(403).json({ success: false, message: 'This admin account is no longer active.' });
+    }
+
+    await pool.query('UPDATE otp_codes SET is_used = 1 WHERE id = ?', [record.id]);
+    const { token, expiresAt } = await createSession('admin', { email, req });
 
     try {
-      // Check valid un-expired OTP in DB
-      const [rows] = await pool.query(
-        'SELECT * FROM otp_codes WHERE email = ? AND otp = ? AND is_used = 0 AND expires_at > NOW() ORDER BY id DESC LIMIT 1',
-        [email, otp]
+      await pool.query(
+        'INSERT INTO admin_logs (admin_email, action, details) VALUES (?, ?, ?)',
+        [email, 'ADMIN_LOGIN', 'Admin authenticated via OTP successfully']
       );
+      await pool.query(
+        'INSERT INTO login_history (admin_email, ip_address, browser, status) VALUES (?, ?, ?, ?)',
+        [email, req.ip, String(req.headers['user-agent'] || '').slice(0, 250), 'Success']
+      );
+    } catch (e) {}
 
-      if (rows.length > 0) {
-        isValid = true;
-        await pool.query('UPDATE otp_codes SET is_used = 1 WHERE id = ?', [rows[0].id]);
-        await pool.query(
-          'INSERT INTO admin_logs (admin_email, action, details) VALUES (?, ?, ?)',
-          [email, 'ADMIN_LOGIN', 'Admin authenticated via OTP successfully']
-        );
-      }
-    } catch (dbErr) {
-      console.warn('DB verify notice:', dbErr.message);
-    }
+    let displayName = 'Admin';
+    try {
+      const [u] = await pool.query('SELECT name FROM admin_users WHERE LOWER(email) = ? LIMIT 1', [email]);
+      if (u[0] && u[0].name) displayName = u[0].name;
+    } catch (e) {}
 
-    // Strictly require verified un-expired OTP from database
-    if (isValid) {
-      const token = `leafora_admin_token_${Date.now()}_${Math.random().toString(36).substring(2)}`;
-
-      return res.status(200).json({
-        success: true,
-        message: 'Admin login successful',
-        token,
-        user: {
-          email: ALLOWED_ADMIN_EMAIL,
-          name: 'Sai Admin',
-          role: 'Admin',
-        },
-      });
-    }
-
-    return res.status(400).json({ success: false, message: 'Invalid or expired OTP code' });
+    return res.status(200).json({
+      success: true,
+      message: 'Admin login successful',
+      token,
+      expires_at: expiresAt,
+      user: { email, name: displayName, role: 'Admin' },
+    });
   } catch (error) {
     console.error('Verify OTP error:', error);
-    return res.status(400).json({ success: false, message: 'Invalid OTP code' });
+    return res.status(500).json({ success: false, message: 'Could not verify OTP. Please try again.' });
   }
+};
+
+// 3. Logout → revokes the admin session
+const adminLogout = async (req, res) => {
+  try {
+    await revokeSession(req.authToken);
+  } catch (e) {
+    console.warn('Admin logout notice:', e.message);
+  }
+  return res.status(200).json({ success: true, message: 'Logged out.' });
 };
 
 // ─── DASHBOARD ANALYTICS ───
@@ -575,17 +596,17 @@ const uploadImage = async (req, res) => {
       dataUrl = `data:image/jpeg;base64,${image_data}`;
     }
 
-    let mimeType = 'image/jpeg';
-    let ext = 'jpg';
-    let base64Content = dataUrl;
+    // Raster images only. SVG is rejected because it can carry scripts that would run
+    // on our own origin (stored XSS against admins).
+    const ALLOWED_IMAGE_TYPES = { 'image/jpeg': 'jpg', 'image/jpg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif', 'image/avif': 'avif' };
 
-    const matches = dataUrl.match(/^data:([A-Za-z0-9-+\/]+);base64,(.+)$/);
-    if (matches && matches.length === 3) {
-      mimeType = matches[1];
-      ext = matches[1].replace('image/', '').replace('jpeg', 'jpg').split('+')[0];
-      if (ext === 'svg+xml') ext = 'svg';
-      base64Content = matches[2];
+    const matches = dataUrl.match(/^data:([A-Za-z0-9-+\/.]+);base64,(.+)$/s);
+    if (!matches || !ALLOWED_IMAGE_TYPES[matches[1].toLowerCase()]) {
+      return res.status(400).json({ success: false, message: 'Unsupported image type. Please upload a JPG, PNG, WEBP, GIF or AVIF image.' });
     }
+    const mimeType = matches[1].toLowerCase() === 'image/jpg' ? 'image/jpeg' : matches[1].toLowerCase();
+    const ext = ALLOWED_IMAGE_TYPES[matches[1].toLowerCase()];
+    const base64Content = matches[2];
 
     const filename = `banner_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${ext}`;
 
@@ -1280,7 +1301,7 @@ const notifyVendor = async (req, res) => {
     const { id } = req.params;
     const [[prod]] = await pool.query('SELECT * FROM products WHERE id = ?', [id]);
     await pool.query('INSERT INTO admin_logs (admin_email, action, details) VALUES (?, ?, ?)', [
-      ALLOWED_ADMIN_EMAIL,
+      (req.admin && req.admin.email) || ALLOWED_ADMIN_EMAIL || 'admin',
       'NOTIFY_VENDOR',
       `Sent restock alert notification to vendor for product: ${prod ? prod.name : id}`,
     ]);
@@ -4280,6 +4301,7 @@ const exportCouponsCsv = async (req, res) => {
 module.exports = {
   sendOtp,
   verifyOtp,
+  adminLogout,
   getAnalytics,
   uploadImage,
   getCategories,

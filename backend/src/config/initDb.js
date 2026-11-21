@@ -905,12 +905,12 @@ const initDb = async () => {
     if (gate[0].cnt === 0) {
       await pool.query(`
         INSERT INTO payment_gateways_config (gateway_name, key_id, key_secret, webhook_secret, environment, is_active) VALUES
-        ('Razorpay', 'rzp_test_SwedUUn1KgRMs0', 'xdW2Ry7T67sUK4zMKb3oOsZh', 'whsec_rzp_live_99210', 'test', 1),
+        ('Razorpay', '', '', '', 'test', 1),
         ('Stripe', 'pk_test_51NxLEAFORA9920102', 'sk_test_51NxLEAFORASec9921', 'whsec_stripe_88120', 'test', 1),
         ('UPI', 'leaforalifesciences@icici', 'VPA_MERCHANT_KEY_882', 'whsec_upi_7721', 'test', 1),
         ('COD', 'COD_HANDLING_DESK', 'COD_SECRET_PIN_001', 'N/A', 'test', 1);
       `);
-      console.log('🌱 Seeded default Payment Gateways configuration (Razorpay Test Keys set)');
+      console.log('🌱 Seeded default Payment Gateways configuration (Razorpay keys come from RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET)');
     }
 
     // Update existing payment rows with rich details if null

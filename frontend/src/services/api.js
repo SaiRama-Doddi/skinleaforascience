@@ -14,6 +14,7 @@ const api = axios.create({
 // Request interceptor
 api.interceptors.request.use(
   (config) => {
+    if (config.headers && config.headers.Authorization) return config; // explicit token wins
     const adminToken = localStorage.getItem('leafora_admin_token');
     const userToken = localStorage.getItem('leafora_user_token');
 
@@ -34,10 +35,16 @@ api.interceptors.response.use(
   (response) => response.data,
   (error) => {
     console.error('API Notice:', error?.response?.data || error.message);
-    if (error?.response?.status === 401 && window.location.pathname.startsWith('/admin')) {
+    const status = error?.response?.status;
+    const onAdminPage = window.location.pathname.startsWith('/admin');
+    if (status === 401 && onAdminPage && !window.location.pathname.startsWith('/admin/login')) {
       localStorage.removeItem('leafora_admin_token');
       localStorage.removeItem('leafora_admin_user');
       window.location.href = '/admin/login';
+    } else if (status === 401 && !onAdminPage && localStorage.getItem('leafora_user_token')) {
+      // Customer session expired or was revoked: clear it so the UI shows signed-out state
+      localStorage.removeItem('leafora_user_token');
+      localStorage.removeItem('leafora_user_profile');
     }
     return Promise.reject(error?.response?.data || { message: error.message });
   }
@@ -81,6 +88,7 @@ export const getCategories = async (params, forceRefresh = false) => {
 // Admin Auth API
 export const adminSendOtp = (email) => api.post('/admin/send-otp', { email });
 export const adminVerifyOtp = (email, otp) => api.post('/admin/verify-otp', { email, otp });
+export const adminLogout = () => api.post('/admin/logout').catch(() => null);
 
 // Admin Analytics & Controls API
 export const adminGetAnalytics = () => api.get('/admin/analytics');
@@ -243,6 +251,12 @@ export const userLogin = (data) => api.post('/auth/login', data);
 export const userForgotPassword = (data) => api.post('/auth/forgot-password', data);
 export const userResetPassword = (data) => api.post('/auth/reset-password', data);
 export const userGetCurrentUser = () => api.get('/auth/me');
+export const userLogout = () => {
+  // Read the token now: callers clear localStorage right after, before interceptors run
+  const token = localStorage.getItem('leafora_user_token');
+  if (!token) return Promise.resolve(null);
+  return api.post('/auth/logout', null, { headers: { Authorization: `Bearer ${token}` } }).catch(() => null);
+};
 
 // ─── USER DASHBOARD & CHECKOUT APIS ───
 export const userGetProfile = (email) => api.get('/user/profile', { params: { email } });
@@ -254,9 +268,9 @@ export const userGetOrders = (email) => api.get('/user/orders', { params: { emai
 export const userGetWishlist = (email) => api.get('/user/wishlist', { params: { email } });
 export const userToggleWishlist = (data) => api.post('/user/wishlist/toggle', data);
 export const userDeleteWishlistItem = (id) => api.delete(`/user/wishlist/${id}`);
-export const placeOrder = (orderData) => api.post('/orders/place', orderData);
 export const submitContactForm = (data) => api.post('/contact', data);
-export const createRazorpayOrder = (data) => api.post('/payments/create-razorpay-order', typeof data === 'object' ? data : { amount: data });
+// Body: { items: [{ id, quantity }] } — the server prices the cart itself
+export const createRazorpayOrder = (data) => api.post('/payments/create-razorpay-order', data);
 export const verifyRazorpayPayment = (data) => api.post('/payments/verify-razorpay-payment', data);
 
 export default api;
