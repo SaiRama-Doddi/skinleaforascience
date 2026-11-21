@@ -1099,7 +1099,8 @@ const getOrderDetails = async (req, res) => {
     const [payments] = await pool.query('SELECT * FROM payments WHERE order_id = ? ORDER BY id ASC', [numId]);
     const [[customer]] = await pool.query('SELECT id, name, email, phone, status, created_at FROM customers WHERE LOWER(email) = LOWER(?) LIMIT 1', [order.customer_email]);
 
-    return res.status(200).json({ success: true, data: { order, items, timeline, payments, customer: customer || null } });
+    const itemsWithImages = items.map((it) => ({ ...it, product_image: it.product_image || `/api/products/${it.product_id}/image` }));
+    return res.status(200).json({ success: true, data: { order, items: itemsWithImages, timeline, payments, customer: customer || null } });
   } catch (error) {
     return orderFail(res, error, 'load the order');
   }

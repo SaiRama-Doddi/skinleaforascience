@@ -920,6 +920,34 @@ const initDb = async () => {
       console.log('🌱 Seeded default admin roles');
     }
 
+    // ─── STATUS COLUMNS: plain text, never a fixed ENUM ───
+    // Older databases created these as ENUMs without values like 'Paid' / 'In Transit'.
+    // MySQL then silently stored '' instead, so paid orders looked unpaid. VARCHAR keeps all values.
+    for (const sql of [
+      "ALTER TABLE orders MODIFY COLUMN status VARCHAR(50) DEFAULT 'Pending'",
+      "ALTER TABLE orders MODIFY COLUMN payment_status VARCHAR(50) DEFAULT 'Pending'",
+      "ALTER TABLE payments MODIFY COLUMN status VARCHAR(50) DEFAULT 'Pending'",
+    ]) {
+      try { await pool.query(sql); } catch (e) { console.warn('Status column migration notice:', e.message); }
+    }
+    // Repair rows blanked by the old ENUM: only orders with a recorded, signature-verified Razorpay payment
+    try {
+      const [fixedPayments] = await pool.query(
+        `UPDATE payments SET status = 'Success'
+         WHERE (status IS NULL OR status = '') AND razorpay_payment_id IS NOT NULL AND razorpay_signature IS NOT NULL`
+      );
+      const [fixedOrders] = await pool.query(
+        `UPDATE orders o SET o.payment_status = 'Paid'
+         WHERE (o.payment_status IS NULL OR o.payment_status = '') AND o.razorpay_payment_id IS NOT NULL
+           AND EXISTS (SELECT 1 FROM payments p WHERE p.razorpay_payment_id = o.razorpay_payment_id AND p.status = 'Success')`
+      );
+      const [fixedStatus] = await pool.query("UPDATE orders SET status = 'Pending' WHERE status IS NULL OR status = ''");
+      const n = fixedPayments.affectedRows + fixedOrders.affectedRows + fixedStatus.affectedRows;
+      if (n > 0) console.log(`🔧 Repaired blank statuses: ${fixedOrders.affectedRows} orders marked Paid, ${fixedPayments.affectedRows} payments, ${fixedStatus.affectedRows} order statuses`);
+    } catch (e) {
+      console.warn('Status repair notice:', e.message);
+    }
+
     console.log('✅ Database initialization complete.');
   } catch (error) {
     console.error('❌ Database initialization error:', error.message);

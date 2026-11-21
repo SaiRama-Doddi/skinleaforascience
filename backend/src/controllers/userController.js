@@ -2,6 +2,9 @@ const { pool } = require('../config/db');
 const { escapeHtml } = require('../services/security');
 const { normalizeMobile, isValidMobile, isValidName, validateAddress, MESSAGES } = require('../services/validation');
 
+// Older order rows have an empty product_image (base64 photos were not copied): point at the image endpoint
+const withItemImage = (it) => ({ ...it, product_image: it.product_image || (it.product_id ? `/api/products/${it.product_id}/image` : '') });
+
 // All handlers except submitContactInquiry are mounted behind `requireUser`,
 // so `req.user` is the signed-in customer. Client-supplied `email` / `customer_id`
 // parameters are ignored: a customer can only ever read or change their own data.
@@ -164,7 +167,7 @@ const getUserOrders = async (req, res) => {
         [orders.map((o) => o.id)]
       );
       for (const order of orders) {
-        order.items = items.filter((it) => it.order_id === order.id);
+        order.items = items.filter((it) => it.order_id === order.id).map(withItemImage);
       }
     }
 
@@ -198,7 +201,7 @@ const getUserOrderDetails = async (req, res) => {
     );
     // Internal admin notes are never sent to customers
     const { admin_notes, razorpay_signature, ...publicOrder } = order;
-    return res.status(200).json({ success: true, order: { ...publicOrder, items }, timeline });
+    return res.status(200).json({ success: true, order: { ...publicOrder, items: items.map(withItemImage) }, timeline });
   } catch (error) {
     console.error('Order details failed:', error.message);
     return res.status(500).json({ success: false, message: 'Could not load the order.' });

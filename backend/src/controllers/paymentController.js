@@ -77,7 +77,8 @@ const priceCart = async (rawItems) => {
     lines.push({
       id: p.id,
       name: p.name,
-      image_url: p.image_url && !String(p.image_url).startsWith('data:') ? p.image_url : '',
+      // Base64 product photos are too big for order rows: reference the image endpoint instead
+      image_url: p.image_url && !String(p.image_url).startsWith('data:') ? p.image_url : `/api/products/${p.id}/image`,
       price,
       quantity,
       total_price: round2(price * quantity),

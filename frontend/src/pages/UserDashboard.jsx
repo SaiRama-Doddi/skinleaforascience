@@ -2,15 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { 
   Menu, User, MapPin, Package, Heart, LogOut, Edit3, Plus, Trash2, CheckCircle2, 
-  Clock, ShieldCheck, Phone, Mail, Award, ChevronRight, Check, AlertCircle, ShoppingBag, Eye, X, Navigation
+  Clock, ShieldCheck, Phone, Mail, Award, ChevronRight, Check, AlertCircle, ShoppingBag, Eye, X, Navigation, FileText, Truck
 } from 'lucide-react';
 import { 
   userGetProfile, userUpdateProfile, userGetAddresses, userAddAddress, 
   userDeleteAddress, userGetOrders, userGetWishlist, userDeleteWishlistItem, userToggleWishlist,
-  userLogout
+  userLogout, userGetOrderDetails, userGetOrderInvoice
 } from '../services/api';
 import { addToCart } from '../services/cartService';
 import { detectLiveLocation } from '../services/locationService';
+import { DEFAULT_PRODUCT_IMAGE } from '../services/cartService';
+import { API_BASE_URL } from '../services/api';
 import { sanitizeMobileInput, sanitizePincodeInput, sanitizeNameInput, isValidMobile, isValidName, validateAddress, MESSAGES } from '../services/validation';
 import './UserDashboard.css';
 
@@ -245,6 +247,45 @@ export default function UserDashboard() {
       showToast('Item removed from your wishlist.');
     } catch (e) {
       setWishlist(prev => prev.filter(w => w.id !== item.id));
+    }
+  };
+
+  // Order item image: '/api/...' paths must go through the API base (works with VITE_API_URL too)
+  const orderItemImage = (item) => {
+    const src = item.product_image || (item.product_id ? `/api/products/${item.product_id}/image` : '');
+    if (!src) return DEFAULT_PRODUCT_IMAGE;
+    if (src.startsWith('/api/') && API_BASE_URL !== '/api') return API_BASE_URL.replace(/\/api\/?$/, '') + src;
+    return src;
+  };
+
+  // Order details with items + timeline
+  const [orderTimeline, setOrderTimeline] = useState([]);
+  const openOrderDetails = async (ord) => {
+    setSelectedOrderDetails(ord);
+    setOrderTimeline([]);
+    try {
+      const res = await userGetOrderDetails(ord.id);
+      if (res?.order) setSelectedOrderDetails(res.order);
+      setOrderTimeline(res?.timeline || []);
+    } catch (err) {
+      showToast(err.message || 'Could not load order details.');
+    }
+  };
+
+  // Invoice: open a window synchronously (avoids popup blockers), then fill it
+  const handleDownloadInvoice = async (ord) => {
+    const win = window.open('', '_blank');
+    if (win) win.document.write('<p style="font-family:Arial;padding:24px">Preparing your invoice…</p>');
+    try {
+      const html = await userGetOrderInvoice(ord.id);
+      if (win) {
+        win.document.open();
+        win.document.write(typeof html === 'string' ? html : '<p>Invoice unavailable.</p>');
+        win.document.close();
+      }
+    } catch (err) {
+      if (win) win.close();
+      showToast(err.message || 'Invoice is not available for this order yet.');
     }
   };
 
@@ -515,13 +556,23 @@ export default function UserDashboard() {
                           <span className="ord-number">Order #{ord.order_number}</span>
                           <span className="ord-date">{new Date(ord.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
                         </div>
-                        <span className={`ord-status-pill ${ord.status.toLowerCase()}`}>{ord.status}</span>
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                          <span className={`ord-status-pill ${String(ord.status || 'Pending').toLowerCase().replace(/\s+/g, '-')}`}>{ord.status || 'Pending'}</span>
+                          {ord.payment_status && (
+                            <span className={`ord-status-pill pay-${String(ord.payment_status).toLowerCase().replace(/\s+/g, '-')}`}>{ord.payment_status}</span>
+                          )}
+                        </div>
                       </div>
 
                       <div className="order-items-preview">
                         {ord.items && ord.items.map((item, idx) => (
                           <div key={idx} className="ord-item-row">
-                            <img src={item.product_image || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZHg9IjEwMCIgZmlsbD0iI0YzRjRGNiIvPjwvc3ZnPg=='} alt={item.product_name} />
+                            <img
+                              src={orderItemImage(item)}
+                              alt={item.product_name}
+                              loading="lazy"
+                              onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = DEFAULT_PRODUCT_IMAGE; }}
+                            />
                             <div className="ord-item-info">
                               <span className="item-title">{item.product_name}</span>
                               <span className="item-qty">Qty: {item.quantity} x ₹{Number(item.price).toFixed(2)}</span>
@@ -533,12 +584,19 @@ export default function UserDashboard() {
 
                       <div className="order-card-footer">
                         <div className="total-amount-box">
-                          <span>Total Amount:</span>
+                          <span>Total Amount:&nbsp;</span>
                           <strong>₹{Number(ord.total_amount).toFixed(2)}</strong>
                         </div>
-                        <button className="btn-view-ord-details" onClick={() => setSelectedOrderDetails(ord)}>
-                          <Eye size={14} /> View Order Details
-                        </button>
+                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                          {(['Paid', 'Partially Refunded', 'Refunded'].includes(ord.payment_status) || Boolean(ord.razorpay_payment_id)) && (
+                            <button className="btn-view-ord-details" onClick={() => handleDownloadInvoice(ord)}>
+                              <FileText size={14} /> Download Invoice
+                            </button>
+                          )}
+                          <button className="btn-view-ord-details" onClick={() => openOrderDetails(ord)}>
+                            <Eye size={14} /> View Order Details
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -752,7 +810,45 @@ export default function UserDashboard() {
             <div style={{ padding: 20 }}>
               <p><strong>Status:</strong> <span className={`ord-status-pill ${selectedOrderDetails.status.toLowerCase()}`}>{selectedOrderDetails.status}</span></p>
               <p style={{ marginTop: 8 }}><strong>Delivery Address:</strong> {selectedOrderDetails.shipping_address}</p>
+              <p style={{ marginTop: 8 }}><strong>Payment:</strong> {selectedOrderDetails.payment_status}{selectedOrderDetails.razorpay_payment_id ? ` (${selectedOrderDetails.razorpay_payment_id})` : ''}</p>
+              {(selectedOrderDetails.shipping_partner || selectedOrderDetails.tracking_number) && (
+                <p style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Truck size={15} /> <strong>Shipment:</strong> {selectedOrderDetails.shipping_partner || 'Courier'}{selectedOrderDetails.tracking_number ? ` · Tracking #${selectedOrderDetails.tracking_number}` : ''}
+                </p>
+              )}
+
+              {Array.isArray(selectedOrderDetails.items) && selectedOrderDetails.items.length > 0 && (
+                <div style={{ marginTop: 14, borderTop: '1px solid #EFE8DE', paddingTop: 10 }}>
+                  {selectedOrderDetails.items.map((it, i) => (
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, padding: '4px 0' }}>
+                      <span>{it.product_name} × {it.quantity}</span>
+                      <span>₹{Number(it.total_price || it.price * it.quantity).toFixed(2)}</span>
+                    </div>
+                  ))}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, padding: '4px 0', color: '#64748B' }}>
+                    <span>Shipping</span><span>{Number(selectedOrderDetails.shipping_fee) ? `₹${Number(selectedOrderDetails.shipping_fee).toFixed(2)}` : 'FREE'}</span>
+                  </div>
+                </div>
+              )}
               <p style={{ marginTop: 8 }}><strong>Total Amount:</strong> ₹{Number(selectedOrderDetails.total_amount).toFixed(2)}</p>
+
+              {orderTimeline.length > 0 && (
+                <div style={{ marginTop: 14, borderTop: '1px solid #EFE8DE', paddingTop: 10 }}>
+                  <strong style={{ display: 'block', marginBottom: 6 }}>Order Updates</strong>
+                  {orderTimeline.map((t, i) => (
+                    <div key={i} style={{ fontSize: 13, padding: '4px 0', color: '#475569' }}>
+                      <span style={{ color: '#94A3B8' }}>{new Date(t.created_at).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+                      {' · '}<strong>{t.title}</strong>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {(['Paid', 'Partially Refunded', 'Refunded'].includes(selectedOrderDetails.payment_status) || Boolean(selectedOrderDetails.razorpay_payment_id)) && (
+                <button className="btn-view-ord-details" style={{ marginTop: 14 }} onClick={() => handleDownloadInvoice(selectedOrderDetails)}>
+                  <FileText size={14} /> Download Invoice
+                </button>
+              )}
             </div>
           </div>
         </div>

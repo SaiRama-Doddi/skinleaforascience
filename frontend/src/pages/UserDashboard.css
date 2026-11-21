@@ -760,3 +760,20 @@
     gap: 12px;
   }
 }
+
+/* Order status pills for every status the store uses */
+.ord-status-pill.processing { background: #EDE9FE; color: #6D28D9; }
+.ord-status-pill.in-transit,
+.ord-status-pill.out-for-delivery { background: #E0F2FE; color: #0369A1; }
+.ord-status-pill.cancelled,
+.ord-status-pill.returned { background: #FEE2E2; color: #B91C1C; }
+.ord-status-pill.exchanged { background: #F1F5F9; color: #475569; }
+
+/* Payment status pills */
+.ord-status-pill.pay-paid { background: #D1FAE5; color: #047857; }
+.ord-status-pill.pay-refunded,
+.ord-status-pill.pay-partially-refunded { background: #F1F5F9; color: #475569; }
+.ord-status-pill.pay-pending { background: #FEF3C7; color: #B45309; }
+
+/* Order item thumbnail: always a visible, contained image */
+.ord-item-row img { object-fit: contain; background: #FAF7F2; }

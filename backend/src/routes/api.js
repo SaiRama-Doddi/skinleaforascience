@@ -1,6 +1,6 @@
 const express = require('express');
 const { getHealthStatus } = require('../controllers/healthController');
-const { getAllProducts, getProductById } = require('../controllers/productController');
+const { getAllProducts, getProductById, getProductImage } = require('../controllers/productController');
 const adminController = require('../controllers/adminController');
 const authController = require('../controllers/authController');
 
@@ -29,6 +29,7 @@ router.get('/health', getHealthStatus);
 // Public Product & Category Endpoints
 router.get('/products', getAllProducts);
 router.get('/products/:id', getProductById);
+router.get('/products/:id/image', getProductImage);
 router.get('/products/:id/reviews', reviewController.getProductReviews);
 router.get('/categories', adminController.getPublicCategories);
 router.get('/banners', adminController.getPublicBanners);
