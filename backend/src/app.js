@@ -33,6 +33,8 @@ app.use(
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   })
 );
+// Never write session tokens (used as ?token= on CSV export links) into access logs
+morgan.token('url', (req) => String(req.originalUrl || req.url).replace(/([?&]token=)[^&]*/gi, '$1[redacted]'));
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
 // Large bodies (base64 images, CSV imports) are only accepted on authenticated admin routes.

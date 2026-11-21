@@ -77,7 +77,8 @@ export default function UserDashboard() {
   // Load User Data
   useEffect(() => {
     const storedUser = localStorage.getItem('leafora_user_profile');
-    if (!storedUser) {
+    const storedToken = localStorage.getItem('leafora_user_token');
+    if (!storedUser || !storedToken) {
       navigate('/login?redirect=/dashboard');
       return;
     }
@@ -108,7 +109,12 @@ export default function UserDashboard() {
               localStorage.setItem('leafora_user_profile', JSON.stringify(u));
             }
           })
-          .catch(() => {});
+          .catch(() => {
+            // A 401 clears the stored session (see api.js); send the user to sign in again
+            if (!localStorage.getItem('leafora_user_token')) {
+              navigate('/login?redirect=/dashboard');
+            }
+          });
       }
     } catch (e) {
       console.error('Error parsing user session:', e);
