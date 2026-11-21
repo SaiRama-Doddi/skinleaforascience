@@ -19,6 +19,7 @@ import {
   X
 } from 'lucide-react';
 import SEO from '../components/SEO';
+import { useShippingSettings, formatRupees } from '../services/shippingService';
 import './PolicyPages.css';
 import './Faq.css';
 
@@ -42,7 +43,7 @@ const FAQ_DATA = [
     category: 'orders',
     categoryName: 'Orders & Shipping',
     question: 'What are the shipping charges and estimated delivery timelines?',
-    answer: 'We provide Free Express Shipping across India on all orders above ₹999. For orders under ₹999, a nominal standard flat shipping fee applies. Orders are packed and dispatched within 24-48 hours. Metro city deliveries usually arrive within 2-4 business days, while other regions receive delivery within 4-6 business days.'
+    answer: '{{SHIPPING_POLICY}} Orders are packed and dispatched within 24-48 hours. Metro city deliveries usually arrive within 2-4 business days, while other regions receive delivery within 4-6 business days.'
   },
   {
     id: 4,
@@ -122,6 +123,19 @@ export default function Faq() {
   const [searchQuery, setSearchQuery] = useState('');
   const [openIds, setOpenIds] = useState([1, 2, 3]); // First 3 open by default
 
+  // Shipping answer reflects Admin → Shipping Charges
+  const shipping = useShippingSettings();
+  const faqData = useMemo(() => {
+    const fee = Number(shipping.shipping_fee) || 0;
+    const threshold = formatRupees(shipping.free_shipping_threshold);
+    const policy = fee === 0
+      ? 'We provide Free Express Shipping across India on all orders.'
+      : shipping.free_shipping_enabled
+        ? 'We provide Free Express Shipping across India on all orders above ' + threshold + '. For orders under ' + threshold + ', a flat shipping fee of ' + formatRupees(fee) + ' applies.'
+        : 'A flat shipping fee of ' + formatRupees(fee) + ' applies to all orders across India.';
+    return FAQ_DATA.map((f) => ({ ...f, answer: f.answer.replace('{{SHIPPING_POLICY}}', policy) }));
+  }, [shipping]);
+
   const toggleItem = (id) => {
     setOpenIds(prev => 
       prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
@@ -137,7 +151,7 @@ export default function Faq() {
   };
 
   const filteredFaqs = useMemo(() => {
-    return FAQ_DATA.filter(faq => {
+    return faqData.filter(faq => {
       const matchCat = selectedCategory === 'all' || faq.category === selectedCategory;
       if (!matchCat) return false;
 
@@ -150,7 +164,7 @@ export default function Faq() {
       }
       return true;
     });
-  }, [selectedCategory, searchQuery]);
+  }, [faqData, selectedCategory, searchQuery]);
 
   return (
     <div className="policy-page-wrapper faq-page-wrapper">

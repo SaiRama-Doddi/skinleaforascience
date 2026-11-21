@@ -7,6 +7,7 @@ import {
 import { getCart, getCartSubtotal, updateCartQuantity, removeFromCart, clearCart, DEFAULT_PRODUCT_IMAGE } from '../services/cartService';
 import { userGetAddresses, userAddAddress, createRazorpayOrder, verifyRazorpayPayment } from '../services/api';
 import { detectLiveLocation } from '../services/locationService';
+import { useShippingSettings, calcShippingFee } from '../services/shippingService';
 import './Cart.css';
 
 const loadRazorpayScript = () => {
@@ -28,6 +29,8 @@ export default function Cart() {
   const navigate = useNavigate();
   const [cartItems, setCartItems] = useState([]);
   const [subtotal, setSubtotal] = useState(0);
+  const shippingSettings = useShippingSettings();
+  const freeShippingThreshold = Number(shippingSettings.free_shipping_threshold) || 0;
 
   // User Auth & Checkout State
   const [user, setUser] = useState(null);
@@ -109,7 +112,7 @@ export default function Cart() {
     };
   }, []);
 
-  const shippingCost = subtotal >= 999 ? 0 : (subtotal > 0 ? 99 : 0);
+  const shippingCost = calcShippingFee(subtotal, shippingSettings);
   const totalAmount = subtotal + shippingCost;
 
   // Handle "Place Order Now" Click
@@ -680,9 +683,10 @@ export default function Cart() {
             <div className="cart-page-grid">
               {/* LEFT COLUMN: CART ITEMS LIST */}
               <div className="cart-items-section">
-                {/* FREE SHIPPING BANNER */}
+                {/* FREE SHIPPING BANNER (values set in Admin → Shipping Charges) */}
+                {(shippingSettings.free_shipping_enabled || shippingCost === 0) && (
                 <div className="cart-shipping-alert">
-                  {subtotal >= 999 ? (
+                  {shippingCost === 0 ? (
                     <div className="shipping-alert-success">
                       <Truck size={20} color="#15803D" />
                       <div>
@@ -694,17 +698,18 @@ export default function Cart() {
                     <div className="shipping-alert-progress">
                       <Truck size={20} color="#A67C52" />
                       <div style={{ flex: 1 }}>
-                        <div>Add <strong>₹{(999 - subtotal).toFixed(2)}</strong> more to unlock <strong>FREE Express Shipping</strong></div>
+                        <div>Add <strong>₹{(freeShippingThreshold - subtotal).toFixed(2)}</strong> more to unlock <strong>FREE Express Shipping</strong></div>
                         <div className="cart-progress-bar-bg" style={{ marginTop: 6 }}>
                           <div 
                             className="cart-progress-bar-fill" 
-                            style={{ width: `${Math.min(100, (subtotal / 999) * 100)}%` }}
+                            style={{ width: `${Math.min(100, (subtotal / (freeShippingThreshold || 1)) * 100)}%` }}
                           />
                         </div>
                       </div>
                     </div>
                   )}
                 </div>
+                )}
 
                 <div className="cart-items-card-list">
                   {cartItems.map((item) => (

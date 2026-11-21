@@ -18,6 +18,7 @@ import {
 import { checkHealth, getProducts, userLogout } from '../services/api';
 import { getCart, getCartCount, getCartSubtotal, updateCartQuantity, removeFromCart, DEFAULT_PRODUCT_IMAGE } from '../services/cartService';
 import leaforaLogo from '../assets/leafora-logo.png';
+import { useShippingSettings, calcShippingFee, formatRupees } from '../services/shippingService';
 import './Navbar.css';
 
 // Botanical Leaf Cluster SVG for the announcement bar corners
@@ -66,6 +67,17 @@ const BotanicalFoliage = ({ side = 'left' }) => (
 );
 
 export default function Navbar() {
+  // Shipping banner text follows Admin → Shipping Charges
+  const shippingSettings = useShippingSettings();
+  const freeThreshold = Number(shippingSettings.free_shipping_threshold) || 0;
+  const shipHighlight = Number(shippingSettings.shipping_fee) === 0 || shippingSettings.free_shipping_enabled
+    ? 'Free Shipping'
+    : `Flat ${formatRupees(shippingSettings.shipping_fee)} Shipping`;
+  const shipSub = Number(shippingSettings.shipping_fee) === 0
+    ? 'on All Orders'
+    : shippingSettings.free_shipping_enabled
+      ? `on Orders Above ${formatRupees(freeThreshold)}`
+      : 'Across India';
   const [apiStatus, setApiStatus] = useState('connected');
   const [user, setUser] = useState(null);
   const [cartCount, setCartCount] = useState(0);
@@ -168,8 +180,8 @@ export default function Navbar() {
             <div className="announcement-left-group">
               <Truck size={17} className="announcement-truck-icon" />
               <div className="announcement-text-content">
-                <span className="announcement-highlight">Free Shipping</span>
-                <span className="announcement-sub">on Orders Above ₹999</span>
+                <span className="announcement-highlight">{shipHighlight}</span>
+                <span className="announcement-sub">{shipSub}</span>
                 <span className="announcement-sep">|</span>
                 <span className="announcement-sub">Natural Skincare for a Healthier You</span>
               </div>
@@ -196,8 +208,8 @@ export default function Navbar() {
             <div className="ticker-track">
               <div className="ticker-item">
                 <Truck size={15} className="announcement-truck-icon" />
-                <span className="announcement-highlight">Free Shipping</span>
-                <span className="announcement-sub">on Orders Above ₹999</span>
+                <span className="announcement-highlight">{shipHighlight}</span>
+                <span className="announcement-sub">{shipSub}</span>
                 <span className="announcement-sep">|</span>
                 <span className="announcement-sub">Natural Skincare for a Healthier You</span>
                 <span className="ticker-bullet">•</span>
@@ -210,8 +222,8 @@ export default function Navbar() {
               {/* Duplicated for seamless infinite looping */}
               <div className="ticker-item" aria-hidden="true">
                 <Truck size={15} className="announcement-truck-icon" />
-                <span className="announcement-highlight">Free Shipping</span>
-                <span className="announcement-sub">on Orders Above ₹999</span>
+                <span className="announcement-highlight">{shipHighlight}</span>
+                <span className="announcement-sub">{shipSub}</span>
                 <span className="announcement-sep">|</span>
                 <span className="announcement-sub">Natural Skincare for a Healthier You</span>
                 <span className="ticker-bullet">•</span>
@@ -409,19 +421,19 @@ export default function Navbar() {
                 </div>
 
                 <div className="cart-drawer-body">
-                  {cartItems.length > 0 && (
+                  {cartItems.length > 0 && (shippingSettings.free_shipping_enabled || calcShippingFee(getCartSubtotal(), shippingSettings) === 0) && (
                     <div className="cart-shipping-banner">
-                      {getCartSubtotal() >= 999 ? (
+                      {calcShippingFee(getCartSubtotal(), shippingSettings) === 0 ? (
                         <div className="cart-shipping-unlocked">
                           🎉 <strong>Free Delivery Unlocked!</strong> You saved shipping fees.
                         </div>
                       ) : (
                         <div className="cart-shipping-progress">
-                          <span>Add <strong>₹{(999 - getCartSubtotal()).toFixed(2)}</strong> more for <strong>Free Delivery</strong></span>
+                          <span>Add <strong>₹{(freeThreshold - getCartSubtotal()).toFixed(2)}</strong> more for <strong>Free Delivery</strong></span>
                           <div className="cart-progress-bar-bg">
                             <div 
                               className="cart-progress-bar-fill" 
-                              style={{ width: `${Math.min(100, (getCartSubtotal() / 999) * 100)}%` }}
+                              style={{ width: `${Math.min(100, (getCartSubtotal() / (freeThreshold || 1)) * 100)}%` }}
                             />
                           </div>
                         </div>

@@ -90,6 +90,10 @@ export const adminSendOtp = (email) => api.post('/admin/send-otp', { email });
 export const adminVerifyOtp = (email, otp) => api.post('/admin/verify-otp', { email, otp });
 export const adminLogout = () => api.post('/admin/logout').catch(() => null);
 
+// Shipping Charges (fee + free-shipping minimum)
+export const adminGetShippingSettings = () => api.get('/admin/shipping-settings');
+export const adminUpdateShippingSettings = (data) => api.put('/admin/shipping-settings', data);
+
 // Admin Analytics & Controls API
 export const adminGetAnalytics = () => api.get('/admin/analytics');
 export const adminUploadImage = (imageData) => api.post('/admin/upload', { image_data: imageData });

@@ -3,10 +3,9 @@ const crypto = require('crypto');
 const { pool } = require('../config/db');
 const { sendOrderConfirmationEmail } = require('../services/mailer');
 const { ensureSecurityTables, safeEqual } = require('../services/security');
+const { getShippingSettings, shippingFeeFor } = require('../services/shippingSettings');
 
-// Checkout pricing rules. Must match the cart UI (frontend/src/pages/Cart.jsx).
-const FREE_SHIPPING_THRESHOLD = 999;
-const STANDARD_SHIPPING_FEE = 99;
+// Shipping charges come from the admin-editable shipping_settings table.
 const MAX_QTY_PER_ITEM = 50;
 
 const round2 = (n) => Math.round(n * 100) / 100;
@@ -85,7 +84,7 @@ const priceCart = async (rawItems) => {
   }
 
   const subtotal = round2(lines.reduce((sum, l) => sum + l.total_price, 0));
-  const shipping_fee = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : (subtotal > 0 ? STANDARD_SHIPPING_FEE : 0);
+  const shipping_fee = round2(shippingFeeFor(subtotal, await getShippingSettings()));
   const total_amount = round2(subtotal + shipping_fee);
 
   if (total_amount <= 0) {

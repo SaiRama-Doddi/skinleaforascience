@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './AdminDashboard.css';
 import leaforaLogo from '../assets/leafora-logo.png';
+import ShippingChargesPanel from '../components/admin/ShippingChargesPanel';
 import {
   adminGetAnalytics, adminUploadImage,
   adminGetCategories, adminAddCategory, adminUpdateCategory, adminDeleteCategory,
@@ -2896,6 +2897,13 @@ export default function AdminDashboard() {
               <span>Reviews</span>
             </li>
             <li 
+              className={`leafora-nav-item ${activeTab === 'shipping' ? 'active' : ''}`}
+              onClick={() => { setActiveTab('shipping'); setIsMobileSidebarOpen(false); }}
+            >
+              <Truck className="leafora-nav-icon" />
+              <span>Shipping Charges</span>
+            </li>
+            <li 
               className="leafora-nav-item leafora-nav-logout"
               onClick={handleLogout}
               title="Sign Out of Admin Portal"
@@ -3021,6 +3029,7 @@ export default function AdminDashboard() {
                 {activeTab === 'users' && 'User Account Directory'}
                 {activeTab === 'coupons' && 'Coupon & Promo Engine'}
                 {activeTab === 'reviews' && 'Customer Reviews Moderation'}
+                {activeTab === 'shipping' && 'Shipping Charges'}
                 {activeTab === 'marketing' && 'Marketing & Referral Suite'}
                 {activeTab === 'reports' && 'Reports & Business Analytics'}
               </h1>
@@ -3033,6 +3042,7 @@ export default function AdminDashboard() {
                 {activeTab === 'users' && 'Manage user accounts, contact info, and loyalty reward tiers.'}
                 {activeTab === 'coupons' && 'Configure discount promo codes and order minimum rules.'}
                 {activeTab === 'reviews' && 'Review and moderate customer product feedback.'}
+                {activeTab === 'shipping' && 'Set the delivery fee and the free-shipping minimum order value.'}
                 {activeTab === 'marketing' && 'Manage affiliate referrals and promotional campaigns.'}
                 {activeTab === 'reports' && 'Export detailed business revenue and inventory reports.'}
               </p>
@@ -10923,6 +10933,9 @@ export default function AdminDashboard() {
                 </div>
               )}
             </div>
+          )}
+          {activeTab === 'shipping' && (
+            <ShippingChargesPanel onNotify={showNotification} />
           )}
           {['reports'].includes(activeTab) && (
             <div className="leafora-card" style={{ padding: 32, textAlign: 'center' }}>

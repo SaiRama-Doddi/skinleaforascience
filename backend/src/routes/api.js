@@ -6,6 +6,7 @@ const authController = require('../controllers/authController');
 
 const userController = require('../controllers/userController');
 const paymentController = require('../controllers/paymentController');
+const shippingController = require('../controllers/shippingController');
 const { verifyAdminToken, requireUser } = require('../middleware/authMiddleware');
 const { rateLimit } = require('../services/security');
 
@@ -30,6 +31,7 @@ router.get('/products/:id', getProductById);
 router.get('/categories', adminController.getCategories);
 router.get('/banners', adminController.getHomepageBanners);
 router.get('/homepage/banners', adminController.getHomepageBanners);
+router.get('/shipping-settings', shippingController.getSettings);
 
 // ─── USER AUTHENTICATION ENDPOINTS ───
 router.post('/auth/register', registerLimiter, authController.registerUser);
@@ -71,6 +73,10 @@ router.use('/admin', (req, res, next) => {
 });
 
 router.post('/admin/logout', adminController.adminLogout);
+
+// ─── ADMIN SHIPPING CHARGES ───
+router.get('/admin/shipping-settings', shippingController.getSettings);
+router.put('/admin/shipping-settings', shippingController.updateSettings);
 
 // ─── ADMIN DASHBOARD ANALYTICS & UPLOADS ───
 router.get('/admin/analytics', adminController.getAnalytics);
