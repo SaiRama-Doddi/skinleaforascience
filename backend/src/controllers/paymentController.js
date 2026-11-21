@@ -294,6 +294,8 @@ const verifyRazorpayPayment = async (req, res) => {
       {
         order_number: orderNumber,
         created_at: new Date(),
+        status: 'Pending',
+        payment_status: 'Paid',
         customer_name: customerName,
         customer_email: customer.email,
         customer_phone: customerPhone,
@@ -305,7 +307,7 @@ const verifyRazorpayPayment = async (req, res) => {
         payment_method: 'Razorpay',
         razorpay_payment_id,
       },
-      lines.map((l) => ({ product_name: l.name, quantity: l.quantity, price: l.price, total_price: l.total_price }))
+      lines.map((l) => ({ product_id: l.id, product_name: l.name, product_image: l.image_url, quantity: l.quantity, price: l.price, total_price: l.total_price }))
     )).catch((e) => console.warn('Invoice email failed:', e.message));
 
     return res.status(200).json({

@@ -61,6 +61,10 @@ const getProductImage = async (req, res, next) => {
     const src = list[index] || list[0];
     if (!src) return res.status(404).end();
 
+    // Public product photos are embedded in e-mails and invoices opened elsewhere;
+    // helmet's default (same-origin) would make browsers/webmail refuse to show them.
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+
     const match = /^data:(image\/(?:jpeg|jpg|png|webp|gif|avif));base64,(.+)$/s.exec(src);
     if (match) {
       res.setHeader('Content-Type', match[1] === 'image/jpg' ? 'image/jpeg' : match[1]);

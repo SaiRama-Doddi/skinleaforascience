@@ -216,19 +216,9 @@ const getUserOrderInvoice = async (req, res) => {
     if (!['Paid', 'Partially Refunded', 'Refunded'].includes(order.payment_status)) {
       return res.status(400).json({ success: false, message: 'An invoice is available once the payment is complete.' });
     }
-    const [items] = await pool.query('SELECT product_name, quantity, price, total_price FROM order_items WHERE order_id = ? ORDER BY id', [order.id]);
-    const { invoiceHtml } = require('../services/mailer');
-    const html = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>Invoice ${escapeHtml(order.order_number)}</title>
-      <meta name="viewport" content="width=device-width, initial-scale=1">
-      <style>body{font-family:Arial,sans-serif;max-width:760px;margin:24px auto;padding:0 16px;color:#334155}
-      .bar{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #C49A45;padding-bottom:10px;margin-bottom:18px}
-      .bar h1{margin:0;color:#1A2E22;font-family:Georgia,serif;font-size:22px}
-      button{background:#1A2E22;color:#fff;border:0;padding:8px 16px;border-radius:6px;cursor:pointer}
-      @media print{button{display:none}}</style></head><body>
-      <div class="bar"><h1>Leafora Life Sciences</h1><button onclick="window.print()">Print / Save as PDF</button></div>
-      ${invoiceHtml(order, items)}
-      <p style="font-size:12px;color:#94A3B8;margin-top:24px">This is a computer-generated invoice for order ${escapeHtml(order.order_number)}.</p>
-      </body></html>`;
+    const [items] = await pool.query('SELECT product_id, product_name, product_image, quantity, price, total_price FROM order_items WHERE order_id = ? ORDER BY id', [order.id]);
+    const { invoicePageHtml } = require('../services/mailer');
+    const html = invoicePageHtml(order, items);
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     return res.status(200).send(html);
   } catch (error) {
