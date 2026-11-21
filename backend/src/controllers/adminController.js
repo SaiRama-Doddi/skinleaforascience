@@ -1258,6 +1258,23 @@ const bulkOrderAction = async (req, res) => {
   }
 };
 
+// GET /admin/orders/:id/invoice — the same printable invoice customers get (real data only)
+const getAdminOrderInvoice = async (req, res) => {
+  try {
+    const [[order]] = await pool.query('SELECT * FROM orders WHERE id = ?', [Number(req.params.id)]);
+    if (!order) return res.status(404).json({ success: false, message: 'Order not found.' });
+    const [items] = await pool.query(
+      'SELECT product_id, product_name, product_image, quantity, price, total_price FROM order_items WHERE order_id = ? ORDER BY id',
+      [order.id]
+    );
+    const { invoicePageHtml } = require('../services/mailer');
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    return res.status(200).send(invoicePageHtml(order, items));
+  } catch (error) {
+    return orderFail(res, error, 'create the invoice');
+  }
+};
+
 const exportOrdersCsv = async (req, res) => {
   try {
     const [rows] = await pool.query('SELECT * FROM orders WHERE deleted_at IS NULL ORDER BY id DESC');
@@ -3687,6 +3704,7 @@ module.exports = {
   notifyVendor,
   getOrders,
   getOrderDetails,
+  getAdminOrderInvoice,
   updateOrderStatus: updateOrderDetails,
   updateOrderDetails,
   cancelOrder,

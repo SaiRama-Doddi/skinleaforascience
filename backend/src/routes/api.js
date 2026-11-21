@@ -120,6 +120,7 @@ router.post('/admin/products/:id/notify-vendor', adminController.notifyVendor);
 router.get('/admin/orders/export', adminController.exportOrdersCsv);
 router.get('/admin/orders', adminController.getOrders);
 router.get('/admin/orders/:id', adminController.getOrderDetails);
+router.get('/admin/orders/:id/invoice', adminController.getAdminOrderInvoice);
 router.put('/admin/orders/:id', adminController.updateOrderDetails);
 router.put('/admin/orders/:id/status', adminController.updateOrderStatus);
 router.post('/admin/orders/:id/cancel', adminController.cancelOrder);

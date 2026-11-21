@@ -130,6 +130,8 @@ export const adminNotifyVendor = (id) => api.post(`/admin/products/${id}/notify-
 // Order Controls
 export const adminGetOrders = (params) => api.get('/admin/orders', { params });
 export const adminGetOrderDetails = (id) => api.get(`/admin/orders/${id}`);
+// Printable invoice (HTML string) — same document customers receive
+export const adminGetOrderInvoice = (id) => api.get(`/admin/orders/${id}/invoice`, { responseType: 'text' });
 export const adminUpdateOrderDetails = (id, data) => api.put(`/admin/orders/${id}`, data);
 export const adminUpdateOrderStatus = (id, status, shipping_partner) => api.put(`/admin/orders/${id}/status`, { status, shipping_partner });
 export const adminCancelOrder = (id, reason) => api.post(`/admin/orders/${id}/cancel`, { reason });

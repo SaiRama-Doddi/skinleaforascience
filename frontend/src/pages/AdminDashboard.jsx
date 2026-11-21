@@ -8,7 +8,7 @@ import {
   adminGetCategories, adminAddCategory, adminUpdateCategory, adminDeleteCategory,
   adminRestoreCategory, adminBulkCategoryStatus, adminReorderCategories, adminExportCategoriesUrl, adminImportCategoriesCsv,
   adminGetProducts, adminAddProduct, adminUpdateProduct, adminDeleteProduct, adminRestoreProduct, adminDuplicateProduct, adminBulkProductAction, adminExportProductsUrl, adminImportProductsCsv, adminNotifyVendor,
-  adminGetOrders, adminGetOrderDetails, adminUpdateOrderDetails, adminUpdateOrderStatus, adminCancelOrder, adminRefundOrder, adminReturnOrder, adminExchangeOrder, adminAddOrderTimeline, adminBulkOrdersAction, adminExportOrdersUrl,
+  adminGetOrders, adminGetOrderDetails, adminGetOrderInvoice, adminUpdateOrderDetails, adminUpdateOrderStatus, adminCancelOrder, adminRefundOrder, adminReturnOrder, adminExchangeOrder, adminAddOrderTimeline, adminBulkOrdersAction, adminExportOrdersUrl,
   adminGetCustomers, adminGetCustomerDetails, adminUpdateCustomer, adminUpdateCustomerStatus, adminUpdateCustomerWalletPoints, adminDeleteCustomer, adminRestoreCustomer, adminExportCustomersUrl,
   adminGetPayments, adminGetPaymentGatewaysConfig, adminUpdatePaymentGatewayConfig, adminIssueRefund, adminRetryFailedPayment, adminMarkCodCollected, adminGetPaymentRefundsLog, adminGetPaymentSettlements, adminExportRevenueUrl,
   adminGetReviews, adminCreateReview, adminGetReviewDetails, adminUpdateReviewStatus, adminReplyToReview, adminReportAbuseReview, adminRestoreReview, adminDeleteReview, adminGetReviewAnalytics, adminExportReviewsUrl,
@@ -55,6 +55,13 @@ export default function AdminDashboard() {
 
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+
+  // Signed-in admin (saved at login from the server response)
+  const signedInAdmin = (() => {
+    try { return JSON.parse(localStorage.getItem('leafora_admin_user') || '{}') || {}; } catch (e) { return {}; }
+  })();
+  const adminInitials = String(signedInAdmin.name || signedInAdmin.email || 'A')
+    .split(/[\s@.]+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('') || 'A';
 
   // Guard against direct unauthorized access
   useEffect(() => {
@@ -1977,32 +1984,82 @@ export default function AdminDashboard() {
     }
   }, [activeTab, orderViewTab, orderStatusFilter, orderPaymentFilter, orderCourierFilter, orderSearchQuery]);
 
-  const handleOpenOrderDetails = async (order) => {
+  // Statuses the server accepts (see backend services/orderService.js)
+  const ORDER_STATUS_OPTIONS = ['Pending', 'Confirmed', 'Processing', 'Shipped', 'In Transit', 'Out for Delivery', 'Delivered', 'Cancelled', 'Returned', 'Exchanged'];
+  const CLOSED_ORDER_STATUSES = ['Cancelled', 'Returned'];
+
+  const emptyOrderEditForm = { status: '', shipping_partner: '', tracking_number: '', customer_name: '', customer_phone: '', shipping_address: '', admin_notes: '' };
+  const [orderEditForm, setOrderEditForm] = useState(emptyOrderEditForm);
+  const [savingOrderEdit, setSavingOrderEdit] = useState(false);
+
+  const fillOrderEditForm = (o) => setOrderEditForm({
+    status: o?.status || 'Pending',
+    shipping_partner: o?.shipping_partner || '',
+    tracking_number: o?.tracking_number || '',
+    customer_name: o?.customer_name || '',
+    customer_phone: o?.customer_phone || '',
+    shipping_address: o?.shipping_address || '',
+    admin_notes: o?.admin_notes || ''
+  });
+
+  const handleOpenOrderDetails = async (order, tab = 'summary') => {
+    // Open immediately with what we have, then load items / timeline from the database
+    setOrderDetailDrawer({ order, items: [], timeline: [], customer: null, loading: true });
+    fillOrderEditForm(order);
+    setOrderDrawerTab(tab);
     try {
       const res = await adminGetOrderDetails(order.id);
       if (res && res.success && res.data) {
         setOrderDetailDrawer(res.data);
+        fillOrderEditForm(res.data.order);
       } else {
-        setOrderDetailDrawer({
-          order,
-          items: [
-            { id: 1, product_name: 'LeafExtract Pharma Grade', price: 49.99, quantity: 2, total_price: 99.98, sku: 'LFA-VITC-01', product_image: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiB2aWV3Qm94PSIwIDAgMjAwIDIwMCI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNGM0Y0RjYiLz48cGF0aCBkPSJNMTAwIDYwIEM3MCA2MCA1MCA4MCA1MCAxMTAgQzUwIDE0MCA3MCAxNTAgMTAwIDE1MCBDMTMwIDE1MCAxNTAgMTQwIDE1MCAxMTAgQzE1MCA4MCAxMzAgNjAgMTAwIDYwIFoiIGZpbGw9IiNBNjdDNTIiIG9wYWNpdHk9IjAuNCIvPjx0ZXh0IHg9IjEwMCIgeT0iMTgwIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMiIgZmlsbD0iIzlDQTNBRiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+TGVhZm9yYTwvdGV4dD48L3N2Zz4=' }
-          ],
-          timeline: [
-            { id: 1, title: 'Order Placed', description: `Order #${order.id} received.`, status: 'Pending', created_at: order.created_at }
-          ],
-          customer: { name: order.customer_name, email: order.customer_email, phone: order.customer_phone }
-        });
+        throw new Error(res?.message || 'Could not load order details.');
       }
     } catch (err) {
-      setOrderDetailDrawer({
-        order,
-        items: [],
-        timeline: [],
-        customer: null
-      });
+      setOrderDetailDrawer({ order, items: [], timeline: [], customer: null, loadError: err?.message || 'Could not load order details.' });
+      showNotification(`⚠️ ${err?.message || 'Could not load order details.'}`);
     }
-    setOrderDrawerTab('summary');
+  };
+
+  const handleSaveOrderEdit = async (e) => {
+    if (e) e.preventDefault();
+    const current = orderDetailDrawer?.order;
+    if (!current) return;
+    const next = { ...orderEditForm, customer_phone: String(orderEditForm.customer_phone || '').replace(/[^\d+]/g, '') };
+    if (CLOSED_ORDER_STATUSES.includes(next.status) && next.status !== current.status) {
+      const ok = window.confirm(`Mark order #${current.order_number} as ${next.status}? Stock will be returned and the customer e-mailed. This cannot be undone.`);
+      if (!ok) return;
+    }
+    // Send only what changed
+    const payload = {};
+    for (const key of Object.keys(next)) {
+      if (String(next[key] ?? '') !== String(current[key] ?? '')) payload[key] = next[key];
+    }
+    if (Object.keys(payload).length === 0) {
+      showNotification('No changes to save.');
+      return;
+    }
+    setSavingOrderEdit(true);
+    try {
+      const res = await adminUpdateOrderDetails(current.id, payload);
+      showNotification(res?.message || 'Order updated.');
+      await handleOpenOrderDetails({ ...current, ...payload }, 'edit');
+      fetchOrders();
+    } catch (err) {
+      showNotification(`⚠️ ${err?.message || 'Could not save the order.'}`);
+    } finally {
+      setSavingOrderEdit(false);
+    }
+  };
+
+  // Inline status change from the orders table
+  const handleInlineStatusChange = async (ord, status) => {
+    if (!status || status === ord.status) return;
+    if (CLOSED_ORDER_STATUSES.includes(status)) {
+      const ok = window.confirm(`Mark order #${ord.order_number} as ${status}? Stock will be returned and the customer e-mailed. This cannot be undone.`);
+      if (!ok) return;
+    }
+    await handleUpdateOrderLogistics(ord.id, { status });
   };
 
   const handleUpdateOrderLogistics = async (orderId, updates) => {
@@ -2112,12 +2169,25 @@ export default function AdminDashboard() {
   };
 
   const handleOpenPrintableDocument = async (order, type) => {
+    if (type === 'invoice') {
+      // Open synchronously (popup blockers), then fill with the server-generated invoice
+      const win = window.open('', '_blank');
+      if (win) win.document.write('<p style="font-family:Arial;padding:24px">Preparing invoice…</p>');
+      try {
+        const html = await adminGetOrderInvoice(order.id);
+        if (win) { win.document.open(); win.document.write(html); win.document.close(); }
+      } catch (err) {
+        if (win) win.close();
+        showNotification(`⚠️ ${err?.message || 'Could not create the invoice.'}`);
+      }
+      return;
+    }
     try {
       const res = await adminGetOrderDetails(order.id);
-      const items = res && res.success && res.data ? res.data.items : [];
-      setPrintableModal({ type, order, items });
+      if (!res?.success || !res.data) throw new Error(res?.message || 'Could not load order items.');
+      setPrintableModal({ type, order: res.data.order || order, items: res.data.items || [] });
     } catch (err) {
-      setPrintableModal({ type, order, items: [] });
+      showNotification(`⚠️ ${err?.message || 'Could not load order items.'}`);
     }
   };
 
@@ -2950,10 +3020,10 @@ export default function AdminDashboard() {
                 onClick={() => setShowAdminProfileMenu(!showAdminProfileMenu)} 
                 title="Admin Profile Options"
               >
-                <div className="leafora-avatar">SA</div>
+                <div className="leafora-avatar">{adminInitials}</div>
                 <div className="leafora-admin-info">
-                  <span className="leafora-admin-name">Sai Admin</span>
-                  <span className="leafora-admin-role">Super Admin</span>
+                  <span className="leafora-admin-name">{signedInAdmin.name || 'Admin'}</span>
+                  <span className="leafora-admin-role">{signedInAdmin.role || 'Admin'}</span>
                 </div>
                 <ChevronDown size={14} color="#6B7280" />
               </div>
@@ -2962,8 +3032,8 @@ export default function AdminDashboard() {
               {showAdminProfileMenu && (
                 <div className="admin-profile-dropdown-menu">
                   <div className="dropdown-head">
-                    <strong>Sai Admin</strong>
-                    <small>admin@leaforalifescience.com</small>
+                    <strong>{signedInAdmin.name || 'Admin'}</strong>
+                    <small>{signedInAdmin.email || ''}</small>
                   </div>
                   <div className="dropdown-divider" />
                   <button className="dropdown-item-btn logout" onClick={handleLogout}>
@@ -4727,7 +4797,7 @@ export default function AdminDashboard() {
                   <tbody>
                     {pagedProducts.length === 0 ? (
                       <tr>
-                        <td colSpan="8" style={{ textAlign: 'center', padding: 36, color: '#9CA3AF' }}>
+                        <td colSpan="7" style={{ textAlign: 'center', padding: 36, color: '#9CA3AF' }}>
                           No products found matching filters in {productViewTab === 'trash' ? 'Trash Bin' : 'Catalog'}.
                         </td>
                       </tr>
@@ -5121,10 +5191,10 @@ export default function AdminDashboard() {
                 <div>
                   <h3 className="leafora-card-title" style={{ fontSize: 18, display: 'flex', alignItems: 'center', gap: 10 }}>
                     <ShoppingCart size={22} color="#A37F3F" />
-                    Orders Fulfillment & Logistics Command Center
+                    Orders
                   </h3>
                   <p className="leafora-page-subtitle" style={{ marginTop: 2 }}>
-                    Manage order fulfillment, warehouse assignment, courier tracking, invoices, packing slips, shipping labels, refunds & timeline history
+                    Update fulfillment status, edit order details, print invoices and packing slips, and handle refunds.
                   </p>
                 </div>
 
@@ -5190,18 +5260,6 @@ export default function AdminDashboard() {
                     <option value="Refunded">Refunded Only</option>
                   </select>
 
-                  <select
-                    className="leafora-select-btn"
-                    value={orderCourierFilter}
-                    onChange={(e) => setOrderCourierFilter(e.target.value)}
-                  >
-                    <option value="all">All Couriers</option>
-                    <option value="BlueDart">BlueDart Express</option>
-                    <option value="FedEx">FedEx Air</option>
-                    <option value="Delhivery">Delhivery Surface</option>
-                    <option value="DHL Express">DHL Express</option>
-                    <option value="India Post">India Post Speed Post</option>
-                  </select>
 
                   <button className="leafora-cat-btn-secondary" onClick={handleExportOrders} title="Export Orders CSV">
                     <Download size={14} /> Export Orders CSV
@@ -5253,7 +5311,6 @@ export default function AdminDashboard() {
                     <th>Amount & Items</th>
                     <th>Payment</th>
                     <th>Fulfillment Status</th>
-                    <th>Logistics (Courier & Whse)</th>
                     <th style={{ textAlign: 'right' }}>Documents & Actions</th>
                   </tr>
                 </thead>
@@ -5315,19 +5372,26 @@ export default function AdminDashboard() {
                           </td>
 
                           <td>
-                            <span className={`leafora-status-pill ${stLower}`}>
-                              <span className="leafora-status-dot"></span>
-                              {ord.status || 'Pending'}
-                            </span>
-                          </td>
-
-                          <td>
-                            <div style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'flex', alignItems: 'center', gap: 4 }}>
-                              <Truck size={13} color="#A37F3F" /> {ord.shipping_partner || 'Unassigned'}
-                            </div>
-                            <div style={{ fontSize: 10, color: '#9CA3AF', fontFamily: 'monospace', marginTop: 2 }}>
-                              {ord.tracking_number ? `TRK: ${ord.tracking_number}` : (ord.warehouse || 'Whse Central')}
-                            </div>
+                            {orderViewTab === 'catalog' && !CLOSED_ORDER_STATUSES.includes(ord.status) ? (
+                              <select
+                                className={`leafora-status-select leafora-status-pill ${stLower.replace(/\s+/g, '-')}`}
+                                value={ord.status || 'Pending'}
+                                onChange={(e) => handleInlineStatusChange(ord, e.target.value)}
+                                title="Change fulfillment status (the customer is e-mailed)"
+                              >
+                                {ORDER_STATUS_OPTIONS.map((st) => <option key={st} value={st}>{st}</option>)}
+                              </select>
+                            ) : (
+                              <span className={`leafora-status-pill ${stLower}`}>
+                                <span className="leafora-status-dot"></span>
+                                {ord.status || 'Pending'}
+                              </span>
+                            )}
+                            {ord.tracking_number && (
+                              <div style={{ fontSize: 10, color: '#6B7280', fontFamily: 'monospace', marginTop: 4 }}>
+                                {ord.shipping_partner ? `${ord.shipping_partner} · ` : ''}{ord.tracking_number}
+                              </div>
+                            )}
                           </td>
 
                           <td style={{ textAlign: 'right' }}>
@@ -5338,9 +5402,18 @@ export default function AdminDashboard() {
                                     type="button"
                                     style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#3B82F6' }}
                                     onClick={() => handleOpenOrderDetails(ord)}
-                                    title="View Full Order Detail Drawer (Items, Timeline, Logistics)"
+                                    title="View order details"
                                   >
                                     <Eye size={16} />
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#A37F3F' }}
+                                    onClick={() => handleOpenOrderDetails(ord, 'edit')}
+                                    title="Edit order"
+                                  >
+                                    <Edit size={16} />
                                   </button>
 
                                   <button
@@ -5361,14 +5434,6 @@ export default function AdminDashboard() {
                                     <FileCheck size={16} />
                                   </button>
 
-                                  <button
-                                    type="button"
-                                    style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#8B5CF6' }}
-                                    onClick={() => handleOpenPrintableDocument(ord, 'shippinglabel')}
-                                    title="Print / Download Shipping Label"
-                                  >
-                                    <QrCode size={16} />
-                                  </button>
 
                                   <button
                                     type="button"
@@ -5444,10 +5509,10 @@ export default function AdminDashboard() {
                       </button>
                       <button
                         type="button"
-                        className={`leafora-prod-tab ${orderDrawerTab === 'fulfillment' ? 'active' : ''}`}
-                        onClick={() => setOrderDrawerTab('fulfillment')}
+                        className={`leafora-prod-tab ${orderDrawerTab === 'edit' ? 'active' : ''}`}
+                        onClick={() => setOrderDrawerTab('edit')}
                       >
-                        Logistics & Warehouse
+                        Edit Order
                       </button>
                       <button
                         type="button"
@@ -5473,6 +5538,8 @@ export default function AdminDashboard() {
                     </div>
 
                     <div className="leafora-drawer-body">
+                      {orderDetailDrawer.loading && <p style={{ fontSize: 12, color: '#6B7280', marginTop: 0 }}>Loading order details…</p>}
+                      {orderDetailDrawer.loadError && <p style={{ fontSize: 12, color: '#DC2626', marginTop: 0 }}>⚠️ {orderDetailDrawer.loadError}</p>}
                       {/* TAB 1: ITEMIZED SUMMARY */}
                       {orderDrawerTab === 'summary' && (
                         <div>
@@ -5518,7 +5585,7 @@ export default function AdminDashboard() {
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 8, color: '#DC2626' }}>
                               <span>Discount Applied:</span>
-                              <span>-${parseFloat(orderDetailDrawer.order?.discount_amount || 0).toFixed(2)}</span>
+                              <span>-₹{parseFloat(orderDetailDrawer.order?.discount_amount || 0).toFixed(2)}</span>
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, fontWeight: 700, paddingTop: 8, borderTop: '1px solid #E5E7EB', color: '#111827' }}>
                               <span>Grand Total:</span>
@@ -5546,7 +5613,7 @@ export default function AdminDashboard() {
                                 <MapPin size={13} color="#A37F3F" /> Shipping Address
                               </h5>
                               <p style={{ margin: 0, fontSize: 12, color: '#4B5563', lineHeight: 1.4 }}>
-                                {orderDetailDrawer.order?.shipping_address || '42 Bio-Tech Park, Jubilee Hills, Hyderabad, Telangana - 500033'}
+                                {orderDetailDrawer.order?.shipping_address || 'Not provided'}
                               </p>
                             </div>
 
@@ -5562,75 +5629,118 @@ export default function AdminDashboard() {
                         </div>
                       )}
 
-                      {/* TAB 3: FULFILLMENT & LOGISTICS */}
-                      {orderDrawerTab === 'fulfillment' && (
-                        <div>
+                      {/* TAB 3: EDIT ORDER (one Save; customer is e-mailed when the status changes) */}
+                      {orderDrawerTab === 'edit' && (
+                        <form onSubmit={handleSaveOrderEdit}>
                           <div className="leafora-prod-form-grid" style={{ gridTemplateColumns: '1fr 1fr', gap: 14 }}>
                             <div className="leafora-form-group">
-                              <label className="leafora-form-label">Assigned Warehouse Origin</label>
+                              <label className="leafora-form-label">Fulfillment Status</label>
                               <select
                                 className="leafora-cat-input"
-                                value={orderDetailDrawer.order?.warehouse || 'Warehouse A - Hyderabad Central'}
-                                onChange={(e) => handleUpdateOrderLogistics(orderDetailDrawer.order.id, { warehouse: e.target.value })}
+                                value={orderEditForm.status}
+                                disabled={CLOSED_ORDER_STATUSES.includes(orderDetailDrawer.order?.status)}
+                                onChange={(e) => setOrderEditForm({ ...orderEditForm, status: e.target.value })}
                               >
-                                <option value="Warehouse A - Hyderabad Central">Warehouse A - Hyderabad Central</option>
-                                <option value="Warehouse B - Bengaluru Hub">Warehouse B - Bengaluru Hub</option>
-                                <option value="Warehouse C - Mumbai Logistics">Warehouse C - Mumbai Logistics</option>
-                                <option value="Warehouse D - Delhi NCR Hub">Warehouse D - Delhi NCR Hub</option>
+                                {ORDER_STATUS_OPTIONS.map((st) => <option key={st} value={st}>{st}</option>)}
                               </select>
+                              {CLOSED_ORDER_STATUSES.includes(orderDetailDrawer.order?.status) && (
+                                <small style={{ color: '#6B7280' }}>This order is {orderDetailDrawer.order.status}; its status can no longer change.</small>
+                              )}
                             </div>
 
                             <div className="leafora-form-group">
-                              <label className="leafora-form-label">Courier Shipping Partner</label>
-                              <select
-                                className="leafora-cat-input"
-                                value={orderDetailDrawer.order?.shipping_partner || 'BlueDart'}
-                                onChange={(e) => handleUpdateOrderLogistics(orderDetailDrawer.order.id, { shipping_partner: e.target.value })}
-                              >
-                                <option value="BlueDart">BlueDart Express</option>
-                                <option value="FedEx">FedEx Air</option>
-                                <option value="Delhivery">Delhivery Surface</option>
-                                <option value="DHL Express">DHL Express</option>
-                                <option value="India Post">India Post Speed Post</option>
-                              </select>
-                            </div>
-
-                            <div className="leafora-form-group" style={{ gridColumn: 'span 2' }}>
-                              <label className="leafora-form-label">Tracking Number / Airway Bill (AWB)</label>
+                              <label className="leafora-form-label">Courier (optional)</label>
                               <input
                                 type="text"
                                 className="leafora-cat-input"
-                                placeholder="e.g. BD-8821034"
-                                value={orderDetailDrawer.order?.tracking_number || ''}
-                                onChange={(e) => handleUpdateOrderLogistics(orderDetailDrawer.order.id, { tracking_number: e.target.value })}
+                                list="leafora-courier-list"
+                                placeholder="e.g. Delhivery"
+                                maxLength={100}
+                                value={orderEditForm.shipping_partner}
+                                onChange={(e) => setOrderEditForm({ ...orderEditForm, shipping_partner: e.target.value })}
+                              />
+                              <datalist id="leafora-courier-list">
+                                {['Delhivery', 'BlueDart', 'DTDC', 'Ekart', 'Xpressbees', 'Shadowfax', 'India Post'].map((c) => <option key={c} value={c} />)}
+                              </datalist>
+                            </div>
+
+                            <div className="leafora-form-group" style={{ gridColumn: 'span 2' }}>
+                              <label className="leafora-form-label">Tracking Number (optional)</label>
+                              <input
+                                type="text"
+                                className="leafora-cat-input"
+                                placeholder="Courier tracking / AWB number"
+                                maxLength={100}
+                                value={orderEditForm.tracking_number}
+                                onChange={(e) => setOrderEditForm({ ...orderEditForm, tracking_number: e.target.value })}
+                              />
+                            </div>
+
+                            <div className="leafora-form-group">
+                              <label className="leafora-form-label">Customer Name</label>
+                              <input
+                                type="text"
+                                className="leafora-cat-input"
+                                maxLength={100}
+                                value={orderEditForm.customer_name}
+                                onChange={(e) => setOrderEditForm({ ...orderEditForm, customer_name: e.target.value })}
+                              />
+                            </div>
+
+                            <div className="leafora-form-group">
+                              <label className="leafora-form-label">Customer Phone</label>
+                              <input
+                                type="tel"
+                                className="leafora-cat-input"
+                                inputMode="numeric"
+                                maxLength={13}
+                                value={orderEditForm.customer_phone}
+                                onChange={(e) => setOrderEditForm({ ...orderEditForm, customer_phone: e.target.value })}
+                              />
+                            </div>
+
+                            <div className="leafora-form-group" style={{ gridColumn: 'span 2' }}>
+                              <label className="leafora-form-label">Delivery Address</label>
+                              <textarea
+                                className="leafora-cat-input"
+                                rows={3}
+                                maxLength={1000}
+                                value={orderEditForm.shipping_address}
+                                onChange={(e) => setOrderEditForm({ ...orderEditForm, shipping_address: e.target.value })}
+                              />
+                            </div>
+
+                            <div className="leafora-form-group" style={{ gridColumn: 'span 2' }}>
+                              <label className="leafora-form-label">Internal Notes (not shown to the customer)</label>
+                              <textarea
+                                className="leafora-cat-input"
+                                rows={3}
+                                maxLength={2000}
+                                value={orderEditForm.admin_notes}
+                                onChange={(e) => setOrderEditForm({ ...orderEditForm, admin_notes: e.target.value })}
                               />
                             </div>
                           </div>
 
-                          <div style={{ marginTop: 16, display: 'flex', gap: 8 }}>
-                            <button
-                              type="button"
-                              className="leafora-cat-btn-secondary"
-                              onClick={() => handleOpenPrintableDocument(orderDetailDrawer.order, 'invoice')}
-                            >
-                              <Printer size={14} /> Open Commercial Invoice
+                          <p style={{ fontSize: 11.5, color: '#6B7280', margin: '10px 0 0' }}>
+                            Changing the status e-mails the customer (with courier and tracking number if filled in).
+                          </p>
+
+                          <div style={{ marginTop: 14, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                            <button type="submit" className="leafora-cat-btn-primary" disabled={savingOrderEdit || orderDetailDrawer.loading}>
+                              {savingOrderEdit ? 'Saving…' : 'Save Changes'}
                             </button>
-                            <button
-                              type="button"
-                              className="leafora-cat-btn-secondary"
-                              onClick={() => handleOpenPrintableDocument(orderDetailDrawer.order, 'packingslip')}
-                            >
-                              <FileCheck size={14} /> Open Packing Slip
+                            <button type="button" className="leafora-cat-btn-secondary" onClick={() => fillOrderEditForm(orderDetailDrawer.order)} disabled={savingOrderEdit}>
+                              Reset
                             </button>
-                            <button
-                              type="button"
-                              className="leafora-cat-btn-secondary"
-                              onClick={() => handleOpenPrintableDocument(orderDetailDrawer.order, 'shippinglabel')}
-                            >
-                              <QrCode size={14} /> Open Shipping Label
+                            <button type="button" className="leafora-cat-btn-secondary" onClick={() => handleOpenPrintableDocument(orderDetailDrawer.order, 'invoice')}>
+                              <Printer size={14} /> Invoice
+                            </button>
+                            <button type="button" className="leafora-cat-btn-secondary" onClick={() => handleOpenPrintableDocument(orderDetailDrawer.order, 'packingslip')}>
+                              <FileCheck size={14} /> Packing Slip
                             </button>
                           </div>
-                        </div>
+                        </form>
                       )}
 
                       {/* TAB 4: ACTION WORKFLOWS */}
@@ -5638,7 +5748,7 @@ export default function AdminDashboard() {
                         <div>
                           <h5 style={{ margin: '0 0 10px 0', fontSize: 13, fontWeight: 700, color: '#374151' }}>Quick Update Status</h5>
                           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 18 }}>
-                            {['Pending', 'Confirmed', 'Processing', 'Shipped', 'Out for Delivery', 'Delivered'].map((st) => (
+                            {ORDER_STATUS_OPTIONS.filter((st) => !CLOSED_ORDER_STATUSES.includes(st)).map((st) => (
                               <button
                                 key={st}
                                 type="button"
@@ -5783,77 +5893,14 @@ export default function AdminDashboard() {
                     </div>
 
                     <div className="leafora-drawer-body" style={{ background: '#FFFFFF', padding: 28 }}>
-                      {/* TYPE 1: INVOICE */}
-                      {printableModal.type === 'invoice' && (
-                        <div className="leafora-printable-invoice">
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #A37F3F', paddingBottom: 16, marginBottom: 20 }}>
-                            <div>
-                              <h2 style={{ margin: 0, color: '#A37F3F', fontFamily: 'Playfair Display, serif', fontSize: 24 }}>LEAFORA</h2>
-                              <span style={{ fontSize: 10, letterSpacing: '0.15em', color: '#6B7280' }}>CLINICAL BOTANICAL SCIENCE</span>
-                            </div>
-                            <div style={{ textAlign: 'right' }}>
-                              <h4 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>COMMERCIAL INVOICE</h4>
-                              <div style={{ fontSize: 12, color: '#6B7280', marginTop: 4 }}>
-                                Invoice #: INV-{printableModal.order?.id}<br />
-                                Date: {printableModal.order?.created_at ? new Date(printableModal.order.created_at).toLocaleDateString() : '2025-09-08'}
-                              </div>
-                            </div>
-                          </div>
-
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20, fontSize: 12 }}>
-                            <div>
-                              <strong>Billed To:</strong><br />
-                              {printableModal.order?.customer_name}<br />
-                              {printableModal.order?.customer_email}<br />
-                              {printableModal.order?.customer_phone}<br />
-                              {printableModal.order?.shipping_address}
-                            </div>
-                            <div>
-                              <strong>Merchant:</strong><br />
-                              Leafora Life Sciences Pvt Ltd<br />
-                              42 Bio-Tech Park, Jubilee Hills<br />
-                              Hyderabad, Telangana - 500033<br />
-                              GSTIN: 36AAAAA0000A1Z5
-                            </div>
-                          </div>
-
-                          <table className="leafora-table" style={{ fontSize: 11.5, marginBottom: 20 }}>
-                            <thead>
-                              <tr><th>Description</th><th>SKU</th><th>Qty</th><th>Price</th><th>Total</th></tr>
-                            </thead>
-                            <tbody>
-                              {(printableModal.items.length > 0 ? printableModal.items : [
-                                { product_name: 'LeafExtract Pharma Grade', sku: 'LFA-VITC-01', quantity: 2, price: 49.99, total_price: 99.98 }
-                              ]).map((it, idx) => (
-                                <tr key={idx}>
-                                  <td>{it.product_name}</td>
-                                  <td>{it.sku || 'N/A'}</td>
-                                  <td>{it.quantity}</td>
-                                  <td>₹{parseFloat(it.price || 0).toFixed(2)}</td>
-                                  <td>₹{parseFloat(it.total_price || (it.price * it.quantity)).toFixed(2)}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-
-                          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                            <div style={{ width: 220, fontSize: 12.5, lineHeight: 1.8 }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Subtotal:</span><span>₹{parseFloat(printableModal.order?.subtotal || printableModal.order?.total_amount || 0).toFixed(2)}</span></div>
-                              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Tax:</span><span>₹{parseFloat(printableModal.order?.tax_amount || 0).toFixed(2)}</span></div>
-                              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Shipping:</span><span>₹{parseFloat(printableModal.order?.shipping_fee || 0).toFixed(2)}</span></div>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: 15, borderTop: '2px solid #A37F3F', paddingTop: 6, marginTop: 6, color: '#A37F3F' }}><span>Total Paid:</span><span>₹{parseFloat(printableModal.order?.total_amount || 0).toFixed(2)}</span></div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
                       {/* TYPE 2: PACKING SLIP */}
                       {printableModal.type === 'packingslip' && (
                         <div className="leafora-printable-packingslip">
                           <div style={{ borderBottom: '2px dashed #9CA3AF', paddingBottom: 14, marginBottom: 18 }}>
                             <h3 style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>WAREHOUSE PACKING SLIP</h3>
                             <div style={{ fontSize: 12, color: '#6B7280', marginTop: 4 }}>
-                              Order #: {printableModal.order?.order_number || printableModal.order?.id} | Warehouse: {printableModal.order?.warehouse || 'Warehouse Central'}
+                              Order #: {printableModal.order?.order_number || printableModal.order?.id} · {printableModal.order?.customer_name}<br />
+                              {printableModal.order?.shipping_address}{printableModal.order?.customer_phone ? ` · Phone: ${printableModal.order.customer_phone}` : ''}
                             </div>
                           </div>
 
@@ -5863,12 +5910,12 @@ export default function AdminDashboard() {
 
                           <table className="leafora-table" style={{ fontSize: 12 }}>
                             <thead>
-                              <tr><th style={{ width: 40 }}>Check</th><th>Product Title</th><th>SKU / Variant</th><th>Qty Picked</th></tr>
+                              <tr><th style={{ width: 40 }}>Check</th><th>Product</th><th>SKU / Variant</th><th>Qty</th></tr>
                             </thead>
                             <tbody>
-                              {(printableModal.items.length > 0 ? printableModal.items : [
-                                { product_name: 'LeafExtract Pharma Grade', sku: 'LFA-VITC-01', quantity: 2 }
-                              ]).map((it, idx) => (
+                              {printableModal.items.length === 0 ? (
+                                <tr><td colSpan="4" style={{ textAlign: 'center', color: '#9CA3AF' }}>No items recorded for this order.</td></tr>
+                              ) : printableModal.items.map((it, idx) => (
                                 <tr key={idx}>
                                   <td style={{ textAlign: 'center' }}><input type="checkbox" /></td>
                                   <td style={{ fontWeight: 600 }}>{it.product_name}</td>
@@ -5881,41 +5928,6 @@ export default function AdminDashboard() {
                         </div>
                       )}
 
-                      {/* TYPE 3: SHIPPING LABEL */}
-                      {printableModal.type === 'shippinglabel' && (
-                        <div className="leafora-printable-shippinglabel" style={{ border: '2px solid #111827', borderRadius: 8, padding: 18 }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #111827', paddingBottom: 10, marginBottom: 14 }}>
-                            <div>
-                              <h2 style={{ margin: 0, fontSize: 22, fontWeight: 900 }}>{printableModal.order?.shipping_partner || 'BLUEDART EXPRESS'}</h2>
-                              <span style={{ fontSize: 11, fontWeight: 700 }}>AIRWAY BILL: {printableModal.order?.tracking_number || `BD-${printableModal.order?.id}`}</span>
-                            </div>
-                            <div style={{ textAlign: 'center' }}>
-                              <QrCode size={48} />
-                              <div style={{ fontSize: 9, fontFamily: 'monospace' }}>BARCODE-SIMULATION</div>
-                            </div>
-                          </div>
-
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, fontSize: 12, marginBottom: 14 }}>
-                            <div style={{ borderRight: '1px solid #E5E7EB', paddingRight: 10 }}>
-                              <strong>SHIP FROM:</strong><br />
-                              Leafora Dispatch Facility<br />
-                              {printableModal.order?.warehouse || 'Warehouse A - Hyderabad Central'}<br />
-                              Hyderabad - 500033
-                            </div>
-                            <div>
-                              <strong>SHIP TO:</strong><br />
-                              <strong>{printableModal.order?.customer_name}</strong><br />
-                              Phone: {printableModal.order?.customer_phone || 'N/A'}<br />
-                              {printableModal.order?.shipping_address || '42 Bio-Tech Park, Jubilee Hills'}
-                            </div>
-                          </div>
-
-                          <div style={{ borderTop: '2px solid #111827', paddingTop: 10, fontSize: 11, display: 'flex', justifyContent: 'space-between' }}>
-                            <span>PREPAID PARCEL | WEIGHT: 0.85 KG</span>
-                            <span>HANDLE WITH CARE 🍷</span>
-                          </div>
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>
