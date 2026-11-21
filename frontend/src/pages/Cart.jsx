@@ -8,6 +8,7 @@ import { getCart, getCartSubtotal, updateCartQuantity, removeFromCart, clearCart
 import { userGetAddresses, userAddAddress, createRazorpayOrder, verifyRazorpayPayment } from '../services/api';
 import { detectLiveLocation } from '../services/locationService';
 import { useShippingSettings, calcShippingFee } from '../services/shippingService';
+import { sanitizeMobileInput, sanitizePincodeInput, sanitizeNameInput, validateAddress, fieldErrorStyle, invalidInputStyle } from '../services/validation';
 import './Cart.css';
 
 const loadRazorpayScript = () => {
@@ -53,6 +54,13 @@ export default function Cart() {
     is_default: true
   });
   const [savingAddress, setSavingAddress] = useState(false);
+  const [addrErrors, setAddrErrors] = useState({});
+
+  // Update one address field and clear its error as the user fixes it
+  const updateAddrField = (field, value) => {
+    setNewAddress(prev => ({ ...prev, [field]: value }));
+    if (addrErrors[field]) setAddrErrors(prev => ({ ...prev, [field]: undefined }));
+  };
 
   // Order Placement State
   const [placingOrder, setPlacingOrder] = useState(false);
@@ -74,7 +82,7 @@ export default function Cart() {
         address_line1: loc.address_line1 || prev.address_line1,
         city: loc.city || prev.city,
         state: loc.state || prev.state,
-        pincode: loc.pincode || prev.pincode
+        pincode: sanitizePincodeInput(loc.pincode) || prev.pincode
       }));
       showToast('📍 Live location detected and filled successfully!');
     } catch (err) {
@@ -134,7 +142,7 @@ export default function Cart() {
       setNewAddress(prev => ({
         ...prev,
         name: u.first_name ? `${u.first_name} ${u.last_name || ''}`.trim() : u.name || '',
-        phone: u.phone || u.mobile || ''
+        phone: sanitizeMobileInput(u.phone || u.mobile || '')
       }));
 
       // Fetch user's saved addresses
@@ -164,8 +172,10 @@ export default function Cart() {
   // Handle Add Inline Address Submit
   const handleAddInlineAddress = async (e) => {
     e.preventDefault();
-    if (!newAddress.address_line1 || !newAddress.city || !newAddress.state || !newAddress.pincode) {
-      showToast('Please fill all mandatory address fields.');
+    const errors = validateAddress(newAddress);
+    setAddrErrors(errors);
+    if (Object.keys(errors).length > 0) {
+      showToast('Please correct the highlighted address fields.');
       return;
     }
 
@@ -173,9 +183,9 @@ export default function Cart() {
     try {
       const payload = {
         ...newAddress,
-        name: newAddress.name || user?.name || 'Customer',
+        name: newAddress.name.trim(),
         email: user?.email,
-        phone: newAddress.phone || user?.phone || user?.mobile || '9999999999'
+        phone: newAddress.phone
       };
 
       const res = await userAddAddress(payload);
@@ -214,11 +224,22 @@ export default function Cart() {
     }
 
     if (!finalAddress) {
-      if (!newAddress.address_line1 || !newAddress.city || !newAddress.pincode) {
-        showToast('Please select or add a delivery address to proceed.');
+      const errors = validateAddress(newAddress);
+      if (Object.keys(errors).length > 0) {
+        setAddrErrors(errors);
+        setShowInlineAddrForm(true);
+        showToast('Please select or add a valid delivery address to proceed.');
         return;
       }
       finalAddress = newAddress;
+    } else {
+      // Older saved addresses may predate validation: block a bad mobile/pincode before payment
+      const errors = validateAddress(finalAddress);
+      if (errors.phone || errors.pincode) {
+        showToast('The selected address has an invalid ' + (errors.phone ? 'mobile number' : 'pincode') + '. Please add a new address.');
+        setShowInlineAddrForm(true);
+        return;
+      }
     }
 
     setPlacingOrder(true);
@@ -234,7 +255,8 @@ export default function Cart() {
       // 1. Create Razorpay backend order
       // The server re-prices the cart from the database; only ids + quantities are sent
       const rzpOrderRes = await createRazorpayOrder({
-        items: cartItems.map(item => ({ id: item.id, quantity: Number(item.quantity) || 1 }))
+        items: cartItems.map(item => ({ id: item.id, quantity: Number(item.quantity) || 1 })),
+        shipping_address: finalAddress
       });
 
       if (!rzpOrderRes || !rzpOrderRes.success) {
@@ -467,9 +489,13 @@ export default function Cart() {
                           type="text" 
                           placeholder="e.g. Himmat Ahir"
                           value={newAddress.name}
-                          onChange={e => setNewAddress({ ...newAddress, name: e.target.value })}
+                          onChange={e => updateAddrField('name', sanitizeNameInput(e.target.value))}
+                          maxLength={60}
+                          autoComplete="name"
+                          style={addrErrors.name ? invalidInputStyle : undefined}
                           required
                         />
+                        {addrErrors.name && <small style={fieldErrorStyle}>{addrErrors.name}</small>}
                       </div>
                       <div className="form-input-field">
                         <label>Mobile Number *</label>
@@ -477,9 +503,14 @@ export default function Cart() {
                           type="tel" 
                           placeholder="10-digit mobile number"
                           value={newAddress.phone}
-                          onChange={e => setNewAddress({ ...newAddress, phone: e.target.value })}
+                          onChange={e => updateAddrField('phone', sanitizeMobileInput(e.target.value))}
+                          inputMode="numeric"
+                          maxLength={10}
+                          autoComplete="tel-national"
+                          style={addrErrors.phone ? invalidInputStyle : undefined}
                           required
                         />
+                        {addrErrors.phone && <small style={fieldErrorStyle}>{addrErrors.phone}</small>}
                       </div>
                     </div>
 
@@ -489,9 +520,13 @@ export default function Cart() {
                         type="text" 
                         placeholder="29 harekrishna park, near shivaji chowk nikol"
                         value={newAddress.address_line1}
-                        onChange={e => setNewAddress({ ...newAddress, address_line1: e.target.value })}
+                        onChange={e => updateAddrField('address_line1', e.target.value.slice(0, 200))}
+                        maxLength={200}
+                        autoComplete="street-address"
+                        style={addrErrors.address_line1 ? invalidInputStyle : undefined}
                         required
                       />
+                      {addrErrors.address_line1 && <small style={fieldErrorStyle}>{addrErrors.address_line1}</small>}
                     </div>
 
                     <div className="inline-form-row three-cols">
@@ -501,9 +536,13 @@ export default function Cart() {
                           type="text" 
                           placeholder="e.g. Ahmedabad"
                           value={newAddress.city}
-                          onChange={e => setNewAddress({ ...newAddress, city: e.target.value })}
+                          onChange={e => updateAddrField('city', sanitizeNameInput(e.target.value))}
+                          maxLength={60}
+                          autoComplete="address-level2"
+                          style={addrErrors.city ? invalidInputStyle : undefined}
                           required
                         />
+                        {addrErrors.city && <small style={fieldErrorStyle}>{addrErrors.city}</small>}
                       </div>
                       <div className="form-input-field">
                         <label>State *</label>
@@ -511,9 +550,13 @@ export default function Cart() {
                           type="text" 
                           placeholder="e.g. Gujarat"
                           value={newAddress.state}
-                          onChange={e => setNewAddress({ ...newAddress, state: e.target.value })}
+                          onChange={e => updateAddrField('state', sanitizeNameInput(e.target.value))}
+                          maxLength={60}
+                          autoComplete="address-level1"
+                          style={addrErrors.state ? invalidInputStyle : undefined}
                           required
                         />
+                        {addrErrors.state && <small style={fieldErrorStyle}>{addrErrors.state}</small>}
                       </div>
                       <div className="form-input-field">
                         <label>Pincode *</label>
@@ -521,9 +564,14 @@ export default function Cart() {
                           type="text" 
                           placeholder="e.g. 382350"
                           value={newAddress.pincode}
-                          onChange={e => setNewAddress({ ...newAddress, pincode: e.target.value })}
+                          onChange={e => updateAddrField('pincode', sanitizePincodeInput(e.target.value))}
+                          inputMode="numeric"
+                          maxLength={6}
+                          autoComplete="postal-code"
+                          style={addrErrors.pincode ? invalidInputStyle : undefined}
                           required
                         />
+                        {addrErrors.pincode && <small style={fieldErrorStyle}>{addrErrors.pincode}</small>}
                       </div>
                     </div>
 

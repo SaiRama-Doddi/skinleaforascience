@@ -3,6 +3,7 @@ const path = require('path');
 const { pool } = require('../config/db');
 const { sendOtpEmail } = require('../services/mailer');
 const ProductModel = require('../models/productModel');
+const { setOrderStatus, refundPayment, refundOrder: refundOrder_ } = require('../services/orderService');
 
 const { generateOtp, safeEqual, createSession, revokeSession, ensureSecurityTables } = require('../services/security');
 
@@ -15,7 +16,7 @@ const isAuthorizedAdminEmail = async (email) => {
   if (ALLOWED_ADMIN_EMAIL && email === ALLOWED_ADMIN_EMAIL) return true;
   try {
     const [users] = await pool.query(
-      'SELECT id FROM admin_users WHERE LOWER(email) = ? AND LOWER(status) = "active" LIMIT 1',
+      'SELECT id FROM admin_users WHERE LOWER(email) = ? AND (is_active = 1 OR is_active IS NULL) LIMIT 1',
       [email]
     );
     return users.length > 0;
@@ -110,6 +111,7 @@ const verifyOtp = async (req, res) => {
     }
 
     await pool.query('UPDATE otp_codes SET is_used = 1 WHERE id = ?', [record.id]);
+    await pool.query('UPDATE admin_users SET last_login_at = NOW() WHERE LOWER(email) = ?', [email]).catch(() => {});
     const { token, expiresAt } = await createSession('admin', { email, req });
 
     try {
@@ -152,434 +154,364 @@ const adminLogout = async (req, res) => {
   return res.status(200).json({ success: true, message: 'Logged out.' });
 };
 
-// ─── DASHBOARD ANALYTICS ───
+// ─── DASHBOARD ANALYTICS (live database counts only) ───
+
+const num = (v) => Number(v || 0);
 
 const getAnalytics = async (req, res) => {
   try {
-    const [[categoriesCount]] = await pool.query('SELECT COUNT(*) as total, SUM(is_active) as active FROM categories');
+    const [[categoriesCount]] = await pool.query(
+      'SELECT COUNT(*) as total, COALESCE(SUM(is_active), 0) as active FROM categories WHERE deleted_at IS NULL'
+    );
     const [[productsStats]] = await pool.query(`
-      SELECT 
+      SELECT
         COUNT(*) as total,
-        SUM(is_active) as active,
-        SUM(CASE WHEN stock > 0 AND stock <= 10 THEN 1 ELSE 0 END) as lowStock,
-        SUM(CASE WHEN stock = 0 THEN 1 ELSE 0 END) as outOfStock
-      FROM products
+        COALESCE(SUM(is_active), 0) as active,
+        COALESCE(SUM(CASE WHEN stock > 0 AND stock <= COALESCE(low_stock_threshold, 10) THEN 1 ELSE 0 END), 0) as lowStock,
+        COALESCE(SUM(CASE WHEN stock <= 0 THEN 1 ELSE 0 END), 0) as outOfStock
+      FROM products WHERE deleted_at IS NULL
     `);
+    // Revenue counts only paid orders that were not cancelled or refunded
     const [[ordersStats]] = await pool.query(`
-      SELECT 
+      SELECT
         COUNT(*) as total,
-        SUM(CASE WHEN DATE(created_at) = CURDATE() THEN 1 ELSE 0 END) as todayOrders,
-        SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) as pendingOrders,
-        COALESCE(SUM(CASE WHEN DATE(created_at) = CURDATE() THEN total_amount ELSE 0 END), 0) as todayRevenue,
-        COALESCE(SUM(CASE WHEN MONTH(created_at) = MONTH(CURDATE()) AND YEAR(created_at) = YEAR(CURDATE()) THEN total_amount ELSE 0 END), 0) as monthlyRevenue
-      FROM orders
+        COALESCE(SUM(CASE WHEN DATE(created_at) = CURDATE() THEN 1 ELSE 0 END), 0) as todayOrders,
+        COALESCE(SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END), 0) as pendingOrders,
+        COALESCE(SUM(CASE WHEN DATE(created_at) = CURDATE() AND payment_status = 'Paid'
+          AND status NOT IN ('Cancelled', 'Refunded') THEN total_amount ELSE 0 END), 0) as todayRevenue,
+        COALESCE(SUM(CASE WHEN MONTH(created_at) = MONTH(CURDATE()) AND YEAR(created_at) = YEAR(CURDATE())
+          AND payment_status = 'Paid' AND status NOT IN ('Cancelled', 'Refunded') THEN total_amount ELSE 0 END), 0) as monthlyRevenue
+      FROM orders WHERE deleted_at IS NULL
     `);
-    const [[customersCount]] = await pool.query('SELECT COUNT(*) as total FROM customers');
+    const [[customersCount]] = await pool.query('SELECT COUNT(*) as total FROM customers WHERE deleted_at IS NULL');
     const [[reviewsCount]] = await pool.query(`
-      SELECT 
-        COUNT(*) as total,
-        SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) as pending
-      FROM reviews
+      SELECT COUNT(*) as total, COALESCE(SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END), 0) as pending
+      FROM reviews WHERE deleted_at IS NULL
     `);
     const [[referralsStats]] = await pool.query(`
-      SELECT 
-        COALESCE(SUM(reward_amount), 0) as totalEarnings,
-        SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) as pendingCount
+      SELECT
+        COALESCE(SUM(CASE WHEN status = 'Approved' THEN reward_amount ELSE 0 END), 0) as totalEarnings,
+        COALESCE(SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END), 0) as pendingCount
       FROM referrals
     `);
     const [[couponsStats]] = await pool.query(`
-      SELECT 
-        COUNT(*) as total,
-        SUM(CASE WHEN status = 'Active' THEN 1 ELSE 0 END) as active
-      FROM coupons
+      SELECT COUNT(*) as total,
+        COALESCE(SUM(CASE WHEN is_active = 1 AND (expiry_date IS NULL OR expiry_date > NOW()) THEN 1 ELSE 0 END), 0) as active
+      FROM coupons WHERE deleted_at IS NULL
     `);
 
     return res.status(200).json({
       success: true,
       data: {
-        categories: {
-          total: categoriesCount?.total || 4,
-          active: categoriesCount?.active || 4,
-        },
+        categories: { total: num(categoriesCount.total), active: num(categoriesCount.active) },
         products: {
-          total: productsStats?.total || 5,
-          active: productsStats?.active || 5,
-          lowStock: productsStats?.lowStock || 0,
-          outOfStock: productsStats?.outOfStock || 0,
+          total: num(productsStats.total),
+          active: num(productsStats.active),
+          lowStock: num(productsStats.lowStock),
+          outOfStock: num(productsStats.outOfStock),
         },
         orders: {
-          total: ordersStats?.total || 4,
-          todayOrders: ordersStats?.todayOrders || 2,
-          pendingOrders: ordersStats?.pendingOrders || 1,
-          todayRevenue: Number(ordersStats?.todayRevenue || 92),
-          monthlyRevenue: Number(ordersStats?.monthlyRevenue || 160),
+          total: num(ordersStats.total),
+          todayOrders: num(ordersStats.todayOrders),
+          pendingOrders: num(ordersStats.pendingOrders),
+          todayRevenue: num(ordersStats.todayRevenue),
+          monthlyRevenue: num(ordersStats.monthlyRevenue),
         },
-        customers: {
-          total: customersCount?.total || 4,
-        },
-        reviews: {
-          total: reviewsCount?.total || 3,
-          pending: reviewsCount?.pending || 0,
-        },
-        referrals: {
-          totalEarnings: Number(referralsStats?.totalEarnings || 150),
-          pendingCount: referralsStats?.pendingCount || 0,
-        },
-        coupons: {
-          total: couponsStats?.total || 3,
-          active: couponsStats?.active || 3,
-        },
+        customers: { total: num(customersCount.total) },
+        reviews: { total: num(reviewsCount.total), pending: num(reviewsCount.pending) },
+        referrals: { totalEarnings: num(referralsStats.totalEarnings), pendingCount: num(referralsStats.pendingCount) },
+        coupons: { total: num(couponsStats.total), active: num(couponsStats.active) },
       },
     });
   } catch (error) {
-    console.error('Analytics error (using db seed fallback):', error.message);
-    return res.status(200).json({
-      success: true,
-      data: {
-        categories: { total: 4, active: 4 },
-        products: { total: 5, active: 5, lowStock: 0, outOfStock: 0 },
-        orders: { total: 4, todayOrders: 2, pendingOrders: 1, todayRevenue: 92, monthlyRevenue: 160 },
-        customers: { total: 4 },
-        reviews: { total: 3, pending: 0 },
-        referrals: { totalEarnings: 150, pendingCount: 0 },
-        coupons: { total: 3, active: 3 },
-      },
-    });
+    console.error('Analytics query failed:', error.message);
+    return res.status(500).json({ success: false, message: 'Could not load dashboard figures from the database.' });
   }
 };
 
+// ─── CATEGORIES (database only) ───
+
+const dbFail = (res, action, error) => {
+  console.error(`Category ${action} failed:`, error.message);
+  return res.status(500).json({ success: false, message: `Could not ${action} the category. Please try again.` });
+};
+
+const slugify = (value) =>
+  String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+
+// Admin: every category, including inactive and trashed (for the trash view)
 const getCategories = async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM categories ORDER BY id ASC');
+    const [rows] = await pool.query('SELECT * FROM categories ORDER BY display_order ASC, id ASC');
     return res.status(200).json({ success: true, count: rows.length, data: rows });
   } catch (error) {
-    console.error('Database Category Query Error:', error.message);
-    return res.status(200).json({ success: true, count: 0, data: [] });
+    console.error('Category list failed:', error.message);
+    return res.status(500).json({ success: false, message: 'Could not load categories.' });
+  }
+};
+
+// Storefront: only active, non-deleted categories
+const getPublicCategories = async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      'SELECT * FROM categories WHERE deleted_at IS NULL AND (is_active = 1 OR is_active IS NULL) ORDER BY display_order ASC, id ASC'
+    );
+    return res.status(200).json({ success: true, count: rows.length, data: rows });
+  } catch (error) {
+    console.error('Public category list failed:', error.message);
+    return res.status(500).json({ success: false, message: 'Could not load categories.' });
   }
 };
 
 const addCategory = async (req, res) => {
-  try {
-    const { 
-      name, parent_id, level, slug, description, image_url, icon_url, banner_url, 
-      meta_title, meta_description, meta_keywords, is_active, is_featured, is_trending, display_order 
-    } = req.body;
-    
-    if (!name) return res.status(400).json({ success: false, message: 'Category name is required' });
+  const {
+    name, parent_id, level, slug, description, image_url, icon_url, banner_url,
+    meta_title, meta_description, meta_keywords, is_active, is_featured, is_trending, display_order
+  } = req.body;
 
-    const finalSlug = (slug || name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
-    const imgUrl = image_url || '/assets/vitamin_c_serum.jpg';
+  if (!name || !String(name).trim()) {
+    return res.status(400).json({ success: false, message: 'Category name is required' });
+  }
+
+  try {
+    const finalSlug = slugify(slug || name);
     const catLevel = level || (parent_id ? 'sub_category' : 'category');
     const pid = parent_id ? Number(parent_id) : null;
 
-    let insertId = null;
-    try {
-      const [resDb] = await pool.query(
-        `INSERT INTO categories 
-          (parent_id, level, name, slug, description, image_url, icon_url, banner_url, meta_title, meta_description, meta_keywords, is_active, is_featured, is_trending, display_order) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          pid, catLevel, name, finalSlug, description || '', imgUrl, icon_url || '', banner_url || '',
-          meta_title || name, meta_description || description || '', meta_keywords || '',
-          is_active !== undefined ? (is_active ? 1 : 0) : 1,
-          is_featured ? 1 : 0, is_trending ? 1 : 0, display_order || 0
-        ]
-      );
-      insertId = resDb.insertId;
-    } catch (dbErr) {
-      console.warn('DB Category Insert Notice:', dbErr.message);
-    }
+    const [result] = await pool.query(
+      `INSERT INTO categories
+        (parent_id, level, name, slug, description, image_url, icon_url, banner_url, meta_title, meta_description, meta_keywords, is_active, is_featured, is_trending, display_order)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        pid, catLevel, String(name).trim(), finalSlug, description || '', image_url || '', icon_url || '', banner_url || '',
+        meta_title || name, meta_description || description || '', meta_keywords || '',
+        is_active !== undefined ? (is_active ? 1 : 0) : 1,
+        is_featured ? 1 : 0, is_trending ? 1 : 0, Number(display_order) || 0
+      ]
+    );
 
-    const newId = insertId || (inMemoryCategories.length > 0 ? Math.max(...inMemoryCategories.map(c => c.id)) + 1 : 1);
-    const newCat = {
-      id: newId, parent_id: pid, level: catLevel, name, slug: finalSlug, description: description || '',
-      image_url: imgUrl, icon_url: icon_url || '', banner_url: banner_url || '',
-      meta_title: meta_title || name, meta_description: meta_description || '', meta_keywords: meta_keywords || '',
-      is_active: is_active ? 1 : 0, is_featured: is_featured ? 1 : 0, is_trending: is_trending ? 1 : 0,
-      display_order: display_order || 0, deleted_at: null
-    };
-    inMemoryCategories.unshift(newCat);
-
-    return res.status(201).json({ success: true, message: 'Category added successfully', data: newCat });
+    const [[saved]] = await pool.query('SELECT * FROM categories WHERE id = ?', [result.insertId]);
+    return res.status(201).json({ success: true, message: 'Category added successfully', data: saved });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(409).json({ success: false, message: 'A category with this name or slug already exists.' });
+    }
+    return dbFail(res, 'add', error);
   }
 };
 
 const updateCategory = async (req, res) => {
+  const numId = Number(req.params.id);
+  const {
+    name, parent_id, level, slug, description, image_url, icon_url, banner_url,
+    meta_title, meta_description, meta_keywords, is_active, is_featured, is_trending, display_order
+  } = req.body;
+
+  if (parent_id !== undefined && Number(parent_id) === numId) {
+    return res.status(400).json({ success: false, message: 'A category cannot be its own parent.' });
+  }
+
   try {
-    const { id } = req.params;
-    const { 
-      name, parent_id, level, slug, description, image_url, icon_url, banner_url, 
-      meta_title, meta_description, meta_keywords, is_active, is_featured, is_trending, display_order 
-    } = req.body;
-    const numId = Number(id);
-    const finalSlug = slug ? slug.toLowerCase().replace(/[^a-z0-9]+/g, '-') : undefined;
-    const pid = parent_id !== undefined ? (parent_id ? Number(parent_id) : null) : undefined;
+    const finalSlug = slug ? slugify(slug) : undefined;
+    const pidProvided = parent_id !== undefined;
+    const pid = pidProvided && parent_id ? Number(parent_id) : null;
 
-    try {
-      await pool.query(
-        `UPDATE categories SET 
-          parent_id = COALESCE(?, parent_id), 
-          level = COALESCE(?, level), 
-          name = COALESCE(?, name), 
-          slug = COALESCE(?, slug), 
-          description = COALESCE(?, description), 
-          image_url = COALESCE(?, image_url), 
-          icon_url = COALESCE(?, icon_url), 
-          banner_url = COALESCE(?, banner_url), 
-          meta_title = COALESCE(?, meta_title), 
-          meta_description = COALESCE(?, meta_description), 
-          meta_keywords = COALESCE(?, meta_keywords), 
-          is_active = COALESCE(?, is_active), 
-          is_featured = COALESCE(?, is_featured), 
-          is_trending = COALESCE(?, is_trending), 
-          display_order = COALESCE(?, display_order)
-         WHERE id = ?`,
-        [
-          pid, level, name, finalSlug, description, image_url, icon_url, banner_url,
-          meta_title, meta_description, meta_keywords,
-          is_active !== undefined ? (is_active ? 1 : 0) : null,
-          is_featured !== undefined ? (is_featured ? 1 : 0) : null,
-          is_trending !== undefined ? (is_trending ? 1 : 0) : null,
-          display_order, numId
-        ]
-      );
-    } catch (dbErr) {
-      console.warn('DB Category Update Notice:', dbErr.message);
-    }
-
-    inMemoryCategories = inMemoryCategories.map(cat => 
-      cat.id === numId 
-        ? { 
-            ...cat, 
-            name: name ?? cat.name, 
-            parent_id: pid !== undefined ? pid : cat.parent_id,
-            level: level ?? cat.level,
-            slug: finalSlug ?? cat.slug,
-            description: description ?? cat.description, 
-            image_url: image_url ?? cat.image_url,
-            icon_url: icon_url ?? cat.icon_url,
-            banner_url: banner_url ?? cat.banner_url,
-            meta_title: meta_title ?? cat.meta_title,
-            meta_description: meta_description ?? cat.meta_description,
-            meta_keywords: meta_keywords ?? cat.meta_keywords,
-            is_active: is_active !== undefined ? (is_active ? 1 : 0) : cat.is_active,
-            is_featured: is_featured !== undefined ? (is_featured ? 1 : 0) : cat.is_featured,
-            is_trending: is_trending !== undefined ? (is_trending ? 1 : 0) : cat.is_trending,
-            display_order: display_order ?? cat.display_order
-          }
-        : cat
+    const [result] = await pool.query(
+      `UPDATE categories SET
+        parent_id = IF(?, ?, parent_id),
+        level = COALESCE(?, level),
+        name = COALESCE(?, name),
+        slug = COALESCE(?, slug),
+        description = COALESCE(?, description),
+        image_url = COALESCE(?, image_url),
+        icon_url = COALESCE(?, icon_url),
+        banner_url = COALESCE(?, banner_url),
+        meta_title = COALESCE(?, meta_title),
+        meta_description = COALESCE(?, meta_description),
+        meta_keywords = COALESCE(?, meta_keywords),
+        is_active = COALESCE(?, is_active),
+        is_featured = COALESCE(?, is_featured),
+        is_trending = COALESCE(?, is_trending),
+        display_order = COALESCE(?, display_order)
+       WHERE id = ?`,
+      [
+        pidProvided ? 1 : 0, pid, level ?? null, name ?? null, finalSlug ?? null, description ?? null, image_url ?? null,
+        icon_url ?? null, banner_url ?? null, meta_title ?? null, meta_description ?? null, meta_keywords ?? null,
+        is_active !== undefined ? (is_active ? 1 : 0) : null,
+        is_featured !== undefined ? (is_featured ? 1 : 0) : null,
+        is_trending !== undefined ? (is_trending ? 1 : 0) : null,
+        display_order ?? null, numId
+      ]
     );
-
+    if (result.affectedRows === 0) return res.status(404).json({ success: false, message: 'Category not found.' });
     return res.status(200).json({ success: true, message: 'Category updated successfully' });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(409).json({ success: false, message: 'A category with this name or slug already exists.' });
+    }
+    return dbFail(res, 'update', error);
   }
 };
 
 const deleteCategory = async (req, res) => {
+  const numId = Number(req.params.id);
+  const force = req.query.force === 'true';
   try {
-    const { id } = req.params;
-    const { force } = req.query;
-    const numId = Number(id);
-
-    try {
-      if (force === 'true') {
-        await pool.query('DELETE FROM categories WHERE id = ?', [numId]);
-      } else {
-        await pool.query('UPDATE categories SET deleted_at = NOW() WHERE id = ?', [numId]);
-      }
-    } catch (dbErr) {
-      console.warn('DB Category Delete Notice:', dbErr.message);
-    }
-
-    if (force === 'true') {
-      inMemoryCategories = inMemoryCategories.filter(cat => cat.id !== numId);
-    } else {
-      inMemoryCategories = inMemoryCategories.map(cat => cat.id === numId ? { ...cat, deleted_at: new Date().toISOString() } : cat);
-    }
-
-    return res.status(200).json({ 
-      success: true, 
-      message: force === 'true' ? `Category #${numId} permanently deleted` : `Category #${numId} moved to Trash` 
+    const [result] = force
+      ? await pool.query('DELETE FROM categories WHERE id = ?', [numId])
+      : await pool.query('UPDATE categories SET deleted_at = NOW() WHERE id = ?', [numId]);
+    if (result.affectedRows === 0) return res.status(404).json({ success: false, message: 'Category not found.' });
+    return res.status(200).json({
+      success: true,
+      message: force ? `Category #${numId} permanently deleted` : `Category #${numId} moved to Trash`
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return dbFail(res, 'delete', error);
   }
 };
 
 const restoreCategory = async (req, res) => {
+  const numId = Number(req.params.id);
   try {
-    const { id } = req.params;
-    const numId = Number(id);
-
-    try {
-      await pool.query('UPDATE categories SET deleted_at = NULL WHERE id = ?', [numId]);
-    } catch (dbErr) {
-      console.warn('DB Category Restore Notice:', dbErr.message);
-    }
-
-    inMemoryCategories = inMemoryCategories.map(cat => cat.id === numId ? { ...cat, deleted_at: null } : cat);
+    const [result] = await pool.query('UPDATE categories SET deleted_at = NULL WHERE id = ?', [numId]);
+    if (result.affectedRows === 0) return res.status(404).json({ success: false, message: 'Category not found.' });
     return res.status(200).json({ success: true, message: `Category #${numId} restored from Trash` });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return dbFail(res, 'restore', error);
   }
 };
 
+const CATEGORY_BULK_SQL = {
+  active: 'UPDATE categories SET is_active = 1 WHERE id IN (?)',
+  inactive: 'UPDATE categories SET is_active = 0 WHERE id IN (?)',
+  soft_delete: 'UPDATE categories SET deleted_at = NOW() WHERE id IN (?)',
+  restore: 'UPDATE categories SET deleted_at = NULL WHERE id IN (?)',
+  permanent_delete: 'DELETE FROM categories WHERE id IN (?)',
+};
+
 const bulkCategoryStatus = async (req, res) => {
+  const { ids, action } = req.body;
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return res.status(400).json({ success: false, message: 'No category IDs specified' });
+  }
+  if (!CATEGORY_BULK_SQL[action]) {
+    return res.status(400).json({ success: false, message: 'Unknown bulk action.' });
+  }
   try {
-    const { ids, action } = req.body; // action: 'active', 'inactive', 'soft_delete', 'restore', 'permanent_delete'
-    if (!Array.isArray(ids) || ids.length === 0) {
-      return res.status(400).json({ success: false, message: 'No category IDs specified' });
-    }
-
-    const numIds = ids.map(Number);
-    try {
-      if (action === 'active') {
-        await pool.query('UPDATE categories SET is_active = 1 WHERE id IN (?)', [numIds]);
-      } else if (action === 'inactive') {
-        await pool.query('UPDATE categories SET is_active = 0 WHERE id IN (?)', [numIds]);
-      } else if (action === 'soft_delete') {
-        await pool.query('UPDATE categories SET deleted_at = NOW() WHERE id IN (?)', [numIds]);
-      } else if (action === 'restore') {
-        await pool.query('UPDATE categories SET deleted_at = NULL WHERE id IN (?)', [numIds]);
-      } else if (action === 'permanent_delete') {
-        await pool.query('DELETE FROM categories WHERE id IN (?)', [numIds]);
-      }
-    } catch (dbErr) {
-      console.warn('DB Bulk Action Notice:', dbErr.message);
-    }
-
-    inMemoryCategories = inMemoryCategories.map(cat => {
-      if (!numIds.includes(cat.id)) return cat;
-      if (action === 'active') return { ...cat, is_active: 1 };
-      if (action === 'inactive') return { ...cat, is_active: 0 };
-      if (action === 'soft_delete') return { ...cat, deleted_at: new Date().toISOString() };
-      if (action === 'restore') return { ...cat, deleted_at: null };
-      return cat;
-    }).filter(cat => !(action === 'permanent_delete' && numIds.includes(cat.id)));
-
-    return res.status(200).json({ success: true, message: `Bulk action "${action}" completed for ${numIds.length} categories` });
+    const numIds = ids.map(Number).filter(Number.isInteger);
+    const [result] = await pool.query(CATEGORY_BULK_SQL[action], [numIds]);
+    return res.status(200).json({ success: true, message: `Bulk action "${action}" applied to ${result.affectedRows} categories` });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return dbFail(res, 'update', error);
   }
 };
 
 const reorderCategories = async (req, res) => {
+  const { orders } = req.body; // [{ id, display_order }]
+  if (!Array.isArray(orders)) return res.status(400).json({ success: false, message: 'Invalid reorder items' });
+
+  const conn = await pool.getConnection();
   try {
-    const { orders } = req.body; // [{ id: 1, display_order: 1 }, ...]
-    if (!Array.isArray(orders)) return res.status(400).json({ success: false, message: 'Invalid reorder items' });
-
+    await conn.beginTransaction();
     for (const item of orders) {
-      try {
-        await pool.query('UPDATE categories SET display_order = ? WHERE id = ?', [item.display_order, item.id]);
-      } catch (e) {}
-      inMemoryCategories = inMemoryCategories.map(c => c.id === Number(item.id) ? { ...c, display_order: item.display_order } : c);
+      await conn.query('UPDATE categories SET display_order = ? WHERE id = ?', [Number(item.display_order) || 0, Number(item.id)]);
     }
-
+    await conn.commit();
     return res.status(200).json({ success: true, message: 'Categories display order updated' });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    await conn.rollback().catch(() => {});
+    return dbFail(res, 'reorder', error);
+  } finally {
+    conn.release();
   }
 };
 
+const csvCell = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+
 const exportCategoriesCsv = async (req, res) => {
   try {
-    let rows = [];
-    try {
-      const [dbRows] = await pool.query('SELECT * FROM categories ORDER BY display_order ASC, id DESC');
-      rows = dbRows.length > 0 ? dbRows : inMemoryCategories;
-    } catch (e) {
-      rows = inMemoryCategories;
-    }
-
+    const [rows] = await pool.query('SELECT * FROM categories WHERE deleted_at IS NULL ORDER BY display_order ASC, id ASC');
     const headers = ['id', 'parent_id', 'level', 'name', 'slug', 'description', 'image_url', 'icon_url', 'banner_url', 'meta_title', 'meta_description', 'meta_keywords', 'is_active', 'is_featured', 'is_trending', 'display_order'];
-    let csvStr = headers.join(',') + '\n';
-
-    rows.forEach(r => {
-      const line = headers.map(h => {
-        let val = r[h] ?? '';
-        val = String(val).replace(/"/g, '""');
-        return `"${val}"`;
-      }).join(',');
-      csvStr += line + '\n';
-    });
+    const csvStr = [headers.join(','), ...rows.map((r) => headers.map((h) => csvCell(r[h])).join(','))].join('\n') + '\n';
 
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', 'attachment; filename="categories_export.csv"');
     return res.status(200).send(csvStr);
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return dbFail(res, 'export', error);
   }
 };
 
+/** Minimal CSV parser that understands quoted fields containing commas / escaped quotes. */
+const parseCsv = (text) => {
+  const rows = [];
+  let row = [], cell = '', quoted = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (quoted) {
+      if (ch === '"' && text[i + 1] === '"') { cell += '"'; i++; }
+      else if (ch === '"') quoted = false;
+      else cell += ch;
+    } else if (ch === '"') quoted = true;
+    else if (ch === ',') { row.push(cell); cell = ''; }
+    else if (ch === '\n' || ch === '\r') {
+      if (ch === '\r' && text[i + 1] === '\n') i++;
+      row.push(cell); cell = '';
+      if (row.some((c) => c.trim() !== '')) rows.push(row);
+      row = [];
+    } else cell += ch;
+  }
+  row.push(cell);
+  if (row.some((c) => c.trim() !== '')) rows.push(row);
+  if (rows.length < 2) return [];
+  const headers = rows[0].map((h) => h.trim());
+  return rows.slice(1).map((vals) => Object.fromEntries(headers.map((h, i) => [h, (vals[i] ?? '').trim()])));
+};
+
 const importCategoriesCsv = async (req, res) => {
+  const { items, csv_text } = req.body;
+  const records = (Array.isArray(items) && items.length ? items : parseCsv(String(csv_text || ''))).filter((r) => r && r.name);
+
+  if (records.length === 0) {
+    return res.status(400).json({ success: false, message: 'No valid category records found in CSV' });
+  }
+
+  const conn = await pool.getConnection();
   try {
-    const { items, csv_text } = req.body;
-    let records = Array.isArray(items) ? items : [];
-
-    if (records.length === 0 && csv_text) {
-      const lines = csv_text.split('\n').map(l => l.trim()).filter(Boolean);
-      if (lines.length > 1) {
-        const headers = lines[0].split(',').map(h => h.replace(/^"|"$/g, '').trim());
-        for (let i = 1; i < lines.length; i++) {
-          const vals = lines[i].split(',').map(v => v.replace(/^"|"$/g, '').trim());
-          const obj = {};
-          headers.forEach((h, idx) => { obj[h] = vals[idx] || ''; });
-          if (obj.name) records.push(obj);
-        }
-      }
-    }
-
-    if (records.length === 0) {
-      return res.status(400).json({ success: false, message: 'No valid category records found in CSV' });
-    }
-
-    let importedCount = 0;
+    await conn.beginTransaction();
     for (const item of records) {
-      const slug = (item.slug || item.name).toLowerCase().replace(/[^a-z0-9]+/g, '-');
-      try {
-        await pool.query(
-          `INSERT INTO categories 
-            (parent_id, level, name, slug, description, image_url, icon_url, banner_url, meta_title, meta_description, meta_keywords, is_active, is_featured, is_trending, display_order) 
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-           ON DUPLICATE KEY UPDATE name=VALUES(name), description=VALUES(description), image_url=VALUES(image_url)`,
-          [
-            item.parent_id ? Number(item.parent_id) : null,
-            item.level || 'category',
-            item.name,
-            slug,
-            item.description || '',
-            item.image_url || '/assets/vitamin_c_serum.jpg',
-            item.icon_url || '',
-            item.banner_url || '',
-            item.meta_title || item.name,
-            item.meta_description || '',
-            item.meta_keywords || '',
-            item.is_active !== undefined ? (Number(item.is_active) ? 1 : 0) : 1,
-            item.is_featured ? 1 : 0,
-            item.is_trending ? 1 : 0,
-            item.display_order ? Number(item.display_order) : 0
-          ]
-        );
-      } catch (e) {}
-
-      const newId = inMemoryCategories.length > 0 ? Math.max(...inMemoryCategories.map(c => c.id)) + 1 : 1;
-      inMemoryCategories.unshift({
-        id: newId, parent_id: item.parent_id ? Number(item.parent_id) : null, level: item.level || 'category',
-        name: item.name, slug, description: item.description || '', image_url: item.image_url || '/assets/vitamin_c_serum.jpg',
-        icon_url: item.icon_url || '', banner_url: item.banner_url || '', meta_title: item.meta_title || item.name,
-        meta_description: item.meta_description || '', meta_keywords: item.meta_keywords || '',
-        is_active: item.is_active !== undefined ? (Number(item.is_active) ? 1 : 0) : 1,
-        is_featured: item.is_featured ? 1 : 0, is_trending: item.is_trending ? 1 : 0, display_order: item.display_order ? Number(item.display_order) : 0, deleted_at: null
-      });
-      importedCount++;
+      await conn.query(
+        `INSERT INTO categories
+          (parent_id, level, name, slug, description, image_url, icon_url, banner_url, meta_title, meta_description, meta_keywords, is_active, is_featured, is_trending, display_order)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE name = VALUES(name), description = VALUES(description), image_url = VALUES(image_url)`,
+        [
+          item.parent_id ? Number(item.parent_id) : null,
+          item.level || 'category',
+          item.name,
+          slugify(item.slug || item.name),
+          item.description || '',
+          item.image_url || '',
+          item.icon_url || '',
+          item.banner_url || '',
+          item.meta_title || item.name,
+          item.meta_description || '',
+          item.meta_keywords || '',
+          item.is_active !== undefined && item.is_active !== '' ? (Number(item.is_active) ? 1 : 0) : 1,
+          Number(item.is_featured) ? 1 : 0,
+          Number(item.is_trending) ? 1 : 0,
+          Number(item.display_order) || 0
+        ]
+      );
     }
-
-    return res.status(200).json({ success: true, message: `Successfully imported ${importedCount} categories from CSV` });
+    await conn.commit();
+    return res.status(200).json({ success: true, message: `Successfully imported ${records.length} categories from CSV` });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    await conn.rollback().catch(() => {});
+    console.error('Category import failed:', error.message);
+    return res.status(500).json({ success: false, message: `Import failed, nothing was saved: ${error.message}` });
+  } finally {
+    conn.release();
   }
 };
 
@@ -660,924 +592,683 @@ const uploadImage = async (req, res) => {
   }
 };
 
-// In-memory Products Fallback
-let inMemoryProducts = [
-  { id: 1, name: 'LeafExtract Pharma Grades', brand: 'Leafora', sku: 'LFA-628708', net_quantity: '100g', category: 'Herbal Extracts', price: 49.99, stock: 117, warehouse_stock: 120, reserved_stock: 0, low_stock_threshold: 10, description: 'Pharma-grade botanical extracts.', image_url: '/assets/vitamin_c_serum.jpg', images: ['/assets/vitamin_c_serum.jpg'], is_active: 1, is_featured: 1, is_trending: 1, is_new_arrival: 1, meta_title: 'LeafExtract Pharma Grades', meta_description: 'Pharma extracts', meta_keywords: 'extracts', canonical_url: '/products/leafextract', deleted_at: null, variants: [] },
-  { id: 2, name: 'BioVital Nutraceutical', brand: 'Leafora', sku: 'LFA-954068', net_quantity: '100g', category: 'Supplements', price: 29.50, stock: 85, warehouse_stock: 85, reserved_stock: 0, low_stock_threshold: 10, description: 'Natural bio-vital nutraceutical.', image_url: '/assets/hydra_glow_moisturizer.jpg', images: ['/assets/hydra_glow_moisturizer.jpg'], is_active: 1, is_featured: 1, is_trending: 0, is_new_arrival: 0, meta_title: 'BioVital Nutraceutical', meta_description: 'Nutraceutical', meta_keywords: 'bio', canonical_url: '/products/biovital', deleted_at: null, variants: [] },
-  { id: 3, name: 'EcoScience Active Solution', brand: 'Leafora', sku: 'LFA-978964', net_quantity: '100ml', category: 'Biotech Formulations', price: 89.00, stock: 40, warehouse_stock: 40, reserved_stock: 0, low_stock_threshold: 10, description: 'Active science solutions.', image_url: '/assets/face_wash.jpg', images: ['/assets/face_wash.jpg'], is_active: 1, is_featured: 0, is_trending: 1, is_new_arrival: 1, meta_title: 'EcoScience Active Solution', meta_description: 'Active solution', meta_keywords: 'ecoscience', canonical_url: '/products/ecoscience', deleted_at: null, variants: [] },
-  { id: 4, name: 'Aloe Vera Pure Gel Base', brand: 'Leafora', sku: 'LFA-ALOE-04', net_quantity: '100g', category: 'Skin Care actives', price: 19.99, stock: 100, warehouse_stock: 100, reserved_stock: 0, low_stock_threshold: 10, description: 'Pure aloe vera gel base.', image_url: '/assets/vitamin_c_serum.jpg', images: ['/assets/vitamin_c_serum.jpg'], is_active: 1, is_featured: 1, is_trending: 1, is_new_arrival: 0, meta_title: 'Aloe Vera Pure Gel Base', meta_description: 'Aloe gel', meta_keywords: 'aloe', canonical_url: '/products/aloe-vera', deleted_at: null, variants: [] },
-  { id: 5, name: 'Curcumin 95% Extract', brand: 'Leafora', sku: 'LFA-CURC-05', net_quantity: '100g', category: 'Herbal Extracts', price: 65.00, stock: 80, warehouse_stock: 80, reserved_stock: 0, low_stock_threshold: 10, description: '95% pure curcumin extract.', image_url: '/assets/sunscreen_spf50.jpg', images: ['/assets/sunscreen_spf50.jpg'], is_active: 1, is_featured: 1, is_trending: 0, is_new_arrival: 1, meta_title: 'Curcumin 95% Extract', meta_description: 'Curcumin extract', meta_keywords: 'curcumin', canonical_url: '/products/curcumin', deleted_at: null, variants: [] },
-  { id: 6, name: 'Gentle Foaming Face Wash', brand: 'Leafora', sku: 'LFA-WASH-06', net_quantity: '100ml', category: 'Face Creams', price: 499.00, stock: 50, warehouse_stock: 50, reserved_stock: 0, low_stock_threshold: 10, description: 'Gentle foaming facial cleanser.', image_url: '/assets/face_wash.jpg', images: ['/assets/face_wash.jpg'], is_active: 1, is_featured: 1, is_trending: 1, is_new_arrival: 1, meta_title: 'Gentle Foaming Face Wash', meta_description: 'Face wash', meta_keywords: 'facewash', canonical_url: '/products/facewash', deleted_at: null, variants: [] },
-  { id: 7, name: 'Curcumin 95% Extract (Copy)', brand: 'Leafora', sku: 'LFA-CURC-07', net_quantity: '100g', category: 'Herbal Extracts', price: 65.00, stock: 80, warehouse_stock: 80, reserved_stock: 0, low_stock_threshold: 10, description: '95% pure curcumin extract copy.', image_url: '/assets/sunscreen_spf50.jpg', images: ['/assets/sunscreen_spf50.jpg'], is_active: 1, is_featured: 0, is_trending: 0, is_new_arrival: 0, meta_title: 'Curcumin 95% Extract Copy', meta_description: 'Curcumin copy', meta_keywords: 'curcumin', canonical_url: '/products/curcumin-copy', deleted_at: null, variants: [] },
-  { id: 8, name: 'Gentle Foaming Face Wash (Copy)', brand: 'Leafora', sku: 'LFA-WASH-08', net_quantity: '100ml', category: 'Face Creams', price: 499.00, stock: 50, warehouse_stock: 50, reserved_stock: 0, low_stock_threshold: 10, description: 'Gentle foaming cleanser copy.', image_url: '/assets/face_wash.jpg', images: ['/assets/face_wash.jpg'], is_active: 1, is_featured: 0, is_trending: 0, is_new_arrival: 0, meta_title: 'Foaming Face Wash Copy', meta_description: 'Face wash copy', meta_keywords: 'facewash', canonical_url: '/products/facewash-copy', deleted_at: null, variants: [] },
-  { id: 9, name: 'SPF 30 Daily Sunscreen', brand: 'Leafora', sku: 'LFA-SUN-09', net_quantity: '100ml', category: 'Sunscreen', price: 600.00, stock: 60, warehouse_stock: 60, reserved_stock: 0, low_stock_threshold: 10, description: 'Daily SPF 30 sunscreen protection.', image_url: '/assets/sunscreen_spf50.jpg', images: ['/assets/sunscreen_spf50.jpg'], is_active: 1, is_featured: 1, is_trending: 1, is_new_arrival: 1, meta_title: 'SPF 30 Daily Sunscreen', meta_description: 'SPF 30 Sunscreen', meta_keywords: 'sunscreen', canonical_url: '/products/spf30-sunscreen', deleted_at: null, variants: [] }
-];
+// ─── CONTROL SUITE 2: PRODUCTS (database only) ───
 
-// ─── CONTROL SUITE 2: PRODUCTS ───
+const productFail = (res, action, error) => {
+  console.error(`Product ${action} failed:`, error.message);
+  if (error.code === 'ER_DUP_ENTRY') {
+    return res.status(409).json({ success: false, message: 'A product with this SKU already exists.' });
+  }
+  return res.status(500).json({ success: false, message: `Could not ${action} the product. Please try again.` });
+};
+
+const clearProductCache = () => { try { ProductModel.clearCache(); } catch (e) { /* cache is optional */ } };
+
+const parseImagesColumn = (value) => {
+  if (!value) return [];
+  if (Array.isArray(value)) return value;
+  try { const arr = JSON.parse(value); return Array.isArray(arr) ? arr : []; } catch (e) { return []; }
+};
+
+/** Attach images (product_images table, else images column) and variants — 2 queries total. */
+const enrichProducts = async (rows) => {
+  if (rows.length === 0) return [];
+  const ids = rows.map((r) => r.id);
+  const [imgRows] = await pool.query(
+    'SELECT product_id, image_url FROM product_images WHERE product_id IN (?) ORDER BY display_order ASC, id ASC',
+    [ids]
+  );
+  const [varRows] = await pool.query('SELECT * FROM product_variants WHERE product_id IN (?) ORDER BY id ASC', [ids]);
+
+  return rows.map((prod) => {
+    let images = imgRows.filter((i) => i.product_id === prod.id).map((i) => i.image_url);
+    if (images.length === 0) images = parseImagesColumn(prod.images);
+    if (images.length === 0 && prod.image_url) images = [prod.image_url];
+    return {
+      ...prod,
+      image_url: images[0] || prod.image_url || '',
+      images: images.slice(0, 5),
+      variants: varRows.filter((v) => v.product_id === prod.id),
+    };
+  });
+};
+
 const getProducts = async (req, res) => {
   try {
     const { status, category, brand, stock_status, search, min_price, max_price } = req.query;
-
     let query = 'SELECT * FROM products WHERE 1=1';
     const params = [];
 
-    if (status === 'deleted') {
-      query += ' AND deleted_at IS NOT NULL';
-    } else if (status === 'active') {
-      query += ' AND deleted_at IS NULL AND is_active = 1';
-    } else if (status === 'inactive') {
-      query += ' AND deleted_at IS NULL AND is_active = 0';
-    } else if (status !== 'all') {
-      query += ' AND deleted_at IS NULL';
-    }
+    if (status === 'deleted') query += ' AND deleted_at IS NOT NULL';
+    else if (status === 'active') query += ' AND deleted_at IS NULL AND is_active = 1';
+    else if (status === 'inactive') query += ' AND deleted_at IS NULL AND is_active = 0';
+    else if (status !== 'all') query += ' AND deleted_at IS NULL';
 
-    if (category && category !== 'all') {
-      query += ' AND category = ?';
-      params.push(category);
-    }
+    if (category && category !== 'all') { query += ' AND category = ?'; params.push(category); }
+    if (brand && brand !== 'all') { query += ' AND brand = ?'; params.push(brand); }
 
-    if (brand && brand !== 'all') {
-      query += ' AND brand = ?';
-      params.push(brand);
-    }
-
-    if (stock_status === 'in_stock') {
-      query += ' AND stock > low_stock_threshold';
-    } else if (stock_status === 'low_stock') {
-      query += ' AND stock > 0 AND stock <= low_stock_threshold';
-    } else if (stock_status === 'out_of_stock') {
-      query += ' AND stock = 0';
-    }
+    if (stock_status === 'in_stock') query += ' AND stock > low_stock_threshold';
+    else if (stock_status === 'low_stock') query += ' AND stock > 0 AND stock <= low_stock_threshold';
+    else if (stock_status === 'out_of_stock') query += ' AND stock <= 0';
 
     if (search) {
       query += ' AND (name LIKE ? OR sku LIKE ? OR brand LIKE ? OR description LIKE ?)';
       const s = `%${search}%`;
       params.push(s, s, s, s);
     }
-
-    if (min_price) {
-      query += ' AND price >= ?';
-      params.push(Number(min_price));
-    }
-    if (max_price) {
-      query += ' AND price <= ?';
-      params.push(Number(max_price));
-    }
+    if (min_price) { query += ' AND price >= ?'; params.push(Number(min_price)); }
+    if (max_price) { query += ' AND price <= ?'; params.push(Number(max_price)); }
 
     query += ' ORDER BY id DESC';
     const [rows] = await pool.query(query, params);
-
-    // Enrich rows with images & variants
-    const enrichedRows = await Promise.all(rows.map(async (prod) => {
-      let images = [];
-      if (prod.images) {
-        try {
-          images = typeof prod.images === 'string' ? JSON.parse(prod.images) : prod.images;
-        } catch (e) {
-          images = [prod.image_url].filter(Boolean);
-        }
-      }
-
-      try {
-        const [imgRows] = await pool.query(
-          'SELECT image_url FROM product_images WHERE product_id = ? ORDER BY display_order ASC, id ASC',
-          [prod.id]
-        );
-        if (imgRows && imgRows.length > 0) {
-          images = imgRows.map(r => r.image_url);
-        }
-      } catch (err) {}
-
-      if (!Array.isArray(images) || images.length === 0) {
-        if (prod.image_url) images = [prod.image_url];
-      }
-
-      let variants = [];
-      try {
-        const [varRows] = await pool.query(
-          'SELECT * FROM product_variants WHERE product_id = ? ORDER BY id ASC',
-          [prod.id]
-        );
-        variants = varRows;
-      } catch (err) {}
-
-      return {
-        ...prod,
-        image_url: images[0] || prod.image_url || '',
-        images: images.slice(0, 5),
-        variants: variants || []
-      };
-    }));
-
-    return res.status(200).json({ success: true, data: enrichedRows.length > 0 ? enrichedRows : inMemoryProducts });
+    return res.status(200).json({ success: true, data: await enrichProducts(rows) });
   } catch (error) {
-    return res.status(200).json({ success: true, data: inMemoryProducts });
+    console.error('Product list failed:', error.message);
+    return res.status(500).json({ success: false, message: 'Could not load products.' });
   }
 };
 
-const addProduct = async (req, res) => {
-  try {
-    const {
-      name, brand, sku, net_quantity, category, category_id, price, stock, warehouse_stock, reserved_stock, low_stock_threshold,
-      description, ingredients, benefits, how_to_use, skin_type, key_ingredients, manufacturing_date, expiry_date, storage, warning,
-      image_url, images, is_active, is_featured, is_trending, is_new_arrival,
-      meta_title, meta_description, meta_keywords, canonical_url, variants
-    } = req.body;
+const cleanImages = (images, image_url) => {
+  let arr = Array.isArray(images) ? images.filter(Boolean) : [];
+  if (arr.length === 0 && image_url) arr = [image_url];
+  return arr.slice(0, 5);
+};
 
-    if (!name || price === undefined) {
-      return res.status(400).json({ success: false, message: 'Product title and price are required' });
-    }
-
-    let imagesArr = Array.isArray(images) ? images.filter(Boolean) : [];
-    if (imagesArr.length === 0 && image_url) imagesArr.push(image_url);
-    imagesArr = imagesArr.slice(0, 5);
-
-    const primaryImg = imagesArr[0] || image_url || '/assets/vitamin_c_serum.jpg';
-    const imagesJson = JSON.stringify(imagesArr);
-
-    let insertId = null;
-    try {
-      const [result] = await pool.query(
-        `INSERT INTO products 
-          (name, brand, sku, net_quantity, category, category_id, price, stock, warehouse_stock, reserved_stock, low_stock_threshold, 
-           description, ingredients, benefits, how_to_use, skin_type, key_ingredients, manufacturing_date, expiry_date, storage, warning,
-           image_url, images, is_active, is_featured, is_trending, is_new_arrival, 
-           meta_title, meta_description, meta_keywords, canonical_url) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+const replaceImagesAndVariants = async (conn, productId, imagesArr, variants, fallback) => {
+  await conn.query('DELETE FROM product_images WHERE product_id = ?', [productId]);
+  for (let i = 0; i < imagesArr.length; i++) {
+    await conn.query(
+      'INSERT INTO product_images (product_id, image_url, is_primary, display_order) VALUES (?, ?, ?, ?)',
+      [productId, imagesArr[i], i === 0 ? 1 : 0, i]
+    );
+  }
+  if (Array.isArray(variants)) {
+    await conn.query('DELETE FROM product_variants WHERE product_id = ?', [productId]);
+    for (const v of variants) {
+      await conn.query(
+        'INSERT INTO product_variants (product_id, variant_name, sku, price, stock, is_active) VALUES (?, ?, ?, ?, ?, ?)',
         [
-          name, brand || 'Leafora', sku || `SKU-${Date.now().toString().slice(-6)}`, net_quantity || '100g', category || 'General', category_id ? Number(category_id) : null,
-          Number(price), Number(stock || 0), Number(warehouse_stock || stock || 0), Number(reserved_stock || 0), Number(low_stock_threshold || 10),
-          description || '', ingredients || '', benefits || '', how_to_use || '', skin_type || '', key_ingredients || '', manufacturing_date || null, expiry_date || null, storage || '', warning || '',
-          primaryImg, imagesJson,
-          is_active !== undefined ? (is_active ? 1 : 0) : 1,
-          is_featured ? 1 : 0, is_trending ? 1 : 0, is_new_arrival ? 1 : 0,
-          meta_title || name, meta_description || description || '', meta_keywords || '', canonical_url || ''
+          productId,
+          v.variant_name || 'Standard',
+          v.sku || `${fallback.sku || 'SKU'}-V`,
+          Number(v.price ?? fallback.price ?? 0),
+          Number(v.stock ?? fallback.stock ?? 0),
+          v.is_active === undefined || v.is_active ? 1 : 0,
         ]
       );
-      insertId = result.insertId;
-    } catch (dbErr) {
-      console.warn('DB Product Insert Notice:', dbErr.message);
     }
+  }
+};
 
-    const prodId = insertId || (inMemoryProducts.length > 0 ? Math.max(...inMemoryProducts.map(p => p.id)) + 1 : 1);
+const validateProductNumbers = ({ price, stock }) => {
+  if (price !== undefined && (!Number.isFinite(Number(price)) || Number(price) < 0)) return 'Price must be a positive number.';
+  if (stock !== undefined && stock !== '' && (!Number.isInteger(Number(stock)) || Number(stock) < 0)) return 'Stock must be a whole number (0 or more).';
+  return null;
+};
 
-    // Insert Product Images
-    if (insertId && imagesArr.length > 0) {
-      for (let i = 0; i < imagesArr.length; i++) {
-        try {
-          await pool.query(
-            'INSERT INTO product_images (product_id, image_url, is_primary, display_order) VALUES (?, ?, ?, ?)',
-            [prodId, imagesArr[i], i === 0 ? 1 : 0, i]
-          );
-        } catch (e) {}
-      }
-    }
+const addProduct = async (req, res) => {
+  const {
+    name, brand, sku, net_quantity, category, category_id, price, stock, warehouse_stock, reserved_stock, low_stock_threshold,
+    description, ingredients, benefits, how_to_use, skin_type, key_ingredients, manufacturing_date, expiry_date, storage, warning,
+    image_url, images, is_active, is_featured, is_trending, is_new_arrival,
+    meta_title, meta_description, meta_keywords, canonical_url, variants
+  } = req.body;
 
-    // Insert Variants
-    const variantsArr = Array.isArray(variants) ? variants : [];
-    if (insertId && variantsArr.length > 0) {
-      for (const v of variantsArr) {
-        try {
-          await pool.query(
-            'INSERT INTO product_variants (product_id, variant_name, sku, price, stock, is_active) VALUES (?, ?, ?, ?, ?, ?)',
-            [prodId, v.variant_name || 'Standard', v.sku || `${sku}-V`, Number(v.price || price), Number(v.stock || stock || 0), v.is_active ? 1 : 1]
-          );
-        } catch (e) {}
-      }
-    }
+  if (!name || price === undefined || price === '') {
+    return res.status(400).json({ success: false, message: 'Product title and price are required' });
+  }
+  const numErr = validateProductNumbers({ price, stock });
+  if (numErr) return res.status(400).json({ success: false, message: numErr });
 
-    const newProd = {
-      id: prodId, name, brand: brand || 'Leafora', sku: sku || `SKU-${prodId}`, net_quantity: net_quantity || '100g', category: category || 'General',
-      price: Number(price), stock: Number(stock || 0), warehouse_stock: Number(warehouse_stock || stock || 0), reserved_stock: Number(reserved_stock || 0), low_stock_threshold: Number(low_stock_threshold || 10),
-      description: description || '',
-      ingredients: ingredients || '',
-      benefits: benefits || '',
-      how_to_use: how_to_use || '',
-      skin_type: skin_type || '',
-      key_ingredients: key_ingredients || '',
-      manufacturing_date: manufacturing_date || '',
-      expiry_date: expiry_date || '',
-      storage: storage || '',
-      warning: warning || '',
-      image_url: primaryImg, images: imagesArr, is_active: is_active ? 1 : 0,
-      is_featured: is_featured ? 1 : 0, is_trending: is_trending ? 1 : 0, is_new_arrival: is_new_arrival ? 1 : 0,
-      meta_title: meta_title || name, meta_description: meta_description || '', meta_keywords: meta_keywords || '', canonical_url: canonical_url || '',
-      deleted_at: null, variants: variantsArr
-    };
+  const imagesArr = cleanImages(images, image_url);
+  const finalSku = sku || `SKU-${Date.now().toString().slice(-6)}`;
 
-    inMemoryProducts.unshift(newProd);
-    try { ProductModel.clearCache(); } catch (e) {}
-    return res.status(201).json({ success: true, message: 'Product created successfully', data: newProd });
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+    const [result] = await conn.query(
+      `INSERT INTO products
+        (name, brand, sku, net_quantity, category, category_id, price, stock, warehouse_stock, reserved_stock, low_stock_threshold,
+         description, ingredients, benefits, how_to_use, skin_type, key_ingredients, manufacturing_date, expiry_date, storage, warning,
+         image_url, images, is_active, is_featured, is_trending, is_new_arrival,
+         meta_title, meta_description, meta_keywords, canonical_url)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        name, brand || 'Leafora', finalSku, net_quantity || '', category || 'General', category_id ? Number(category_id) : null,
+        Number(price), Number(stock || 0), Number(warehouse_stock || stock || 0), Number(reserved_stock || 0), Number(low_stock_threshold || 10),
+        description || '', ingredients || '', benefits || '', how_to_use || '', skin_type || '', key_ingredients || '',
+        manufacturing_date || null, expiry_date || null, storage || '', warning || '',
+        imagesArr[0] || '', JSON.stringify(imagesArr),
+        is_active !== undefined ? (is_active ? 1 : 0) : 1,
+        is_featured ? 1 : 0, is_trending ? 1 : 0, is_new_arrival ? 1 : 0,
+        meta_title || name, meta_description || description || '', meta_keywords || '', canonical_url || ''
+      ]
+    );
+    await replaceImagesAndVariants(conn, result.insertId, imagesArr, variants, { sku: finalSku, price, stock });
+    await conn.commit();
+    clearProductCache();
+
+    const [[saved]] = await pool.query('SELECT * FROM products WHERE id = ?', [result.insertId]);
+    const [enriched] = await enrichProducts([saved]);
+    return res.status(201).json({ success: true, message: 'Product created successfully', data: enriched });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    await conn.rollback().catch(() => {});
+    return productFail(res, 'create', error);
+  } finally {
+    conn.release();
   }
 };
 
 const updateProduct = async (req, res) => {
+  const numId = Number(req.params.id);
+  const {
+    name, brand, sku, net_quantity, category, category_id, price, stock, warehouse_stock, reserved_stock, low_stock_threshold,
+    description, ingredients, benefits, how_to_use, skin_type, key_ingredients, manufacturing_date, expiry_date, storage, warning,
+    image_url, images, is_active, is_featured, is_trending, is_new_arrival,
+    meta_title, meta_description, meta_keywords, canonical_url, variants
+  } = req.body;
+
+  const numErr = validateProductNumbers({ price, stock });
+  if (numErr) return res.status(400).json({ success: false, message: numErr });
+
+  // Only touch images when the client sent them; otherwise keep what is stored
+  const imagesSent = Array.isArray(images) || image_url !== undefined;
+  const imagesArr = imagesSent ? cleanImages(images, image_url) : null;
+  const opt = (v) => (v === undefined ? null : v);
+  const optNum = (v) => (v === undefined || v === '' ? null : Number(v));
+  const optBool = (v) => (v === undefined ? null : v ? 1 : 0);
+
+  const conn = await pool.getConnection();
   try {
-    const { id } = req.params;
-    const numId = Number(id);
-    const {
-      name, brand, sku, net_quantity, category, category_id, price, stock, warehouse_stock, reserved_stock, low_stock_threshold,
-      description, ingredients, benefits, how_to_use, skin_type, key_ingredients, manufacturing_date, expiry_date, storage, warning,
-      image_url, images, is_active, is_featured, is_trending, is_new_arrival,
-      meta_title, meta_description, meta_keywords, canonical_url, variants
-    } = req.body;
-
-    let imagesArr = Array.isArray(images) ? images.filter(Boolean) : [];
-    if (imagesArr.length === 0 && image_url) imagesArr.push(image_url);
-    imagesArr = imagesArr.slice(0, 5);
-
-    const primaryImg = imagesArr[0] || image_url || '/assets/vitamin_c_serum.jpg';
-    const imagesJson = JSON.stringify(imagesArr);
-
-    try {
-      await pool.query(
-        `UPDATE products SET 
-          name = COALESCE(?, name),
-          brand = COALESCE(?, brand),
-          sku = COALESCE(?, sku),
-          net_quantity = COALESCE(?, net_quantity),
-          category = COALESCE(?, category),
-          category_id = COALESCE(?, category_id),
-          price = COALESCE(?, price),
-          stock = COALESCE(?, stock),
-          warehouse_stock = COALESCE(?, warehouse_stock),
-          reserved_stock = COALESCE(?, reserved_stock),
-          low_stock_threshold = COALESCE(?, low_stock_threshold),
-          description = COALESCE(?, description),
-          ingredients = COALESCE(?, ingredients),
-          benefits = COALESCE(?, benefits),
-          how_to_use = COALESCE(?, how_to_use),
-          skin_type = COALESCE(?, skin_type),
-          key_ingredients = COALESCE(?, key_ingredients),
-          manufacturing_date = COALESCE(?, manufacturing_date),
-          expiry_date = COALESCE(?, expiry_date),
-          storage = COALESCE(?, storage),
-          warning = COALESCE(?, warning),
-          image_url = COALESCE(?, image_url),
-          images = COALESCE(?, images),
-          is_active = COALESCE(?, is_active),
-          is_featured = COALESCE(?, is_featured),
-          is_trending = COALESCE(?, is_trending),
-          is_new_arrival = COALESCE(?, is_new_arrival),
-          meta_title = COALESCE(?, meta_title),
-          meta_description = COALESCE(?, meta_description),
-          meta_keywords = COALESCE(?, meta_keywords),
-          canonical_url = COALESCE(?, canonical_url)
-         WHERE id = ?`,
-        [
-          name, brand, sku, net_quantity !== undefined ? net_quantity : null, category, category_id ? Number(category_id) : null,
-          price !== undefined ? Number(price) : null,
-          stock !== undefined ? Number(stock) : null,
-          warehouse_stock !== undefined ? Number(warehouse_stock) : null,
-          reserved_stock !== undefined ? Number(reserved_stock) : null,
-          low_stock_threshold !== undefined ? Number(low_stock_threshold) : null,
-          description,
-          ingredients !== undefined ? ingredients : null,
-          benefits !== undefined ? benefits : null,
-          how_to_use !== undefined ? how_to_use : null,
-          skin_type !== undefined ? skin_type : null,
-          key_ingredients !== undefined ? key_ingredients : null,
-          manufacturing_date !== undefined ? manufacturing_date : null,
-          expiry_date !== undefined ? expiry_date : null,
-          storage !== undefined ? storage : null,
-          warning !== undefined ? warning : null,
-          primaryImg, imagesJson,
-          is_active !== undefined ? (is_active ? 1 : 0) : null,
-          is_featured !== undefined ? (is_featured ? 1 : 0) : null,
-          is_trending !== undefined ? (is_trending ? 1 : 0) : null,
-          is_new_arrival !== undefined ? (is_new_arrival ? 1 : 0) : null,
-          meta_title, meta_description, meta_keywords, canonical_url, numId
-        ]
-      );
-
-      // Sync Images Table
-      await pool.query('DELETE FROM product_images WHERE product_id = ?', [numId]);
-      for (let i = 0; i < imagesArr.length; i++) {
-        await pool.query(
-          'INSERT INTO product_images (product_id, image_url, is_primary, display_order) VALUES (?, ?, ?, ?)',
-          [numId, imagesArr[i], i === 0 ? 1 : 0, i]
-        );
-      }
-
-      // Sync Variants Table
-      if (Array.isArray(variants)) {
-        await pool.query('DELETE FROM product_variants WHERE product_id = ?', [numId]);
-        for (const v of variants) {
-          await pool.query(
-            'INSERT INTO product_variants (product_id, variant_name, sku, price, stock, is_active) VALUES (?, ?, ?, ?, ?, ?)',
-            [numId, v.variant_name || 'Standard', v.sku || `${sku || 'SKU'}-V`, Number(v.price || price || 0), Number(v.stock || stock || 0), v.is_active ? 1 : 1]
-          );
-        }
-      }
-    } catch (dbErr) {
-      console.warn('DB Product Update Notice:', dbErr.message);
-    }
-
-    inMemoryProducts = inMemoryProducts.map(prod => 
-      prod.id === numId 
-        ? {
-            ...prod,
-            name: name ?? prod.name,
-            brand: brand ?? prod.brand,
-            sku: sku ?? prod.sku,
-            net_quantity: net_quantity ?? prod.net_quantity ?? '100g',
-            category: category ?? prod.category,
-            price: price !== undefined ? Number(price) : prod.price,
-            stock: stock !== undefined ? Number(stock) : prod.stock,
-            warehouse_stock: warehouse_stock !== undefined ? Number(warehouse_stock) : prod.warehouse_stock,
-            reserved_stock: reserved_stock !== undefined ? Number(reserved_stock) : prod.reserved_stock,
-            low_stock_threshold: low_stock_threshold !== undefined ? Number(low_stock_threshold) : prod.low_stock_threshold,
-            description: description ?? prod.description,
-            ingredients: ingredients !== undefined ? ingredients : prod.ingredients,
-            benefits: benefits !== undefined ? benefits : prod.benefits,
-            how_to_use: how_to_use !== undefined ? how_to_use : prod.how_to_use,
-            skin_type: skin_type !== undefined ? skin_type : prod.skin_type,
-            key_ingredients: key_ingredients !== undefined ? key_ingredients : prod.key_ingredients,
-            manufacturing_date: manufacturing_date !== undefined ? manufacturing_date : prod.manufacturing_date,
-            expiry_date: expiry_date !== undefined ? expiry_date : prod.expiry_date,
-            storage: storage !== undefined ? storage : prod.storage,
-            warning: warning !== undefined ? warning : prod.warning,
-            image_url: primaryImg ?? prod.image_url,
-            images: imagesArr.length > 0 ? imagesArr : prod.images,
-            is_active: is_active !== undefined ? (is_active ? 1 : 0) : prod.is_active,
-            is_featured: is_featured !== undefined ? (is_featured ? 1 : 0) : prod.is_featured,
-            is_trending: is_trending !== undefined ? (is_trending ? 1 : 0) : prod.is_trending,
-            is_new_arrival: is_new_arrival !== undefined ? (is_new_arrival ? 1 : 0) : prod.is_new_arrival,
-            meta_title: meta_title ?? prod.meta_title,
-            meta_description: meta_description ?? prod.meta_description,
-            meta_keywords: meta_keywords ?? prod.meta_keywords,
-            canonical_url: canonical_url ?? prod.canonical_url,
-            variants: Array.isArray(variants) ? variants : prod.variants
-          }
-        : prod
+    await conn.beginTransaction();
+    const [result] = await conn.query(
+      `UPDATE products SET
+        name = COALESCE(?, name), brand = COALESCE(?, brand), sku = COALESCE(?, sku), net_quantity = COALESCE(?, net_quantity),
+        category = COALESCE(?, category), category_id = COALESCE(?, category_id), price = COALESCE(?, price), stock = COALESCE(?, stock),
+        warehouse_stock = COALESCE(?, warehouse_stock), reserved_stock = COALESCE(?, reserved_stock), low_stock_threshold = COALESCE(?, low_stock_threshold),
+        description = COALESCE(?, description), ingredients = COALESCE(?, ingredients), benefits = COALESCE(?, benefits),
+        how_to_use = COALESCE(?, how_to_use), skin_type = COALESCE(?, skin_type), key_ingredients = COALESCE(?, key_ingredients),
+        manufacturing_date = COALESCE(?, manufacturing_date), expiry_date = COALESCE(?, expiry_date), storage = COALESCE(?, storage),
+        warning = COALESCE(?, warning), image_url = COALESCE(?, image_url), images = COALESCE(?, images),
+        is_active = COALESCE(?, is_active), is_featured = COALESCE(?, is_featured), is_trending = COALESCE(?, is_trending),
+        is_new_arrival = COALESCE(?, is_new_arrival), meta_title = COALESCE(?, meta_title), meta_description = COALESCE(?, meta_description),
+        meta_keywords = COALESCE(?, meta_keywords), canonical_url = COALESCE(?, canonical_url)
+       WHERE id = ?`,
+      [
+        opt(name), opt(brand), opt(sku), opt(net_quantity), opt(category), category_id ? Number(category_id) : null,
+        optNum(price), optNum(stock), optNum(warehouse_stock), optNum(reserved_stock), optNum(low_stock_threshold),
+        opt(description), opt(ingredients), opt(benefits), opt(how_to_use), opt(skin_type), opt(key_ingredients),
+        manufacturing_date === undefined ? null : manufacturing_date || null,
+        expiry_date === undefined ? null : expiry_date || null,
+        opt(storage), opt(warning),
+        imagesArr ? imagesArr[0] || '' : null, imagesArr ? JSON.stringify(imagesArr) : null,
+        optBool(is_active), optBool(is_featured), optBool(is_trending), optBool(is_new_arrival),
+        opt(meta_title), opt(meta_description), opt(meta_keywords), opt(canonical_url), numId
+      ]
     );
-
-    try { ProductModel.clearCache(); } catch (e) {}
+    if (result.affectedRows === 0) {
+      await conn.rollback();
+      return res.status(404).json({ success: false, message: 'Product not found.' });
+    }
+    if (imagesArr) {
+      await replaceImagesAndVariants(conn, numId, imagesArr, variants, { sku, price, stock });
+    } else if (Array.isArray(variants)) {
+      const [[cur]] = await conn.query('SELECT sku, price, stock FROM products WHERE id = ?', [numId]);
+      const [imgRows] = await conn.query('SELECT image_url FROM product_images WHERE product_id = ? ORDER BY display_order', [numId]);
+      await replaceImagesAndVariants(conn, numId, imgRows.map((r) => r.image_url), variants, cur);
+    }
+    await conn.commit();
+    clearProductCache();
     return res.status(200).json({ success: true, message: 'Product updated successfully' });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    await conn.rollback().catch(() => {});
+    return productFail(res, 'update', error);
+  } finally {
+    conn.release();
   }
 };
 
 const deleteProduct = async (req, res) => {
+  const numId = Number(req.params.id);
+  const force = req.query.force === 'true';
+  const conn = await pool.getConnection();
   try {
-    const { id } = req.params;
-    const { force } = req.query;
-    const numId = Number(id);
-
-    try {
-      if (force === 'true') {
-        await pool.query('DELETE FROM products WHERE id = ?', [numId]);
-        await pool.query('DELETE FROM product_images WHERE product_id = ?', [numId]);
-        await pool.query('DELETE FROM product_variants WHERE product_id = ?', [numId]);
-      } else {
-        await pool.query('UPDATE products SET deleted_at = NOW() WHERE id = ?', [numId]);
-      }
-    } catch (dbErr) {
-      console.warn('DB Product Delete Notice:', dbErr.message);
-    }
-
-    if (force === 'true') {
-      inMemoryProducts = inMemoryProducts.filter(p => p.id !== numId);
+    await conn.beginTransaction();
+    let result;
+    if (force) {
+      await conn.query('DELETE FROM product_images WHERE product_id = ?', [numId]);
+      await conn.query('DELETE FROM product_variants WHERE product_id = ?', [numId]);
+      [result] = await conn.query('DELETE FROM products WHERE id = ?', [numId]);
     } else {
-      inMemoryProducts = inMemoryProducts.map(p => p.id === numId ? { ...p, deleted_at: new Date().toISOString() } : p);
+      [result] = await conn.query('UPDATE products SET deleted_at = NOW() WHERE id = ?', [numId]);
     }
-
-    try { ProductModel.clearCache(); } catch (e) {}
-
+    if (result.affectedRows === 0) {
+      await conn.rollback();
+      return res.status(404).json({ success: false, message: 'Product not found.' });
+    }
+    await conn.commit();
+    clearProductCache();
     return res.status(200).json({
       success: true,
-      message: force === 'true' ? `Product #${numId} permanently deleted` : `Product #${numId} moved to Trash Bin`
+      message: force ? `Product #${numId} permanently deleted` : `Product #${numId} moved to Trash Bin`
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    await conn.rollback().catch(() => {});
+    return productFail(res, 'delete', error);
+  } finally {
+    conn.release();
   }
 };
 
 const restoreProduct = async (req, res) => {
+  const numId = Number(req.params.id);
   try {
-    const { id } = req.params;
-    const numId = Number(id);
-
-    try {
-      await pool.query('UPDATE products SET deleted_at = NULL WHERE id = ?', [numId]);
-    } catch (dbErr) {
-      console.warn('DB Product Restore Notice:', dbErr.message);
-    }
-
-    inMemoryProducts = inMemoryProducts.map(p => p.id === numId ? { ...p, deleted_at: null } : p);
-    try { ProductModel.clearCache(); } catch (e) {}
+    const [result] = await pool.query('UPDATE products SET deleted_at = NULL WHERE id = ?', [numId]);
+    if (result.affectedRows === 0) return res.status(404).json({ success: false, message: 'Product not found.' });
+    clearProductCache();
     return res.status(200).json({ success: true, message: `Product #${numId} restored from Trash` });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return productFail(res, 'restore', error);
   }
 };
 
 const duplicateProduct = async (req, res) => {
+  const numId = Number(req.params.id);
+  const conn = await pool.getConnection();
   try {
-    const { id } = req.params;
-    const numId = Number(id);
-    const prod = inMemoryProducts.find(p => p.id === numId);
+    const [[source]] = await conn.query('SELECT * FROM products WHERE id = ?', [numId]);
+    if (!source) return res.status(404).json({ success: false, message: 'Product not found.' });
 
-    let insertId = null;
-    try {
-      const [[dbProd]] = await pool.query('SELECT * FROM products WHERE id = ?', [numId]);
-      const source = dbProd || prod;
-      if (source) {
-        const [result] = await pool.query(
-          `INSERT INTO products 
-            (name, brand, sku, category, price, stock, warehouse_stock, reserved_stock, low_stock_threshold, description, 
-             ingredients, benefits, how_to_use, skin_type, key_ingredients, manufacturing_date, expiry_date, storage, warning,
-             image_url, images, is_active, is_featured, is_trending, is_new_arrival, meta_title, meta_description, meta_keywords, canonical_url) 
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            `${source.name} (Copy)`, source.brand || 'Leafora', `${source.sku || 'SKU'}-COPY`, source.category, source.price, source.stock, source.warehouse_stock || source.stock, source.reserved_stock || 0, source.low_stock_threshold || 10,
-            source.description, source.ingredients || '', source.benefits || '', source.how_to_use || '', source.skin_type || '', source.key_ingredients || '', source.manufacturing_date || null, source.expiry_date || null, source.storage || '', source.warning || '',
-            source.image_url, source.images, source.is_active, source.is_featured, source.is_trending || 0, source.is_new_arrival || 0,
-            source.meta_title, source.meta_description, source.meta_keywords, source.canonical_url
-          ]
-        );
-        insertId = result.insertId;
-      }
-    } catch (e) {}
-
-    const newId = insertId || (inMemoryProducts.length > 0 ? Math.max(...inMemoryProducts.map(p => p.id)) + 1 : 1);
-    if (prod) {
-      inMemoryProducts.unshift({
-        ...prod,
-        id: newId,
-        name: `${prod.name} (Copy)`,
-        sku: `${prod.sku || 'SKU'}-COPY`,
-        ingredients: prod.ingredients || '',
-        benefits: prod.benefits || '',
-        how_to_use: prod.how_to_use || '',
-        skin_type: prod.skin_type || '',
-        key_ingredients: prod.key_ingredients || '',
-        manufacturing_date: prod.manufacturing_date || '',
-        expiry_date: prod.expiry_date || '',
-        storage: prod.storage || '',
-        warning: prod.warning || '',
-        deleted_at: null
-      });
-    }
-
-    try { ProductModel.clearCache(); } catch (e) {}
-    return res.status(201).json({ success: true, message: `Product #${numId} duplicated successfully as #${newId}` });
+    await conn.beginTransaction();
+    const copySku = `${source.sku || 'SKU'}-COPY-${Date.now().toString().slice(-4)}`;
+    const [result] = await conn.query(
+      `INSERT INTO products
+        (name, brand, sku, net_quantity, category, category_id, price, stock, warehouse_stock, reserved_stock, low_stock_threshold, description,
+         ingredients, benefits, how_to_use, skin_type, key_ingredients, manufacturing_date, expiry_date, storage, warning,
+         image_url, images, is_active, is_featured, is_trending, is_new_arrival, meta_title, meta_description, meta_keywords, canonical_url)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        `${source.name} (Copy)`, source.brand, copySku, source.net_quantity, source.category, source.category_id,
+        source.price, source.stock, source.warehouse_stock, source.reserved_stock, source.low_stock_threshold, source.description,
+        source.ingredients, source.benefits, source.how_to_use, source.skin_type, source.key_ingredients,
+        source.manufacturing_date, source.expiry_date, source.storage, source.warning,
+        source.image_url, source.images, source.is_featured, source.is_trending, source.is_new_arrival,
+        source.meta_title, source.meta_description, source.meta_keywords, ''
+      ]
+    );
+    await conn.query(
+      `INSERT INTO product_images (product_id, image_url, is_primary, display_order)
+       SELECT ?, image_url, is_primary, display_order FROM product_images WHERE product_id = ?`,
+      [result.insertId, numId]
+    );
+    await conn.query(
+      `INSERT INTO product_variants (product_id, variant_name, sku, price, stock, is_active)
+       SELECT ?, variant_name, CONCAT(sku, '-COPY'), price, stock, is_active FROM product_variants WHERE product_id = ?`,
+      [result.insertId, numId]
+    );
+    await conn.commit();
+    clearProductCache();
+    // Copies start inactive so they don't appear in the shop until reviewed
+    return res.status(201).json({ success: true, message: `Product #${numId} duplicated as #${result.insertId} (inactive until you publish it)` });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    await conn.rollback().catch(() => {});
+    return productFail(res, 'duplicate', error);
+  } finally {
+    conn.release();
   }
 };
 
 const bulkProductAction = async (req, res) => {
+  const { ids, action, price_percent, stock_value } = req.body;
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return res.status(400).json({ success: false, message: 'No product IDs specified' });
+  }
+  const numIds = ids.map(Number).filter(Number.isInteger);
+
+  const conn = await pool.getConnection();
   try {
-    const { ids, action, price_percent, price_offset, stock_value } = req.body;
-    if (!Array.isArray(ids) || ids.length === 0) {
-      return res.status(400).json({ success: false, message: 'No product IDs specified' });
+    await conn.beginTransaction();
+    let result;
+    switch (action) {
+      case 'active': [result] = await conn.query('UPDATE products SET is_active = 1 WHERE id IN (?)', [numIds]); break;
+      case 'inactive': [result] = await conn.query('UPDATE products SET is_active = 0 WHERE id IN (?)', [numIds]); break;
+      case 'soft_delete': [result] = await conn.query('UPDATE products SET deleted_at = NOW() WHERE id IN (?)', [numIds]); break;
+      case 'restore': [result] = await conn.query('UPDATE products SET deleted_at = NULL WHERE id IN (?)', [numIds]); break;
+      case 'permanent_delete':
+        await conn.query('DELETE FROM product_images WHERE product_id IN (?)', [numIds]);
+        await conn.query('DELETE FROM product_variants WHERE product_id IN (?)', [numIds]);
+        [result] = await conn.query('DELETE FROM products WHERE id IN (?)', [numIds]);
+        break;
+      case 'price_update': {
+        const pct = Number(price_percent);
+        if (!Number.isFinite(pct) || pct <= -100) throw Object.assign(new Error('Invalid price percentage.'), { status: 400 });
+        [result] = await conn.query('UPDATE products SET price = ROUND(price * ?, 2) WHERE id IN (?)', [1 + pct / 100, numIds]);
+        break;
+      }
+      case 'stock_update': {
+        const sv = Number(stock_value);
+        if (!Number.isInteger(sv) || sv < 0) throw Object.assign(new Error('Stock must be a whole number (0 or more).'), { status: 400 });
+        [result] = await conn.query('UPDATE products SET stock = ?, warehouse_stock = ? WHERE id IN (?)', [sv, sv, numIds]);
+        break;
+      }
+      default:
+        throw Object.assign(new Error('Unknown bulk action.'), { status: 400 });
     }
-
-    const numIds = ids.map(Number);
-    try {
-      if (action === 'active') {
-        await pool.query('UPDATE products SET is_active = 1 WHERE id IN (?)', [numIds]);
-      } else if (action === 'inactive') {
-        await pool.query('UPDATE products SET is_active = 0 WHERE id IN (?)', [numIds]);
-      } else if (action === 'soft_delete') {
-        await pool.query('UPDATE products SET deleted_at = NOW() WHERE id IN (?)', [numIds]);
-      } else if (action === 'restore') {
-        await pool.query('UPDATE products SET deleted_at = NULL WHERE id IN (?)', [numIds]);
-      } else if (action === 'permanent_delete') {
-        await pool.query('DELETE FROM products WHERE id IN (?)', [numIds]);
-        await pool.query('DELETE FROM product_images WHERE product_id IN (?)', [numIds]);
-        await pool.query('DELETE FROM product_variants WHERE product_id IN (?)', [numIds]);
-      } else if (action === 'price_update' && price_percent !== undefined) {
-        const mult = 1 + (Number(price_percent) / 100);
-        await pool.query('UPDATE products SET price = ROUND(price * ?, 2) WHERE id IN (?)', [mult, numIds]);
-      } else if (action === 'stock_update' && stock_value !== undefined) {
-        await pool.query('UPDATE products SET stock = ?, warehouse_stock = ? WHERE id IN (?)', [Number(stock_value), Number(stock_value), numIds]);
-      }
-    } catch (dbErr) {
-      console.warn('DB Bulk Action Notice:', dbErr.message);
-    }
-
-    inMemoryProducts = inMemoryProducts.map(p => {
-      if (!numIds.includes(p.id)) return p;
-      if (action === 'active') return { ...p, is_active: 1 };
-      if (action === 'inactive') return { ...p, is_active: 0 };
-      if (action === 'soft_delete') return { ...p, deleted_at: new Date().toISOString() };
-      if (action === 'restore') return { ...p, deleted_at: null };
-      if (action === 'price_update' && price_percent !== undefined) {
-        return { ...p, price: Number((p.price * (1 + (Number(price_percent) / 100))).toFixed(2)) };
-      }
-      if (action === 'stock_update' && stock_value !== undefined) {
-        return { ...p, stock: Number(stock_value), warehouse_stock: Number(stock_value) };
-      }
-      return p;
-    }).filter(p => !(action === 'permanent_delete' && numIds.includes(p.id)));
-
-    try { ProductModel.clearCache(); } catch (e) {}
-    return res.status(200).json({ success: true, message: `Bulk action "${action}" completed for ${numIds.length} products` });
+    await conn.commit();
+    clearProductCache();
+    return res.status(200).json({ success: true, message: `Bulk action "${action}" applied to ${result.affectedRows} products` });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    await conn.rollback().catch(() => {});
+    if (error.status === 400) return res.status(400).json({ success: false, message: error.message });
+    return productFail(res, 'update', error);
+  } finally {
+    conn.release();
   }
 };
 
+const PRODUCT_CSV_HEADERS = [
+  'id', 'name', 'brand', 'sku', 'net_quantity', 'category', 'price', 'stock', 'warehouse_stock', 'reserved_stock', 'low_stock_threshold',
+  'description', 'ingredients', 'benefits', 'how_to_use', 'skin_type', 'key_ingredients', 'manufacturing_date', 'expiry_date', 'storage', 'warning',
+  'image_url', 'is_active', 'is_featured', 'is_trending', 'is_new_arrival', 'meta_title', 'meta_description', 'meta_keywords', 'canonical_url'
+];
+
 const exportProductsCsv = async (req, res) => {
   try {
-    let rows = [];
-    try {
-      const [dbRows] = await pool.query('SELECT * FROM products ORDER BY id DESC');
-      rows = dbRows.length > 0 ? dbRows : inMemoryProducts;
-    } catch (e) {
-      rows = inMemoryProducts;
-    }
-
-    const headers = [
-      'id', 'name', 'brand', 'sku', 'category', 'price', 'stock', 'warehouse_stock', 'reserved_stock', 'low_stock_threshold',
-      'description', 'ingredients', 'benefits', 'how_to_use', 'skin_type', 'key_ingredients', 'manufacturing_date', 'expiry_date', 'storage', 'warning',
-      'image_url', 'is_active', 'is_featured', 'is_trending', 'is_new_arrival', 'meta_title', 'meta_description', 'meta_keywords', 'canonical_url'
-    ];
-    let csvStr = headers.join(',') + '\n';
-
-    rows.forEach(r => {
-      const line = headers.map(h => {
-        let val = r[h] ?? '';
-        val = String(val).replace(/"/g, '""');
-        return `"${val}"`;
-      }).join(',');
-      csvStr += line + '\n';
-    });
-
+    const [rows] = await pool.query('SELECT * FROM products WHERE deleted_at IS NULL ORDER BY id DESC');
+    const csvStr = [PRODUCT_CSV_HEADERS.join(','), ...rows.map((r) => PRODUCT_CSV_HEADERS.map((h) => csvCell(r[h])).join(','))].join('\n') + '\n';
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', 'attachment; filename="products_export.csv"');
     return res.status(200).send(csvStr);
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return productFail(res, 'export', error);
   }
 };
 
 const importProductsCsv = async (req, res) => {
+  const { items, csv_text } = req.body;
+  const records = (Array.isArray(items) && items.length ? items : parseCsv(String(csv_text || ''))).filter((r) => r && r.name);
+  if (records.length === 0) {
+    return res.status(400).json({ success: false, message: 'No valid product records found in CSV' });
+  }
+  for (const [i, item] of records.entries()) {
+    const err = validateProductNumbers({ price: item.price, stock: item.stock });
+    if (err) return res.status(400).json({ success: false, message: `Row ${i + 2} (${item.name}): ${err}` });
+  }
+
+  const conn = await pool.getConnection();
   try {
-    const { items, csv_text } = req.body;
-    let records = Array.isArray(items) ? items : [];
-
-    if (records.length === 0 && csv_text) {
-      const lines = csv_text.split('\n').map(l => l.trim()).filter(Boolean);
-      if (lines.length > 1) {
-        const headers = lines[0].split(',').map(h => h.replace(/^"|"$/g, '').trim());
-        for (let i = 1; i < lines.length; i++) {
-          const vals = lines[i].split(',').map(v => v.replace(/^"|"$/g, '').trim());
-          const obj = {};
-          headers.forEach((h, idx) => { obj[h] = vals[idx] || ''; });
-          if (obj.name) records.push(obj);
-        }
-      }
-    }
-
-    if (records.length === 0) {
-      return res.status(400).json({ success: false, message: 'No valid product records found in CSV' });
-    }
-
-    let importedCount = 0;
+    await conn.beginTransaction();
     for (const item of records) {
-      try {
-        await pool.query(
-          `INSERT INTO products 
-            (name, brand, sku, category, price, stock, warehouse_stock, reserved_stock, low_stock_threshold, 
-             description, ingredients, benefits, how_to_use, skin_type, key_ingredients, manufacturing_date, expiry_date, storage, warning,
-             image_url, is_active, is_featured, is_trending, is_new_arrival, meta_title, meta_description, meta_keywords, canonical_url) 
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-           ON DUPLICATE KEY UPDATE name=VALUES(name), price=VALUES(price), stock=VALUES(stock)`,
-          [
-            item.name, item.brand || 'Leafora', item.sku || `SKU-${Date.now()}`, item.category || 'General',
-            Number(item.price || 0), Number(item.stock || 0), Number(item.warehouse_stock || item.stock || 0), Number(item.reserved_stock || 0), Number(item.low_stock_threshold || 10),
-            item.description || '', item.ingredients || '', item.benefits || '', item.how_to_use || '', item.skin_type || '', item.key_ingredients || '', item.manufacturing_date || null, item.expiry_date || null, item.storage || '', item.warning || '',
-            item.image_url || '/assets/vitamin_c_serum.jpg',
-            item.is_active !== undefined ? (Number(item.is_active) ? 1 : 0) : 1,
-            item.is_featured ? 1 : 0, item.is_trending ? 1 : 0, item.is_new_arrival ? 1 : 0,
-            item.meta_title || item.name, item.meta_description || '', item.meta_keywords || '', item.canonical_url || ''
-          ]
-        );
-      } catch (e) {}
-
-      const newId = inMemoryProducts.length > 0 ? Math.max(...inMemoryProducts.map(p => p.id)) + 1 : 1;
-      inMemoryProducts.unshift({
-        id: newId, name: item.name, brand: item.brand || 'Leafora', sku: item.sku || `SKU-${newId}`, category: item.category || 'General',
-        price: Number(item.price || 0), stock: Number(item.stock || 0), warehouse_stock: Number(item.warehouse_stock || item.stock || 0), reserved_stock: Number(item.reserved_stock || 0), low_stock_threshold: Number(item.low_stock_threshold || 10),
-        description: item.description || '',
-        ingredients: item.ingredients || '',
-        benefits: item.benefits || '',
-        how_to_use: item.how_to_use || '',
-        skin_type: item.skin_type || '',
-        key_ingredients: item.key_ingredients || '',
-        manufacturing_date: item.manufacturing_date || '',
-        expiry_date: item.expiry_date || '',
-        storage: item.storage || '',
-        warning: item.warning || '',
-        image_url: item.image_url || '/assets/vitamin_c_serum.jpg', images: [item.image_url || '/assets/vitamin_c_serum.jpg'],
-        is_active: item.is_active !== undefined ? (Number(item.is_active) ? 1 : 0) : 1,
-        is_featured: item.is_featured ? 1 : 0, is_trending: item.is_trending ? 1 : 0, is_new_arrival: item.is_new_arrival ? 1 : 0,
-        meta_title: item.meta_title || item.name, meta_description: item.meta_description || '', meta_keywords: item.meta_keywords || '', canonical_url: item.canonical_url || '',
-        deleted_at: null, variants: []
-      });
-      importedCount++;
+      await conn.query(
+        `INSERT INTO products
+          (name, brand, sku, net_quantity, category, price, stock, warehouse_stock, reserved_stock, low_stock_threshold,
+           description, ingredients, benefits, how_to_use, skin_type, key_ingredients, manufacturing_date, expiry_date, storage, warning,
+           image_url, images, is_active, is_featured, is_trending, is_new_arrival, meta_title, meta_description, meta_keywords, canonical_url)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE name = VALUES(name), price = VALUES(price), stock = VALUES(stock)`,
+        [
+          item.name, item.brand || 'Leafora', item.sku || `SKU-${Date.now()}-${Math.floor(Math.random() * 1000)}`, item.net_quantity || '',
+          item.category || 'General', Number(item.price || 0), Number(item.stock || 0), Number(item.warehouse_stock || item.stock || 0),
+          Number(item.reserved_stock || 0), Number(item.low_stock_threshold || 10),
+          item.description || '', item.ingredients || '', item.benefits || '', item.how_to_use || '', item.skin_type || '',
+          item.key_ingredients || '', item.manufacturing_date || null, item.expiry_date || null, item.storage || '', item.warning || '',
+          item.image_url || '', JSON.stringify(item.image_url ? [item.image_url] : []),
+          item.is_active !== undefined && item.is_active !== '' ? (Number(item.is_active) ? 1 : 0) : 1,
+          Number(item.is_featured) ? 1 : 0, Number(item.is_trending) ? 1 : 0, Number(item.is_new_arrival) ? 1 : 0,
+          item.meta_title || item.name, item.meta_description || '', item.meta_keywords || '', item.canonical_url || ''
+        ]
+      );
     }
-
-    try { ProductModel.clearCache(); } catch (e) {}
-
-    return res.status(200).json({ success: true, message: `Successfully imported ${importedCount} products from CSV` });
+    await conn.commit();
+    clearProductCache();
+    return res.status(200).json({ success: true, message: `Successfully imported ${records.length} products from CSV` });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    await conn.rollback().catch(() => {});
+    console.error('Product import failed:', error.message);
+    return res.status(500).json({ success: false, message: `Import failed, nothing was saved: ${error.message}` });
+  } finally {
+    conn.release();
   }
 };
 
-const bulkUploadProducts = async (req, res) => {
-  return importProductsCsv(req, res);
-};
+const bulkUploadProducts = (req, res) => importProductsCsv(req, res);
 
+// Records a restock reminder in the admin log. (No vendor e-mail integration exists.)
 const notifyVendor = async (req, res) => {
   try {
-    const { id } = req.params;
-    const [[prod]] = await pool.query('SELECT * FROM products WHERE id = ?', [id]);
+    const [[prod]] = await pool.query('SELECT id, name, stock FROM products WHERE id = ?', [req.params.id]);
+    if (!prod) return res.status(404).json({ success: false, message: 'Product not found.' });
     await pool.query('INSERT INTO admin_logs (admin_email, action, details) VALUES (?, ?, ?)', [
-      (req.admin && req.admin.email) || ALLOWED_ADMIN_EMAIL || 'admin',
-      'NOTIFY_VENDOR',
-      `Sent restock alert notification to vendor for product: ${prod ? prod.name : id}`,
+      (req.admin && req.admin.email) || 'admin',
+      'RESTOCK_REMINDER',
+      `Restock reminder recorded for "${prod.name}" (stock: ${prod.stock})`,
     ]);
-    return res.status(200).json({ success: true, message: `Vendor notified to restock ${prod ? prod.name : 'product'}` });
+    return res.status(200).json({ success: true, message: `Restock reminder recorded for ${prod.name}` });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return productFail(res, 'record a restock reminder for', error);
   }
 };
 
-// ─── CONTROL SUITE 3 & 4: ORDERS & SHIPPING (VERY PREMIUM) ───
+// ─── CONTROL SUITE 3 & 4: ORDERS (database only; status changes e-mail the customer) ───
+
+const orderFail = (res, error, action = 'update the order') => {
+  if (error.status && error.status < 500) return res.status(error.status).json({ success: false, message: error.message });
+  console.error(`Order ${action} failed:`, error);
+  return res.status(error.status || 500).json({ success: false, message: error.status ? error.message : `Could not ${action}. Please try again.` });
+};
+
 const getOrders = async (req, res) => {
   try {
     const { status, payment_status, courier, search } = req.query;
-    let query = 'SELECT o.* FROM orders o WHERE 1=1';
+    let query = `
+      SELECT o.*,
+        COALESCE((SELECT SUM(quantity) FROM order_items WHERE order_id = o.id), 0) AS items_count,
+        (SELECT COUNT(*) FROM order_timeline WHERE order_id = o.id) AS timeline_count
+      FROM orders o WHERE 1=1`;
     const params = [];
 
-    if (status === 'deleted') {
-      query += ' AND o.deleted_at IS NOT NULL';
-    } else {
+    if (status === 'deleted') query += ' AND o.deleted_at IS NOT NULL';
+    else {
       query += ' AND o.deleted_at IS NULL';
-      if (status && status !== 'all') {
-        query += ' AND o.status = ?';
-        params.push(status);
-      }
+      if (status && status !== 'all') { query += ' AND o.status = ?'; params.push(status); }
     }
-
-    if (payment_status && payment_status !== 'all') {
-      query += ' AND o.payment_status = ?';
-      params.push(payment_status);
-    }
-
-    if (courier && courier !== 'all') {
-      query += ' AND o.shipping_partner = ?';
-      params.push(courier);
-    }
-
+    if (payment_status && payment_status !== 'all') { query += ' AND o.payment_status = ?'; params.push(payment_status); }
+    if (courier && courier !== 'all') { query += ' AND o.shipping_partner = ?'; params.push(courier); }
     if (search) {
       const s = `%${search}%`;
       query += ' AND (o.order_number LIKE ? OR o.customer_name LIKE ? OR o.customer_email LIKE ? OR o.customer_phone LIKE ? OR o.tracking_number LIKE ? OR o.id = ?)';
       params.push(s, s, s, s, s, isNaN(search) ? -1 : Number(search));
     }
-
     query += ' ORDER BY o.id DESC';
+
     const [rows] = await pool.query(query, params);
-
-    // Enrich with item count and timeline count
-    for (let o of rows) {
-      try {
-        const [itemsCnt] = await pool.query('SELECT COUNT(*) as cnt, SUM(quantity) as total_qty FROM order_items WHERE order_id = ?', [o.id]);
-        o.items_count = itemsCnt[0]?.total_qty || itemsCnt[0]?.cnt || 1;
-
-        const [tCnt] = await pool.query('SELECT COUNT(*) as cnt FROM order_timeline WHERE order_id = ?', [o.id]);
-        o.timeline_count = tCnt[0]?.cnt || 0;
-      } catch (e) {}
-    }
-
-    return res.status(200).json({ success: true, data: rows });
+    return res.status(200).json({ success: true, data: rows.map((o) => ({ ...o, items_count: Number(o.items_count), timeline_count: Number(o.timeline_count) })) });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return orderFail(res, error, 'load orders');
   }
 };
 
 const getOrderDetails = async (req, res) => {
   try {
-    const { id } = req.params;
-    const numId = Number(id);
+    const numId = Number(req.params.id);
+    const [[order]] = await pool.query('SELECT * FROM orders WHERE id = ?', [numId]);
+    if (!order) return res.status(404).json({ success: false, message: 'Order record not found' });
 
-    const [oRows] = await pool.query('SELECT * FROM orders WHERE id = ?', [numId]);
-    if (oRows.length === 0) {
-      return res.status(404).json({ success: false, message: 'Order record not found' });
-    }
-    const order = oRows[0];
-
-    // Fetch Order Items
     const [items] = await pool.query('SELECT * FROM order_items WHERE order_id = ? ORDER BY id ASC', [numId]);
-
-    // Fetch Timeline Log
     const [timeline] = await pool.query('SELECT * FROM order_timeline WHERE order_id = ? ORDER BY id ASC', [numId]);
+    const [payments] = await pool.query('SELECT * FROM payments WHERE order_id = ? ORDER BY id ASC', [numId]);
+    const [[customer]] = await pool.query('SELECT id, name, email, phone, status, created_at FROM customers WHERE LOWER(email) = LOWER(?) LIMIT 1', [order.customer_email]);
 
-    // Fetch Customer Profile matching email
-    const [custRows] = await pool.query('SELECT * FROM customers WHERE email = ? LIMIT 1', [order.customer_email]);
-    const customer = custRows[0] || null;
-
-    return res.status(200).json({
-      success: true,
-      data: {
-        order,
-        items,
-        timeline,
-        customer
-      }
-    });
+    return res.status(200).json({ success: true, data: { order, items, timeline, payments, customer: customer || null } });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return orderFail(res, error, 'load the order');
   }
 };
 
+// PUT /admin/orders/:id and /admin/orders/:id/status
 const updateOrderDetails = async (req, res) => {
+  const numId = Number(req.params.id);
+  const {
+    status, shipping_partner, warehouse, tracking_number,
+    admin_notes, return_reason, exchange_notes, customer_name, customer_phone, shipping_address
+  } = req.body;
+
   try {
-    const { id } = req.params;
-    const { 
-      status, payment_status, shipping_partner, warehouse, tracking_number, 
-      admin_notes, return_reason, exchange_notes, customer_name, customer_phone, shipping_address 
-    } = req.body;
-
-    const numId = Number(id);
-
-    await pool.query(
-      `UPDATE orders SET 
-        status = COALESCE(?, status), 
-        payment_status = COALESCE(?, payment_status), 
-        shipping_partner = COALESCE(?, shipping_partner), 
-        warehouse = COALESCE(?, warehouse), 
-        tracking_number = COALESCE(?, tracking_number), 
-        admin_notes = COALESCE(?, admin_notes), 
-        return_reason = COALESCE(?, return_reason), 
-        exchange_notes = COALESCE(?, exchange_notes),
-        customer_name = COALESCE(?, customer_name),
-        customer_phone = COALESCE(?, customer_phone),
+    // Plain fields (no status logic). payment_status is deliberately NOT editable here:
+    // it is set only by verified payments and real refunds.
+    const [result] = await pool.query(
+      `UPDATE orders SET
+        shipping_partner = COALESCE(?, shipping_partner), warehouse = COALESCE(?, warehouse),
+        tracking_number = COALESCE(?, tracking_number), admin_notes = COALESCE(?, admin_notes),
+        return_reason = COALESCE(?, return_reason), exchange_notes = COALESCE(?, exchange_notes),
+        customer_name = COALESCE(?, customer_name), customer_phone = COALESCE(?, customer_phone),
         shipping_address = COALESCE(?, shipping_address)
        WHERE id = ?`,
       [
-        status || null, payment_status || null, shipping_partner || null, warehouse || null, 
-        tracking_number || null, admin_notes || null, return_reason || null, exchange_notes || null,
-        customer_name || null, customer_phone || null, shipping_address || null, numId
+        shipping_partner || null, warehouse || null, tracking_number || null, admin_notes ?? null, return_reason || null,
+        exchange_notes || null, customer_name || null, customer_phone || null, shipping_address || null, numId
       ]
     );
+    if (result.affectedRows === 0) return res.status(404).json({ success: false, message: 'Order not found.' });
 
-    // Auto append log to timeline if status or courier changed
     if (status) {
-      await pool.query(
-        'INSERT INTO order_timeline (order_id, title, description, status) VALUES (?, ?, ?, ?)',
-        [numId, `Status Updated: ${status}`, `Order #${numId} status changed to ${status}${shipping_partner ? ` via ${shipping_partner}` : ''}.`, status]
-      );
+      await setOrderStatus(numId, status, { shipping_partner, tracking_number, adminEmail: req.admin && req.admin.email });
     }
-
-    return res.status(200).json({ success: true, message: `Order #${numId} updated successfully` });
+    return res.status(200).json({ success: true, message: status ? `Order updated to "${status}" and the customer was notified` : 'Order updated successfully' });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return orderFail(res, error);
   }
 };
 
 const cancelOrder = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { reason } = req.body;
-    const numId = Number(id);
-
-    await pool.query('UPDATE orders SET status = "Cancelled", admin_notes = CONCAT(IFNULL(admin_notes, ""), "\n[Cancellation Reason]: ", ?) WHERE id = ?', [reason || 'Cancelled by admin', numId]);
-    await pool.query(
-      'INSERT INTO order_timeline (order_id, title, description, status) VALUES (?, ?, ?, "Cancelled")',
-      [numId, 'Order Cancelled', `Order #${numId} cancelled. Reason: ${reason || 'Admin action'}`, 'Cancelled']
-    );
-
-    return res.status(200).json({ success: true, message: `Order #${numId} cancelled successfully` });
+    const order = await setOrderStatus(Number(req.params.id), 'Cancelled', { reason: req.body.reason || 'Cancelled by store', adminEmail: req.admin && req.admin.email });
+    const paid = order.payment_status === 'Paid';
+    return res.status(200).json({
+      success: true,
+      message: `Order #${order.order_number} cancelled, stock returned and customer notified.${paid ? ' The payment was NOT refunded automatically — use "Refund" to return the money.' : ''}`,
+    });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return orderFail(res, error, 'cancel the order');
   }
 };
 
 const refundOrder = async (req, res) => {
   try {
-    const { id } = req.params;
     const { amount, reason } = req.body;
-    const numId = Number(id);
-
-    await pool.query('UPDATE orders SET payment_status = "Refunded", admin_notes = CONCAT(IFNULL(admin_notes, ""), "\n[Refunded]: $", ?, " Reason: ", ?) WHERE id = ?', [amount || 0, reason || 'Refund issued by admin', numId]);
-    await pool.query(
-      'INSERT INTO order_timeline (order_id, title, description, status) VALUES (?, ?, ?, "Refunded")',
-      [numId, 'Payment Refunded', `Refund of $${amount || 0} processed for Order #${numId}. Note: ${reason || 'Admin refund'}`, 'Refunded']
-    );
-
-    return res.status(200).json({ success: true, message: `Refund processed for Order #${numId}` });
+    const result = await refundOrder_(Number(req.params.id), { amount, reason, adminEmail: req.admin && req.admin.email });
+    return res.status(200).json({ success: true, message: `Refund of ₹${result.amount.toFixed(2)} issued via Razorpay (${result.refund_id}).`, ...result });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return orderFail(res, error, 'refund the order');
   }
 };
 
 const returnOrder = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { reason } = req.body;
-    const numId = Number(id);
-
-    await pool.query('UPDATE orders SET status = "Returned", return_reason = ? WHERE id = ?', [reason || 'Item returned by customer', numId]);
-    await pool.query(
-      'INSERT INTO order_timeline (order_id, title, description, status) VALUES (?, ?, ?, "Returned")',
-      [numId, 'Return Initiated', `Return request recorded for Order #${numId}. Reason: ${reason || 'Customer return'}`, 'Returned']
-    );
-
-    return res.status(200).json({ success: true, message: `Return processed for Order #${numId}` });
+    const order = await setOrderStatus(Number(req.params.id), 'Returned', { reason: req.body.reason || 'Item returned', adminEmail: req.admin && req.admin.email });
+    return res.status(200).json({ success: true, message: `Return recorded for #${order.order_number}; stock returned. Issue a refund separately if needed.` });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return orderFail(res, error, 'record the return');
   }
 };
 
 const exchangeOrder = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { exchange_notes } = req.body;
-    const numId = Number(id);
-
-    await pool.query('UPDATE orders SET status = "Exchanged", exchange_notes = ? WHERE id = ?', [exchange_notes || 'Item exchanged', numId]);
-    await pool.query(
-      'INSERT INTO order_timeline (order_id, title, description, status) VALUES (?, ?, ?, "Exchanged")',
-      [numId, 'Item Exchange Recorded', `Product exchange initiated for Order #${numId}. Notes: ${exchange_notes || 'Exchange request'}`, 'Exchanged']
-    );
-
-    return res.status(200).json({ success: true, message: `Exchange recorded for Order #${numId}` });
+    const numId = Number(req.params.id);
+    const notes = req.body.exchange_notes || 'Exchange requested';
+    await pool.query('UPDATE orders SET exchange_notes = ? WHERE id = ?', [notes, numId]);
+    const order = await setOrderStatus(numId, 'Exchanged', { reason: notes, adminEmail: req.admin && req.admin.email });
+    return res.status(200).json({ success: true, message: `Exchange recorded for #${order.order_number}` });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return orderFail(res, error, 'record the exchange');
   }
 };
 
 const addOrderTimelineEvent = async (req, res) => {
   try {
-    const { id } = req.params;
     const { title, description, status } = req.body;
-    const numId = Number(id);
-
+    if (!title) return res.status(400).json({ success: false, message: 'Timeline title is required.' });
+    const [[order]] = await pool.query('SELECT id FROM orders WHERE id = ?', [Number(req.params.id)]);
+    if (!order) return res.status(404).json({ success: false, message: 'Order not found.' });
     await pool.query(
       'INSERT INTO order_timeline (order_id, title, description, status) VALUES (?, ?, ?, ?)',
-      [numId, title || 'Timeline Update', description || '', status || 'Processing']
+      [order.id, title, description || '', status || null]
     );
-
     return res.status(201).json({ success: true, message: 'Timeline event recorded' });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return orderFail(res, error, 'add the timeline note');
   }
 };
 
+const BULK_STATUS = { ship: 'Shipped', deliver: 'Delivered', cancel: 'Cancelled' };
+
 const bulkOrderAction = async (req, res) => {
+  const { ids, action, extra } = req.body;
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return res.status(400).json({ success: false, message: 'No orders selected' });
+  }
+  const numIds = ids.map(Number).filter(Number.isInteger);
+
   try {
-    const { ids, action, extra } = req.body;
-    if (!Array.isArray(ids) || ids.length === 0) {
-      return res.status(400).json({ success: false, message: 'No orders selected' });
+    if (BULK_STATUS[action]) {
+      const failed = [];
+      for (const id of numIds) {
+        try {
+          await setOrderStatus(id, BULK_STATUS[action], { shipping_partner: action === 'ship' ? extra?.courier : undefined, adminEmail: req.admin && req.admin.email });
+        } catch (e) {
+          failed.push(`#${id}: ${e.message}`);
+        }
+      }
+      return res.status(failed.length ? 207 : 200).json({
+        success: failed.length === 0,
+        message: failed.length
+          ? `${numIds.length - failed.length} updated, ${failed.length} failed — ${failed.join('; ')}`
+          : `${numIds.length} orders marked "${BULK_STATUS[action]}" and customers notified`,
+      });
     }
 
-    if (action === 'ship') {
-      const courier = extra?.courier || 'BlueDart';
-      await pool.query('UPDATE orders SET status = "Shipped", shipping_partner = ? WHERE id IN (?)', [courier, ids]);
-    } else if (action === 'deliver') {
-      await pool.query('UPDATE orders SET status = "Delivered" WHERE id IN (?)', [ids]);
-    } else if (action === 'cancel') {
-      await pool.query('UPDATE orders SET status = "Cancelled" WHERE id IN (?)', [ids]);
-    } else if (action === 'soft_delete') {
-      await pool.query('UPDATE orders SET deleted_at = NOW() WHERE id IN (?)', [ids]);
-    } else if (action === 'restore') {
-      await pool.query('UPDATE orders SET deleted_at = NULL WHERE id IN (?)', [ids]);
-    } else if (action === 'permanent_delete') {
-      await pool.query('DELETE FROM order_items WHERE order_id IN (?)', [ids]);
-      await pool.query('DELETE FROM order_timeline WHERE order_id IN (?)', [ids]);
-      await pool.query('DELETE FROM orders WHERE id IN (?)', [ids]);
+    if (action === 'soft_delete') await pool.query('UPDATE orders SET deleted_at = NOW() WHERE id IN (?)', [numIds]);
+    else if (action === 'restore') await pool.query('UPDATE orders SET deleted_at = NULL WHERE id IN (?)', [numIds]);
+    else if (action === 'permanent_delete') {
+      // Paid orders are financial records: they can be hidden (soft delete) but not erased
+      const [[paid]] = await pool.query("SELECT COUNT(*) AS cnt FROM orders WHERE id IN (?) AND payment_status IN ('Paid', 'Partially Refunded', 'Refunded')", [numIds]);
+      if (paid.cnt > 0) {
+        return res.status(409).json({ success: false, message: 'Paid orders cannot be permanently deleted (they are needed for accounting). Move them to Trash instead.' });
+      }
+      const conn = await pool.getConnection();
+      try {
+        await conn.beginTransaction();
+        await conn.query('DELETE FROM order_items WHERE order_id IN (?)', [numIds]);
+        await conn.query('DELETE FROM order_timeline WHERE order_id IN (?)', [numIds]);
+        await conn.query('DELETE FROM orders WHERE id IN (?)', [numIds]);
+        await conn.commit();
+      } catch (e) {
+        await conn.rollback().catch(() => {});
+        throw e;
+      } finally {
+        conn.release();
+      }
+    } else {
+      return res.status(400).json({ success: false, message: 'Unknown bulk action.' });
     }
-
-    return res.status(200).json({ success: true, message: `Bulk action "${action}" completed for ${ids.length} orders` });
+    return res.status(200).json({ success: true, message: `Bulk action "${action}" completed for ${numIds.length} orders` });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return orderFail(res, error, 'apply the bulk action');
   }
 };
 
 const exportOrdersCsv = async (req, res) => {
   try {
     const [rows] = await pool.query('SELECT * FROM orders WHERE deleted_at IS NULL ORDER BY id DESC');
-    let csv = 'ID,Order Number,Customer Name,Email,Phone,Subtotal,Tax,Shipping Fee,Total Amount,Status,Payment Status,Shipping Partner,Warehouse,Tracking Number,Created At\n';
-    rows.forEach(o => {
-      csv += `"${o.id}","${o.order_number || `ORD-${o.id}`}","${o.customer_name}","${o.customer_email}","${o.customer_phone || ''}","${o.subtotal || 0}","${o.tax_amount || 0}","${o.shipping_fee || 0}","${o.total_amount}","${o.status}","${o.payment_status}","${o.shipping_partner || ''}","${o.warehouse || ''}","${o.tracking_number || ''}","${o.created_at}"\n`;
-    });
+    const headers = ['id', 'order_number', 'customer_name', 'customer_email', 'customer_phone', 'subtotal', 'tax_amount', 'shipping_fee', 'discount_amount', 'total_amount', 'status', 'payment_status', 'payment_method', 'razorpay_payment_id', 'shipping_partner', 'tracking_number', 'shipping_address', 'created_at'];
+    const csv = [headers.join(','), ...rows.map((o) => headers.map((h) => csvCell(o[h])).join(','))].join('\n') + '\n';
     res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename="leafora_orders_catalog.csv"');
+    res.setHeader('Content-Disposition', 'attachment; filename="leafora_orders.csv"');
     return res.send(csv);
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return orderFail(res, error, 'export orders');
   }
 };
-
 
 // ─── CONTROL SUITE 5: CUSTOMERS MANAGEMENT ───
 const getCustomers = async (req, res) => {
@@ -1877,88 +1568,35 @@ const updatePaymentGatewayConfig = async (req, res) => {
   }
 };
 
+// Real Razorpay refund for a payment row (see services/orderService.js)
 const issueRefund = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { refund_amount, refund_type, reason } = req.body;
-    const numId = Number(id);
-
-    const [[pay]] = await pool.query('SELECT * FROM payments WHERE id = ?', [numId]);
-    if (!pay) {
-      return res.status(404).json({ success: false, message: 'Payment record not found' });
-    }
-
-    const origAmt = parseFloat(pay.amount || 0);
-    const existingRefunded = parseFloat(pay.refunded_amount || 0);
-    const refundAmt = refund_amount ? parseFloat(refund_amount) : (origAmt - existingRefunded);
-    const totalRefundedNow = Number((existingRefunded + refundAmt).toFixed(2));
-
-    const isFull = totalRefundedNow >= origAmt;
-    const newStatus = isFull ? 'Refunded' : 'Partially Refunded';
-    const newRefundStatus = isFull ? 'Full' : 'Partial';
-    const rfdCode = `RFD_${Math.floor(100000 + Math.random() * 900000)}`;
-
-    await pool.query(
-      'UPDATE payments SET status = ?, refunded_amount = ?, refund_status = ?, refund_reason = ? WHERE id = ?',
-      [newStatus, totalRefundedNow, newRefundStatus, reason || 'Refund issued by admin', numId]
-    );
-
-    // Record in payment_refunds table
-    await pool.query(
-      'INSERT INTO payment_refunds (payment_id, order_id, transaction_id, refund_id, amount, refund_type, reason) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [numId, pay.order_id, pay.transaction_id, rfdCode, refundAmt, newRefundStatus, reason || 'Admin refund']
-    );
-
-    // Also sync orders table
-    if (pay.order_id) {
-      await pool.query(
-        'UPDATE orders SET payment_status = ? WHERE id = ? OR order_number = ?',
-        [newStatus, pay.order_id, pay.order_number || `ORD-${pay.order_id}`]
-      );
-      await pool.query(
-        'INSERT INTO order_timeline (order_id, title, description, status) VALUES (?, ?, ?, ?)',
-        [pay.order_id, `${newRefundStatus} Refund Issued ($${refundAmt.toFixed(2)})`, `Refund token #${rfdCode} processed. Reason: ${reason || 'Admin action'}`, newStatus]
-      );
-    }
-
+    const { refund_amount, reason } = req.body;
+    const result = await refundPayment(Number(req.params.id), {
+      amount: refund_amount,
+      reason,
+      adminEmail: req.admin && req.admin.email,
+    });
     return res.status(200).json({
       success: true,
-      message: `${newRefundStatus} Refund of $${refundAmt.toFixed(2)} processed for Payment #${numId} (Refund ID: ${rfdCode})!`,
-      refund_id: rfdCode,
-      refunded_amount: totalRefundedNow,
-      status: newStatus
+      message: `Refund of ₹${result.amount.toFixed(2)} issued via Razorpay (Refund ID: ${result.refund_id}). The customer has been e-mailed.`,
+      refund_id: result.refund_id,
+      refunded_amount: result.refunded_total,
+      status: result.status,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    if (error.status && error.status < 500) return res.status(error.status).json({ success: false, message: error.message });
+    console.error('Refund failed:', error);
+    return res.status(error.status || 500).json({ success: false, message: error.message || 'Refund failed.' });
   }
 };
 
+// Razorpay payment links are not integrated, so nothing can be "resent". Be explicit instead of pretending.
 const retryFailedPayment = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const numId = Number(id);
-    const [[pay]] = await pool.query('SELECT * FROM payments WHERE id = ?', [numId]);
-    if (!pay) {
-      return res.status(404).json({ success: false, message: 'Payment record not found' });
-    }
-
-    const newCount = (pay.retry_count || 0) + 1;
-    await pool.query('UPDATE payments SET retry_count = ? WHERE id = ?', [newCount, numId]);
-
-    if (pay.order_id) {
-      await pool.query(
-        'INSERT INTO order_timeline (order_id, title, description, status) VALUES (?, ?, ?, "Pending")',
-        [pay.order_id, `Payment Retry Link Sent (#${newCount})`, `Sent instant payment retry checkout link to ${pay.customer_email}`, 'Pending']
-      );
-    }
-
-    return res.status(200).json({
-      success: true,
-      message: `Payment retry checkout link resent to ${pay.customer_email || 'customer'}! (Attempt #${newCount})`
-    });
-  } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
-  }
+  return res.status(400).json({
+    success: false,
+    message: 'Payment retry links are not available. Ask the customer to place the order again from their cart.',
+  });
 };
 
 const markCodCollected = async (req, res) => {
@@ -1973,11 +1611,11 @@ const markCodCollected = async (req, res) => {
       await pool.query('UPDATE orders SET payment_status = "Paid" WHERE id = ?', [pay.order_id]);
       await pool.query(
         'INSERT INTO order_timeline (order_id, title, description, status) VALUES (?, ?, ?, "Paid")',
-        [pay.order_id, 'COD Cash Amount Deposited', `Courier partner confirmed COD collection of $${pay.amount}.`, 'Paid']
+        [pay.order_id, 'COD Cash Amount Deposited', `Courier partner confirmed COD collection of ₹${pay.amount}.`, 'Paid']
       );
     }
 
-    return res.status(200).json({ success: true, message: `COD collection of $${pay ? pay.amount : ''} marked as collected and settled.` });
+    return res.status(200).json({ success: true, message: `COD collection of ₹${pay ? pay.amount : ''} marked as collected and settled.` });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
@@ -2381,378 +2019,168 @@ const exportReviewsCsv = async (req, res) => {
   }
 };
 
-// ─── CONTROL SUITE 10B: HOMEPAGE CMS & LAYOUT BUILDER ───
+// ─── CONTROL SUITE 10B: HOMEPAGE CMS & LAYOUT BUILDER (database only) ───
 
-let inMemoryBanners = [
-  {
-    id: 1,
-    banner_type: 'hero',
-    title: 'Pharma-Grade Botanical Actives',
-    subtitle: '100% Pure Organic Extracts Certified by Global Herbal Labs',
-    desktop_image_url: '/assets/heroimage.jpeg',
-    mobile_image_url: '/assets/heroimage.jpeg',
-    link_url: '/products',
-    button_text: 'Explore Catalog',
-    category_id: null,
-    flash_sale_end_time: null,
-    display_order: 1,
-    is_active: 1
-  },
-  {
-    id: 2,
-    banner_type: 'hero',
-    title: 'Clinical Skin Radiance & Hydration',
-    subtitle: 'Formulated with Vitamin C & Hyaluronic Acid Hybrids',
-    desktop_image_url: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=1600&auto=format&fit=crop&q=80',
-    mobile_image_url: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=800&auto=format&fit=crop&q=80',
-    link_url: '/products',
-    button_text: 'Discover Skincare',
-    category_id: null,
-    flash_sale_end_time: null,
-    display_order: 2,
-    is_active: 1
-  },
-  {
-    id: 3,
-    banner_type: 'offer',
-    title: 'FLAT 20% OFF Summer Festival Sale',
-    subtitle: 'Use Promo Code SUMMER2026 at Checkout on Orders Above $99',
-    desktop_image_url: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=1600&auto=format&fit=crop&q=80',
-    mobile_image_url: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=800&auto=format&fit=crop&q=80',
-    link_url: '/products',
-    button_text: 'Claim Discount',
-    category_id: null,
-    flash_sale_end_time: null,
-    display_order: 3,
-    is_active: 1
-  }
-];
+const BANNER_TYPES = ['hero', 'offer', 'category', 'flash_sale'];
 
-let isBannerTableReady = false;
-const ensureHomepageBannersTable = async () => {
-  if (isBannerTableReady) return;
+const toMysqlDateTime = (value) => {
+  if (value === undefined) return undefined; // not sent
+  if (value === null || String(value).trim() === '') return null; // cleared
+  let v = String(value).replace('T', ' ');
+  if (v.length === 16) v += ':00';
+  return v;
+};
+
+const bannerFail = (res, action, error) => {
+  console.error(`Banner ${action} failed:`, error.message);
+  return res.status(500).json({ success: false, message: `Could not ${action} the banner. Please try again.` });
+};
+
+// Admin: all banners (filters optional). Public route is getPublicBanners.
+const getHomepageBanners = async (req, res) => {
   try {
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS homepage_banners (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        banner_type ENUM('hero', 'offer', 'category', 'flash_sale') NOT NULL DEFAULT 'hero',
-        title VARCHAR(255) NOT NULL,
-        subtitle VARCHAR(255) NULL,
-        desktop_image_url LONGTEXT NOT NULL,
-        mobile_image_url LONGTEXT NULL,
-        link_url VARCHAR(500) NULL,
-        button_text VARCHAR(100) DEFAULT 'Shop Now',
-        category_id INT NULL,
-        flash_sale_end_time DATETIME NULL,
-        display_order INT DEFAULT 0,
-        is_active TINYINT(1) DEFAULT 1,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-      );
-    `);
-
-    try {
-      await pool.query('ALTER TABLE homepage_banners MODIFY COLUMN desktop_image_url LONGTEXT');
-      await pool.query('ALTER TABLE homepage_banners MODIFY COLUMN mobile_image_url LONGTEXT');
-    } catch (_) {}
-
-    const [countRows] = await pool.query('SELECT COUNT(*) as cnt FROM homepage_banners');
-    if (countRows[0]?.cnt === 0) {
-      for (const b of inMemoryBanners) {
-        await pool.query(
-          `INSERT INTO homepage_banners (banner_type, title, subtitle, desktop_image_url, mobile_image_url, link_url, button_text, display_order, is_active)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [b.banner_type, b.title, b.subtitle, b.desktop_image_url, b.mobile_image_url, b.link_url, b.button_text, b.display_order, b.is_active]
-        );
-      }
-    }
-    isBannerTableReady = true;
-  } catch (err) {
-    console.warn('ensureHomepageBannersTable notice:', err.message);
+    const { type, active_only } = req.query;
+    const conditions = [];
+    const params = [];
+    if (type && type !== 'all') { conditions.push('banner_type = ?'); params.push(type); }
+    if (active_only === 'true' || active_only === '1') conditions.push('is_active = 1');
+    const where = conditions.length ? ` WHERE ${conditions.join(' AND ')}` : '';
+    const [rows] = await pool.query(`SELECT * FROM homepage_banners${where} ORDER BY display_order ASC, id DESC`, params);
+    return res.status(200).json({ success: true, data: rows });
+  } catch (error) {
+    console.error('Banner list failed:', error.message);
+    return res.status(500).json({ success: false, message: 'Could not load banners.' });
   }
 };
 
-const getHomepageBanners = async (req, res) => {
+// Storefront: active banners only; expired flash sales are hidden
+const getPublicBanners = async (req, res) => {
   try {
-    await ensureHomepageBannersTable();
-    const { type, active_only } = req.query;
-    let query = 'SELECT * FROM homepage_banners';
-    const conditions = [];
+    const { type } = req.query;
     const params = [];
-    if (type && type !== 'all') {
-      conditions.push('banner_type = ?');
-      params.push(type);
-    }
-    if (active_only === 'true' || active_only === '1') {
-      conditions.push('is_active = 1');
-    }
-    if (conditions.length > 0) {
-      query += ' WHERE ' + conditions.join(' AND ');
-    }
+    let query = `SELECT * FROM homepage_banners WHERE is_active = 1
+      AND (banner_type <> 'flash_sale' OR flash_sale_end_time IS NULL OR flash_sale_end_time > NOW())`;
+    if (type && type !== 'all') { query += ' AND banner_type = ?'; params.push(type); }
     query += ' ORDER BY display_order ASC, id DESC';
     const [rows] = await pool.query(query, params);
     return res.status(200).json({ success: true, data: rows });
   } catch (error) {
-    console.warn('DB getHomepageBanners fallback notice:', error.message);
-    let filtered = [...inMemoryBanners];
-    const { type, active_only } = req.query;
-    if (type && type !== 'all') {
-      filtered = filtered.filter(b => b.banner_type === type);
-    }
-    if (active_only === 'true' || active_only === '1') {
-      filtered = filtered.filter(b => b.is_active === 1 || b.is_active === true);
-    }
-    return res.status(200).json({ success: true, data: filtered, fallback: true });
+    console.error('Public banner list failed:', error.message);
+    return res.status(500).json({ success: false, message: 'Could not load banners.' });
   }
 };
 
 const createHomepageBanner = async (req, res) => {
+  const {
+    banner_type = 'hero', title, subtitle, desktop_image_url, mobile_image_url, link_url,
+    button_text, category_id, flash_sale_end_time, display_order = 0, is_active = true
+  } = req.body;
+
+  if (!title || !String(title).trim()) {
+    return res.status(400).json({ success: false, message: 'Banner headline / title is required' });
+  }
+  if (!desktop_image_url || !String(desktop_image_url).trim()) {
+    return res.status(400).json({ success: false, message: 'Desktop banner image URL or upload is required' });
+  }
+  if (!BANNER_TYPES.includes(banner_type)) {
+    return res.status(400).json({ success: false, message: 'Unknown banner type.' });
+  }
+
   try {
-    await ensureHomepageBannersTable();
-    const {
-      banner_type = 'hero',
-      title,
-      subtitle,
-      desktop_image_url,
-      mobile_image_url,
-      link_url,
-      button_text = 'Shop Now',
-      category_id,
-      flash_sale_end_time,
-      display_order = 0,
-      is_active = true
-    } = req.body;
-
-    if (!title || !String(title).trim()) {
-      return res.status(400).json({ success: false, message: 'Banner headline / title is required' });
-    }
-    if (!desktop_image_url || !String(desktop_image_url).trim()) {
-      return res.status(400).json({ success: false, message: 'Desktop banner image URL or upload is required' });
-    }
-
-    let formattedFlashSaleEndTime = null;
-    if (flash_sale_end_time && String(flash_sale_end_time).trim() !== '') {
-      formattedFlashSaleEndTime = String(flash_sale_end_time).replace('T', ' ');
-      if (formattedFlashSaleEndTime.length === 16) {
-        formattedFlashSaleEndTime += ':00';
-      }
-    }
-
-    let insertedId = Date.now();
-    try {
-      const [result] = await pool.query(
-        `INSERT INTO homepage_banners (
-          banner_type, title, subtitle, desktop_image_url, mobile_image_url, link_url, button_text, category_id, flash_sale_end_time, display_order, is_active
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          banner_type || 'hero',
-          String(title).trim(),
-          subtitle ? String(subtitle).trim() : null,
-          desktop_image_url,
-          mobile_image_url || desktop_image_url,
-          link_url || null,
-          button_text || 'Shop Now',
-          category_id && String(category_id).trim() !== '' ? Number(category_id) : null,
-          formattedFlashSaleEndTime,
-          parseInt(display_order) || 0,
-          is_active ? 1 : 0
-        ]
-      );
-      insertedId = result.insertId;
-      console.log('✅ Banner saved to MySQL database table homepage_banners with id:', insertedId);
-    } catch (dbErr) {
-      console.error('⚠️ DB insert error on homepage_banners:', dbErr.message);
-      // Ensure table and columns exist in MySQL and retry
-      try {
-        await pool.query(`
-          CREATE TABLE IF NOT EXISTS homepage_banners (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            banner_type ENUM('hero', 'offer', 'category', 'flash_sale') NOT NULL DEFAULT 'hero',
-            title VARCHAR(255) NOT NULL,
-            subtitle VARCHAR(255) NULL,
-            desktop_image_url LONGTEXT NOT NULL,
-            mobile_image_url LONGTEXT NULL,
-            link_url VARCHAR(500) NULL,
-            button_text VARCHAR(100) DEFAULT 'Shop Now',
-            category_id INT NULL,
-            flash_sale_end_time DATETIME NULL,
-            display_order INT DEFAULT 0,
-            is_active TINYINT(1) DEFAULT 1,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-          )
-        `);
-        await pool.query('ALTER TABLE homepage_banners MODIFY COLUMN desktop_image_url LONGTEXT');
-        await pool.query('ALTER TABLE homepage_banners MODIFY COLUMN mobile_image_url LONGTEXT');
-        const [retryRes] = await pool.query(
-          `INSERT INTO homepage_banners (
-            banner_type, title, subtitle, desktop_image_url, mobile_image_url, link_url, button_text, category_id, flash_sale_end_time, display_order, is_active
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            banner_type || 'hero',
-            String(title).trim(),
-            subtitle ? String(subtitle).trim() : null,
-            desktop_image_url,
-            mobile_image_url || desktop_image_url,
-            link_url || null,
-            button_text || 'Shop Now',
-            category_id && String(category_id).trim() !== '' ? Number(category_id) : null,
-            formattedFlashSaleEndTime,
-            parseInt(display_order) || 0,
-            is_active ? 1 : 0
-          ]
-        );
-        insertedId = retryRes.insertId;
-        console.log('✅ Banner successfully saved to MySQL on retry with id:', insertedId);
-      } catch (retryErr) {
-        console.error('❌ Retry insert into MySQL failed:', retryErr.message);
-      }
-    }
-
-    const newBanner = {
-      id: insertedId,
-      banner_type: banner_type || 'hero',
-      title: String(title).trim(),
-      subtitle: subtitle ? String(subtitle).trim() : '',
-      desktop_image_url,
-      mobile_image_url: mobile_image_url || desktop_image_url,
-      link_url: link_url || '',
-      button_text: button_text || 'Shop Now',
-      category_id: category_id ? Number(category_id) : null,
-      flash_sale_end_time: formattedFlashSaleEndTime,
-      display_order: parseInt(display_order) || 0,
-      is_active: is_active ? 1 : 0
-    };
-    inMemoryBanners.unshift(newBanner);
-
-    return res.status(201).json({ success: true, message: 'Homepage banner created successfully', banner_id: insertedId, banner: newBanner });
+    const [result] = await pool.query(
+      `INSERT INTO homepage_banners
+        (banner_type, title, subtitle, desktop_image_url, mobile_image_url, link_url, button_text, category_id, flash_sale_end_time, display_order, is_active)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        banner_type, String(title).trim(), subtitle ? String(subtitle).trim() : null, desktop_image_url,
+        mobile_image_url || desktop_image_url, link_url || null, button_text || 'Shop Now',
+        category_id && String(category_id).trim() !== '' ? Number(category_id) : null,
+        toMysqlDateTime(flash_sale_end_time) ?? null, parseInt(display_order, 10) || 0, is_active ? 1 : 0
+      ]
+    );
+    const [[banner]] = await pool.query('SELECT * FROM homepage_banners WHERE id = ?', [result.insertId]);
+    return res.status(201).json({ success: true, message: 'Homepage banner created successfully', banner_id: result.insertId, banner });
   } catch (error) {
-    console.error('Create Banner Error:', error);
-    return res.status(500).json({ success: false, message: error.message });
+    return bannerFail(res, 'create', error);
   }
 };
 
 const updateHomepageBanner = async (req, res) => {
+  const {
+    banner_type, title, subtitle, desktop_image_url, mobile_image_url, link_url,
+    button_text, category_id, flash_sale_end_time, display_order, is_active
+  } = req.body;
+
+  if (banner_type !== undefined && !BANNER_TYPES.includes(banner_type)) {
+    return res.status(400).json({ success: false, message: 'Unknown banner type.' });
+  }
+
+  // Build SET list from fields actually sent, so toggling "active" never wipes other fields
+  const sets = [];
+  const params = [];
+  const set = (col, val) => { sets.push(`${col} = ?`); params.push(val); };
+  if (banner_type !== undefined) set('banner_type', banner_type);
+  if (title !== undefined) {
+    if (!String(title).trim()) return res.status(400).json({ success: false, message: 'Banner title cannot be empty.' });
+    set('title', String(title).trim());
+  }
+  if (subtitle !== undefined) set('subtitle', subtitle ? String(subtitle).trim() : null);
+  if (desktop_image_url) set('desktop_image_url', desktop_image_url);
+  if (mobile_image_url !== undefined) set('mobile_image_url', mobile_image_url || null);
+  if (link_url !== undefined) set('link_url', link_url || null);
+  if (button_text !== undefined) set('button_text', button_text || 'Shop Now');
+  if (category_id !== undefined) set('category_id', category_id && String(category_id).trim() !== '' ? Number(category_id) : null);
+  const flashEnd = toMysqlDateTime(flash_sale_end_time);
+  if (flashEnd !== undefined) set('flash_sale_end_time', flashEnd);
+  if (display_order !== undefined && display_order !== '') set('display_order', parseInt(display_order, 10) || 0);
+  if (is_active !== undefined) set('is_active', is_active ? 1 : 0);
+
+  if (sets.length === 0) return res.status(400).json({ success: false, message: 'Nothing to update.' });
+
   try {
-    await ensureHomepageBannersTable();
-    const { id } = req.params;
-    const {
-      banner_type,
-      title,
-      subtitle,
-      desktop_image_url,
-      mobile_image_url,
-      link_url,
-      button_text,
-      category_id,
-      flash_sale_end_time,
-      display_order,
-      is_active
-    } = req.body;
-
-    let formattedFlashSaleEndTime = null;
-    if (flash_sale_end_time !== undefined && flash_sale_end_time !== null) {
-      if (String(flash_sale_end_time).trim() !== '') {
-        formattedFlashSaleEndTime = String(flash_sale_end_time).replace('T', ' ');
-        if (formattedFlashSaleEndTime.length === 16) {
-          formattedFlashSaleEndTime += ':00';
-        }
-      }
-    }
-
-    try {
-      await pool.query(
-        `UPDATE homepage_banners SET
-          banner_type = COALESCE(?, banner_type),
-          title = COALESCE(?, title),
-          subtitle = COALESCE(?, subtitle),
-          desktop_image_url = COALESCE(?, desktop_image_url),
-          mobile_image_url = COALESCE(?, mobile_image_url),
-          link_url = COALESCE(?, link_url),
-          button_text = COALESCE(?, button_text),
-          category_id = ?,
-          flash_sale_end_time = ?,
-          display_order = COALESCE(?, display_order),
-          is_active = COALESCE(?, is_active)
-         WHERE id = ?`,
-        [
-          banner_type || null,
-          title || null,
-          subtitle || null,
-          desktop_image_url || null,
-          mobile_image_url || null,
-          link_url || null,
-          button_text || null,
-          category_id && String(category_id).trim() !== '' ? Number(category_id) : null,
-          formattedFlashSaleEndTime,
-          display_order !== undefined && display_order !== '' ? parseInt(display_order) : null,
-          is_active !== undefined ? (is_active ? 1 : 0) : null,
-          id
-        ]
-      );
-    } catch (dbErr) {
-      console.warn('DB update banner fallback notice:', dbErr.message);
-    }
-
-    // Update in-memory fallback
-    const idx = inMemoryBanners.findIndex(b => String(b.id) === String(id));
-    if (idx !== -1) {
-      inMemoryBanners[idx] = {
-        ...inMemoryBanners[idx],
-        ...(banner_type !== undefined ? { banner_type } : {}),
-        ...(title !== undefined ? { title } : {}),
-        ...(subtitle !== undefined ? { subtitle } : {}),
-        ...(desktop_image_url !== undefined ? { desktop_image_url } : {}),
-        ...(mobile_image_url !== undefined ? { mobile_image_url } : {}),
-        ...(link_url !== undefined ? { link_url } : {}),
-        ...(button_text !== undefined ? { button_text } : {}),
-        ...(category_id !== undefined ? { category_id } : {}),
-        ...(formattedFlashSaleEndTime !== undefined ? { flash_sale_end_time: formattedFlashSaleEndTime } : {}),
-        ...(display_order !== undefined ? { display_order: parseInt(display_order) } : {}),
-        ...(is_active !== undefined ? { is_active: is_active ? 1 : 0 } : {})
-      };
-    }
-
+    params.push(req.params.id);
+    const [result] = await pool.query(`UPDATE homepage_banners SET ${sets.join(', ')} WHERE id = ?`, params);
+    if (result.affectedRows === 0) return res.status(404).json({ success: false, message: 'Banner not found.' });
     return res.status(200).json({ success: true, message: 'Homepage banner updated successfully' });
   } catch (error) {
-    console.error('Update Banner Error:', error);
-    return res.status(500).json({ success: false, message: error.message });
+    return bannerFail(res, 'update', error);
   }
 };
 
 const deleteHomepageBanner = async (req, res) => {
   try {
-    const { id } = req.params;
-    try {
-      await pool.query('DELETE FROM homepage_banners WHERE id = ?', [id]);
-    } catch (dbErr) {
-      console.warn('DB delete banner fallback notice:', dbErr.message);
-    }
-    inMemoryBanners = inMemoryBanners.filter(b => String(b.id) !== String(id));
+    const [result] = await pool.query('DELETE FROM homepage_banners WHERE id = ?', [req.params.id]);
+    if (result.affectedRows === 0) return res.status(404).json({ success: false, message: 'Banner not found.' });
     return res.status(200).json({ success: true, message: 'Homepage banner deleted successfully' });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return bannerFail(res, 'delete', error);
+  }
+};
+
+const reorderRows = async (table, orders) => {
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+    for (const item of orders) {
+      await conn.query(`UPDATE ${table} SET display_order = ? WHERE id = ?`, [Number(item.display_order) || 0, Number(item.id)]);
+    }
+    await conn.commit();
+  } catch (error) {
+    await conn.rollback().catch(() => {});
+    throw error;
+  } finally {
+    conn.release();
   }
 };
 
 const reorderHomepageBanners = async (req, res) => {
+  const { orders } = req.body;
+  if (!Array.isArray(orders)) return res.status(400).json({ success: false, message: 'Invalid orders format' });
   try {
-    const { orders } = req.body;
-    if (!Array.isArray(orders)) {
-      return res.status(400).json({ success: false, message: 'Invalid orders format' });
-    }
-    for (const item of orders) {
-      try {
-        await pool.query('UPDATE homepage_banners SET display_order = ? WHERE id = ?', [item.display_order, item.id]);
-      } catch (dbErr) {
-        console.warn('DB reorder banner fallback notice:', dbErr.message);
-      }
-      const b = inMemoryBanners.find(x => String(x.id) === String(item.id));
-      if (b) b.display_order = item.display_order;
-    }
+    await reorderRows('homepage_banners', orders);
     return res.status(200).json({ success: true, message: 'Banner order updated successfully' });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return bannerFail(res, 'reorder', error);
   }
 };
 
@@ -2761,346 +2189,276 @@ const getHomepageSections = async (req, res) => {
     const [rows] = await pool.query('SELECT * FROM homepage_sections ORDER BY display_order ASC, id ASC');
     return res.status(200).json({ success: true, data: rows });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    console.error('Section list failed:', error.message);
+    return res.status(500).json({ success: false, message: 'Could not load homepage sections.' });
   }
 };
 
 const updateHomepageSection = async (req, res) => {
   try {
-    const { id } = req.params;
     const { custom_title, custom_subtitle, item_limit, is_active } = req.body;
-
-    await pool.query(
+    const [result] = await pool.query(
       `UPDATE homepage_sections SET
-        custom_title = COALESCE(?, custom_title),
-        custom_subtitle = COALESCE(?, custom_subtitle),
-        item_limit = COALESCE(?, item_limit),
-        is_active = COALESCE(?, is_active)
+        custom_title = COALESCE(?, custom_title), custom_subtitle = COALESCE(?, custom_subtitle),
+        item_limit = COALESCE(?, item_limit), is_active = COALESCE(?, is_active)
        WHERE id = ?`,
       [
-        custom_title || null,
-        custom_subtitle || null,
-        item_limit !== undefined ? parseInt(item_limit) : null,
+        custom_title ?? null, custom_subtitle ?? null,
+        item_limit !== undefined && item_limit !== '' ? Math.max(1, parseInt(item_limit, 10) || 1) : null,
         is_active !== undefined ? (is_active ? 1 : 0) : null,
-        id
+        req.params.id
       ]
     );
-
+    if (result.affectedRows === 0) return res.status(404).json({ success: false, message: 'Section not found.' });
     return res.status(200).json({ success: true, message: 'Section settings updated successfully' });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    console.error('Section update failed:', error.message);
+    return res.status(500).json({ success: false, message: 'Could not update the section.' });
   }
 };
 
 const reorderHomepageSections = async (req, res) => {
+  const { orders } = req.body;
+  if (!Array.isArray(orders)) return res.status(400).json({ success: false, message: 'Invalid orders format' });
   try {
-    const { orders } = req.body;
-    if (!Array.isArray(orders)) {
-      return res.status(400).json({ success: false, message: 'Invalid orders format' });
-    }
-    for (const item of orders) {
-      await pool.query('UPDATE homepage_sections SET display_order = ? WHERE id = ?', [item.display_order, item.id]);
-    }
+    await reorderRows('homepage_sections', orders);
     return res.status(200).json({ success: true, message: 'Homepage section order updated successfully' });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    console.error('Section reorder failed:', error.message);
+    return res.status(500).json({ success: false, message: 'Could not reorder sections.' });
   }
 };
 
 const getCuratedProducts = async (req, res) => {
   try {
-    const [products] = await pool.query('SELECT id, name, sku, price, image, is_featured, is_trending, is_new_arrival, is_best_seller, is_active FROM products WHERE deleted_at IS NULL ORDER BY id DESC');
+    const [products] = await pool.query(
+      `SELECT id, name, sku, price, image_url, image_url AS image, is_featured, is_trending, is_new_arrival,
+              COALESCE(is_best_seller, 0) AS is_best_seller, is_active
+       FROM products WHERE deleted_at IS NULL ORDER BY id DESC`
+    );
     return res.status(200).json({ success: true, data: products });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    console.error('Curated products failed:', error.message);
+    return res.status(500).json({ success: false, message: 'Could not load products.' });
   }
 };
 
 const curateProducts = async (req, res) => {
+  const { id, is_featured, is_trending, is_new_arrival, is_best_seller } = req.body;
+  if (!id) return res.status(400).json({ success: false, message: 'Product ID is required' });
+
+  const updates = [];
+  const params = [];
+  if (is_featured !== undefined) { updates.push('is_featured = ?'); params.push(is_featured ? 1 : 0); }
+  if (is_trending !== undefined) { updates.push('is_trending = ?'); params.push(is_trending ? 1 : 0); }
+  if (is_new_arrival !== undefined) { updates.push('is_new_arrival = ?'); params.push(is_new_arrival ? 1 : 0); }
+  if (is_best_seller !== undefined) { updates.push('is_best_seller = ?'); params.push(is_best_seller ? 1 : 0); }
+  if (updates.length === 0) return res.status(400).json({ success: false, message: 'Nothing to update.' });
+
   try {
-    const { id, is_featured, is_trending, is_new_arrival, is_best_seller } = req.body;
-    if (!id) {
-      return res.status(400).json({ success: false, message: 'Product ID is required' });
-    }
-
-    const updates = [];
-    const params = [];
-
-    if (is_featured !== undefined) { updates.push('is_featured = ?'); params.push(is_featured ? 1 : 0); }
-    if (is_trending !== undefined) { updates.push('is_trending = ?'); params.push(is_trending ? 1 : 0); }
-    if (is_new_arrival !== undefined) { updates.push('is_new_arrival = ?'); params.push(is_new_arrival ? 1 : 0); }
-    if (is_best_seller !== undefined) { updates.push('is_best_seller = ?'); params.push(is_best_seller ? 1 : 0); }
-
-    if (updates.length > 0) {
-      params.push(id);
-      await pool.query(`UPDATE products SET ${updates.join(', ')} WHERE id = ?`, params);
-    }
-
+    params.push(id);
+    const [result] = await pool.query(`UPDATE products SET ${updates.join(', ')} WHERE id = ?`, params);
+    if (result.affectedRows === 0) return res.status(404).json({ success: false, message: 'Product not found.' });
+    clearProductCache();
     return res.status(200).json({ success: true, message: 'Product curation flags updated successfully' });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    console.error('Curate products failed:', error.message);
+    return res.status(500).json({ success: false, message: 'Could not update the product.' });
   }
 };
 
-// ─── CONTROL SUITE 12: SYSTEM SETTINGS & ADMINISTRATION ───
+// ─── CONTROL SUITE 12: SYSTEM SETTINGS & ADMINISTRATION (database only) ───
 
-const defaultSettings = {
-  store_name: 'Leafora Life Science',
-  support_email: 'support@leaforalifescience.com',
-  support_phone: '+1 (800) 555-LEAF',
-  store_address: '100 Botanical Way, Suite 400, San Francisco, CA 94107',
-  store_currency: 'USD ($)',
-  header_logo_url: '/assets/leafora_logo_header.png',
-  footer_logo_url: '/assets/leafora_logo_footer.png',
-  favicon_url: '/favicon.ico',
-  meta_title: 'Leafora Life Science - Enterprise Organic Wellness & Skincare',
-  meta_description: 'Discover premium botanical formulations, clinical-grade supplements, and herbal skincare backed by science.',
-  meta_keywords: 'skincare, organic wellness, supplements, botanical serum, ayurveda',
-  google_analytics_id: 'G-LEAFORA9921',
-  gstin_number: '36AAACL8890C1Z5',
-  hsn_code: '30049011',
-  default_tax_percent: '18.00',
-  tax_included_in_price: 'true',
-  free_shipping_threshold: '75.00',
-  standard_shipping_fee: '5.99',
-  express_shipping_fee: '14.99',
-  smtp_host: 'smtp.sendgrid.net',
-  smtp_port: '587',
-  smtp_username: 'apikey',
-  smtp_password: '••••••••••••••••',
-  smtp_encryption: 'TLS',
-  smtp_sender_name: 'Leafora Customer Service',
-  smtp_sender_email: 'noreply@leaforalifescience.com',
-  sms_provider: 'MSG91',
-  sms_api_key: '••••••••••••••••',
-  sms_sender_id: 'LEAFOR',
-  sms_otp_template_id: 'TMP_OTP_9918',
-  enable_sms_notifications: 'true',
-  security_2fa_enabled: 'true',
-  security_session_timeout_mins: '60',
-  security_max_failed_attempts: '5',
-  security_ip_whitelist: '127.0.0.1, 192.168.1.1'
+const sysFail = (res, what, error) => {
+  console.error(`${what} failed:`, error.message);
+  if (error.code === 'ER_DUP_ENTRY') return res.status(409).json({ success: false, message: 'An admin user with this e-mail already exists.' });
+  return res.status(500).json({ success: false, message: `${what} failed. Please try again.` });
 };
 
-const defaultSystemUsers = [
-  { id: 1, name: 'Sai Admin', email: 'admin@leaforalifescience.com', phone: '+1 555 0192', role: 'Super Admin', permissions: ['all'], is_active: 1, created_at: new Date() },
-  { id: 2, name: 'Priya Sharma', email: 'priya@leaforalifescience.com', phone: '+91 98765 43210', role: 'Store Manager', permissions: ['categories', 'products', 'orders', 'coupons', 'reviews'], is_active: 1, created_at: new Date() },
-  { id: 3, name: 'Rahul Verma', email: 'rahul@leaforalifescience.com', phone: '+91 98123 45678', role: 'Fulfillment Manager', permissions: ['orders', 'shiprocket'], is_active: 1, created_at: new Date() }
-];
+const parsePermissions = (value) => {
+  if (Array.isArray(value)) return value;
+  try { const arr = JSON.parse(value || '[]'); return Array.isArray(arr) ? arr : []; } catch (e) { return []; }
+};
 
-const defaultSystemRoles = [
-  { id: 1, role_name: 'Super Admin', description: 'Unrestricted root administrator with total control over store settings, payments, and team access.', permissions: ['all'] },
-  { id: 2, role_name: 'Store Manager', description: 'Manages products, categories, coupons, homepage banners, customer reviews, and orders.', permissions: ['categories', 'products', 'orders', 'coupons', 'banners', 'reviews'] },
-  { id: 3, role_name: 'Fulfillment Manager', description: 'Manages order processing, shipping labels, AWB generation, and Shiprocket logistics.', permissions: ['orders', 'shiprocket'] },
-  { id: 4, role_name: 'Customer Support', description: 'Handles customer inquiries, review replies, abuse reports, and refund requests.', permissions: ['customers', 'reviews', 'orders'] }
-];
-
-const defaultActivityLogs = [
-  { id: 101, admin_name: 'Sai Admin', module: 'Settings', action: 'Updated Global Tax & Delivery Rates', ip_address: '127.0.0.1', created_at: new Date() },
-  { id: 102, admin_name: 'Priya Sharma', module: 'Products', action: 'Published Vitamin C Radiance Serum', ip_address: '182.72.10.45', created_at: new Date() },
-  { id: 103, admin_name: 'Rahul Verma', module: 'Shiprocket', action: 'Scheduled Bulk Pickup for 14 Packages', ip_address: '106.51.22.18', created_at: new Date() }
-];
-
-const defaultLoginHistory = [
-  { id: 201, admin_email: 'admin@leaforalifescience.com', browser: 'Chrome 128.0 (Windows)', ip_address: '127.0.0.1', status: 'Success', created_at: new Date() },
-  { id: 202, admin_email: 'priya@leaforalifescience.com', browser: 'Safari 17.5 (macOS)', ip_address: '182.72.10.45', status: 'Success', created_at: new Date() },
-  { id: 203, admin_email: 'unknown@leaforalifescience.com', browser: 'Firefox 129.0 (Linux)', ip_address: '45.33.21.99', status: 'Failed (Invalid Password)', created_at: new Date() }
-];
+const logActivity = (req, module, action) =>
+  pool.query('INSERT INTO activity_logs (admin_name, module, action, ip_address) VALUES (?, ?, ?, ?)', [
+    (req.admin && req.admin.email) || 'admin', module, action, req.ip,
+  ]).catch(() => {});
 
 const getSystemSettings = async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM system_settings');
-    const settingsMap = { ...defaultSettings };
-    if (rows && rows.length > 0) {
-      rows.forEach(r => {
-        const k = r.setting_key || r.key_name;
-        const v = r.setting_value ?? r.key_value ?? '';
-        if (k) settingsMap[k] = v;
-      });
-    }
-    return res.status(200).json({ success: true, data: settingsMap });
+    const [rows] = await pool.query('SELECT key_name, key_value FROM system_settings');
+    const data = Object.fromEntries(rows.map((r) => [r.key_name, r.key_value ?? '']));
+    return res.status(200).json({ success: true, data });
   } catch (error) {
-    return res.status(200).json({ success: true, data: defaultSettings });
+    return sysFail(res, 'Loading settings', error);
   }
 };
 
 const updateSystemSettingsGroup = async (req, res) => {
+  const settingsObj = req.body.settings || {};
+  const keys = Object.keys(settingsObj).filter((k) => /^[a-z0-9_]{1,100}$/i.test(k));
+  if (keys.length === 0) return res.status(400).json({ success: false, message: 'No settings provided.' });
+
+  const conn = await pool.getConnection();
   try {
-    const settingsObj = req.body.settings || req.body || {};
-    const keys = Object.keys(settingsObj);
+    await conn.beginTransaction();
     for (const key of keys) {
-      const val = String(settingsObj[key] ?? '');
-      try {
-        await pool.query(
-          `INSERT INTO system_settings (setting_key, setting_value, group_name) 
-           VALUES (?, ?, 'general') 
-           ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)`,
-          [key, val]
-        );
-      } catch (err) {
-        // Fallback for key_name schema
-        await pool.query(
-          `INSERT INTO system_settings (key_name, key_value) 
-           VALUES (?, ?) 
-           ON DUPLICATE KEY UPDATE key_value = VALUES(key_value)`,
-          [key, val]
-        ).catch(() => {});
-      }
-    }
-
-    try {
-      await pool.query(
-        `INSERT INTO activity_logs (admin_name, module, action, ip_address) VALUES (?, ?, ?, ?)`,
-        ['Sai Admin', 'Settings', `Updated system configuration group (${keys.length} items)`, '127.0.0.1']
+      await conn.query(
+        'INSERT INTO system_settings (key_name, key_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE key_value = VALUES(key_value)',
+        [key, String(settingsObj[key] ?? '')]
       );
-    } catch (e) {}
-
-    return res.status(200).json({ success: true, message: 'System settings saved successfully!' });
+    }
+    await conn.commit();
+    logActivity(req, 'Settings', `Updated ${keys.length} setting(s)`);
+    return res.status(200).json({ success: true, message: 'Settings saved.' });
   } catch (error) {
-    return res.status(200).json({ success: true, message: 'Settings saved in local session!' });
+    await conn.rollback().catch(() => {});
+    return sysFail(res, 'Saving settings', error);
+  } finally {
+    conn.release();
   }
 };
 
 const getSystemUsers = async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM admin_users ORDER BY id ASC');
-    if (!rows || rows.length === 0) {
-      return res.status(200).json({ success: true, data: defaultSystemUsers });
-    }
-    const parsed = rows.map(u => ({
-      ...u,
-      permissions: typeof u.permissions === 'string' ? JSON.parse(u.permissions || '[]') : (u.permissions || [])
-    }));
-    return res.status(200).json({ success: true, data: parsed });
+    const [rows] = await pool.query('SELECT id, name, email, phone, role, permissions, is_active, last_login_at, created_at FROM admin_users ORDER BY id ASC');
+    return res.status(200).json({ success: true, data: rows.map((u) => ({ ...u, permissions: parsePermissions(u.permissions) })) });
   } catch (error) {
-    return res.status(200).json({ success: true, data: defaultSystemUsers });
+    return sysFail(res, 'Loading admin users', error);
   }
 };
 
-const createSystemUser = async (req, res) => {
-  try {
-    const { name, email, phone, role, permissions, is_active } = req.body;
-    const permsJson = JSON.stringify(permissions || ['categories', 'products', 'orders']);
-    const [result] = await pool.query(
-      `INSERT INTO admin_users (name, email, phone, role, permissions, is_active) VALUES (?, ?, ?, ?, ?, ?)`,
-      [name, email, phone || '', role || 'Store Manager', permsJson, is_active ? 1 : 0]
-    );
+const ADMIN_EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    return res.status(201).json({ success: true, message: 'Admin user created successfully!', id: result.insertId });
+const createSystemUser = async (req, res) => {
+  const { name, email, phone, role, permissions, is_active } = req.body;
+  const cleanEmail = String(email || '').trim().toLowerCase();
+  if (!name || !ADMIN_EMAIL_RE.test(cleanEmail)) {
+    return res.status(400).json({ success: false, message: 'Name and a valid e-mail are required.' });
+  }
+  try {
+    const [result] = await pool.query(
+      'INSERT INTO admin_users (name, email, phone, role, permissions, is_active) VALUES (?, ?, ?, ?, ?, ?)',
+      [String(name).trim(), cleanEmail, phone || '', role || 'Store Manager', JSON.stringify(parsePermissions(permissions)), is_active === false ? 0 : 1]
+    );
+    logActivity(req, 'Admin Users', `Created admin user ${cleanEmail}`);
+    return res.status(201).json({ success: true, message: 'Admin user created. They can now sign in with an e-mailed code.', id: result.insertId });
   } catch (error) {
-    return res.status(200).json({ success: true, message: 'Admin user created (session preview)', id: Date.now() });
+    return sysFail(res, 'Creating admin user', error);
   }
 };
 
 const updateSystemUser = async (req, res) => {
+  const { name, email, phone, role, permissions, is_active } = req.body;
+  const cleanEmail = email !== undefined ? String(email).trim().toLowerCase() : undefined;
+  if (cleanEmail !== undefined && !ADMIN_EMAIL_RE.test(cleanEmail)) {
+    return res.status(400).json({ success: false, message: 'Please enter a valid e-mail.' });
+  }
   try {
-    const { id } = req.params;
-    const { name, email, phone, role, permissions, is_active } = req.body;
-    const permsJson = JSON.stringify(permissions || []);
-    
+    const [[target]] = await pool.query('SELECT email FROM admin_users WHERE id = ?', [req.params.id]);
+    if (!target) return res.status(404).json({ success: false, message: 'Admin user not found.' });
+    if (req.admin && target.email.toLowerCase() === req.admin.email && is_active === false) {
+      return res.status(400).json({ success: false, message: 'You cannot deactivate your own account.' });
+    }
     await pool.query(
-      `UPDATE admin_users SET name = ?, email = ?, phone = ?, role = ?, permissions = ?, is_active = ? WHERE id = ?`,
-      [name, email, phone || '', role, permsJson, is_active ? 1 : 0, id]
+      `UPDATE admin_users SET name = COALESCE(?, name), email = COALESCE(?, email), phone = COALESCE(?, phone),
+         role = COALESCE(?, role), permissions = COALESCE(?, permissions), is_active = COALESCE(?, is_active) WHERE id = ?`,
+      [
+        name ?? null, cleanEmail ?? null, phone ?? null, role ?? null,
+        permissions !== undefined ? JSON.stringify(parsePermissions(permissions)) : null,
+        is_active !== undefined ? (is_active ? 1 : 0) : null,
+        req.params.id,
+      ]
     );
-
-    return res.status(200).json({ success: true, message: 'Admin user updated successfully!' });
+    // Deactivated admins lose their sessions immediately
+    if (is_active === false) {
+      await pool.query("DELETE FROM auth_sessions WHERE subject_type = 'admin' AND email = ?", [target.email.toLowerCase()]).catch(() => {});
+    }
+    logActivity(req, 'Admin Users', `Updated admin user ${target.email}`);
+    return res.status(200).json({ success: true, message: 'Admin user updated.' });
   } catch (error) {
-    return res.status(200).json({ success: true, message: 'Admin user updated!' });
+    return sysFail(res, 'Updating admin user', error);
   }
 };
 
 const deleteSystemUser = async (req, res) => {
   try {
-    const { id } = req.params;
-    await pool.query('DELETE FROM admin_users WHERE id = ?', [id]);
-    return res.status(200).json({ success: true, message: 'Admin user deleted!' });
+    const [[target]] = await pool.query('SELECT email FROM admin_users WHERE id = ?', [req.params.id]);
+    if (!target) return res.status(404).json({ success: false, message: 'Admin user not found.' });
+    if (req.admin && target.email.toLowerCase() === req.admin.email) {
+      return res.status(400).json({ success: false, message: 'You cannot delete your own account.' });
+    }
+    await pool.query('DELETE FROM admin_users WHERE id = ?', [req.params.id]);
+    await pool.query("DELETE FROM auth_sessions WHERE subject_type = 'admin' AND email = ?", [target.email.toLowerCase()]).catch(() => {});
+    logActivity(req, 'Admin Users', `Deleted admin user ${target.email}`);
+    return res.status(200).json({ success: true, message: 'Admin user deleted.' });
   } catch (error) {
-    return res.status(200).json({ success: true, message: 'Admin user removed!' });
+    return sysFail(res, 'Deleting admin user', error);
   }
 };
 
 const getSystemRoles = async (req, res) => {
   try {
     const [rows] = await pool.query('SELECT * FROM admin_roles ORDER BY id ASC');
-    if (!rows || rows.length === 0) {
-      return res.status(200).json({ success: true, data: defaultSystemRoles });
-    }
-    const parsed = rows.map(r => ({
-      ...r,
-      permissions: typeof r.permissions === 'string' ? JSON.parse(r.permissions || '[]') : (r.permissions || [])
-    }));
-    return res.status(200).json({ success: true, data: parsed });
+    return res.status(200).json({ success: true, data: rows.map((r) => ({ ...r, permissions: parsePermissions(r.permissions) })) });
   } catch (error) {
-    return res.status(200).json({ success: true, data: defaultSystemRoles });
+    return sysFail(res, 'Loading roles', error);
   }
 };
 
 const updateSystemRole = async (req, res) => {
+  const { role_name, description, permissions } = req.body;
   try {
-    const { id } = req.params;
-    const { role_name, description, permissions } = req.body;
-    const permsJson = JSON.stringify(permissions || []);
-    await pool.query(
-      'UPDATE admin_roles SET role_name = ?, description = ?, permissions = ? WHERE id = ?',
-      [role_name, description, permsJson, id]
+    const [result] = await pool.query(
+      'UPDATE admin_roles SET role_name = COALESCE(?, role_name), description = COALESCE(?, description), permissions = COALESCE(?, permissions) WHERE id = ?',
+      [role_name ?? null, description ?? null, permissions !== undefined ? JSON.stringify(parsePermissions(permissions)) : null, req.params.id]
     );
-
-    return res.status(200).json({ success: true, message: 'Role permissions updated!' });
+    if (result.affectedRows === 0) return res.status(404).json({ success: false, message: 'Role not found.' });
+    logActivity(req, 'Roles', `Updated role #${req.params.id}`);
+    return res.status(200).json({ success: true, message: 'Role updated.' });
   } catch (error) {
-    return res.status(200).json({ success: true, message: 'Role updated!' });
+    return sysFail(res, 'Updating role', error);
   }
 };
 
 const getActivityLogs = async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM activity_logs ORDER BY id DESC LIMIT 100');
-    if (!rows || rows.length === 0) {
-      return res.status(200).json({ success: true, data: defaultActivityLogs });
-    }
+    const [rows] = await pool.query('SELECT * FROM activity_logs ORDER BY id DESC LIMIT 200');
     return res.status(200).json({ success: true, data: rows });
   } catch (error) {
-    return res.status(200).json({ success: true, data: defaultActivityLogs });
+    return sysFail(res, 'Loading activity logs', error);
   }
 };
 
 const getLoginHistory = async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM login_history ORDER BY id DESC LIMIT 100');
-    if (!rows || rows.length === 0) {
-      return res.status(200).json({ success: true, data: defaultLoginHistory });
-    }
+    const [rows] = await pool.query('SELECT * FROM login_history ORDER BY id DESC LIMIT 200');
     return res.status(200).json({ success: true, data: rows });
   } catch (error) {
-    return res.status(200).json({ success: true, data: defaultLoginHistory });
+    return sysFail(res, 'Loading login history', error);
   }
 };
 
 const exportSystemBackup = async (req, res) => {
   try {
-    const [settings] = await pool.query('SELECT * FROM system_settings').catch(() => [[]]);
-    const [users] = await pool.query('SELECT * FROM admin_users').catch(() => [[]]);
-    const [roles] = await pool.query('SELECT * FROM admin_roles').catch(() => [[]]);
-    const [logs] = await pool.query('SELECT * FROM activity_logs').catch(() => [[]]);
-    const [logins] = await pool.query('SELECT * FROM login_history').catch(() => [[]]);
+    const [settings] = await pool.query('SELECT * FROM system_settings');
+    const [users] = await pool.query('SELECT id, name, email, phone, role, permissions, is_active, last_login_at, created_at FROM admin_users');
+    const [roles] = await pool.query('SELECT * FROM admin_roles');
+    const [logs] = await pool.query('SELECT * FROM activity_logs ORDER BY id DESC LIMIT 5000');
+    const [logins] = await pool.query('SELECT * FROM login_history ORDER BY id DESC LIMIT 5000');
 
     const backupData = {
       exported_at: new Date().toISOString(),
-      store: 'Leafora Life Science',
-      version: '2.5.0',
-      data: {
-        system_settings: settings.length ? settings : defaultSettings,
-        admin_users: users.length ? users : defaultSystemUsers,
-        admin_roles: roles.length ? roles : defaultSystemRoles,
-        activity_logs: logs.length ? logs : defaultActivityLogs,
-        login_history: logins.length ? logins : defaultLoginHistory
-      }
+      store: 'Leafora Life Sciences',
+      data: { system_settings: settings, admin_users: users, admin_roles: roles, activity_logs: logs, login_history: logins },
     };
-
+    logActivity(req, 'Backup', 'Exported admin configuration backup');
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Content-Disposition', `attachment; filename="leafora_backup_${Date.now()}.json"`);
     return res.send(JSON.stringify(backupData, null, 2));
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return sysFail(res, 'Backup export', error);
   }
 };
 
@@ -3203,7 +2561,7 @@ const updateReferralStatus = async (req, res) => {
       await pool.query('UPDATE referrals SET status = "Approved", rejection_reason = NULL WHERE id = ?', [id]);
       return res.status(200).json({
         success: true,
-        message: `Referral #${id} APPROVED! $${rewardAmt.toFixed(2)} wallet credit granted to ${ref.referrer_name}.`
+        message: `Referral #${id} APPROVED! ₹${rewardAmt.toFixed(2)} wallet credit granted to ${ref.referrer_name}.`
       });
 
     } else if (status === 'Rejected') {
@@ -3350,7 +2708,7 @@ const manualWalletAdjustment = async (req, res) => {
 
     if (transaction_type === 'debit') {
       if (newBal < numAmt) {
-        return res.status(400).json({ success: false, message: `Insufficient wallet balance ($${newBal.toFixed(2)}) for debit` });
+        return res.status(400).json({ success: false, message: `Insufficient wallet balance (₹${newBal.toFixed(2)}) for debit` });
       }
       newBal -= numAmt;
     } else {
@@ -3378,7 +2736,7 @@ const manualWalletAdjustment = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: `Manual wallet ${transaction_type === 'debit' ? 'debit (-)' : 'credit (+)'} of $${numAmt.toFixed(2)} applied for ${cust.name}. New balance: $${newBal.toFixed(2)}.`
+      message: `Manual wallet ${transaction_type === 'debit' ? 'debit (-)' : 'credit (+)'} of ₹${numAmt.toFixed(2)} applied for ${cust.name}. New balance: ₹${newBal.toFixed(2)}.`
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
@@ -3456,15 +2814,7 @@ const getShiprocketConfig = async (req, res) => {
     if (rows.length === 0) {
       return res.status(200).json({
         success: true,
-        data: {
-          api_email: 'shipping@leaforalifescience.com',
-          api_password: '••••••••••••',
-          secret_key: 'sr_sec_live_99812376',
-          environment: 'production',
-          is_connected: 1,
-          auto_sync: 1,
-          token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.sample_sr_token'
-        }
+        data: { api_email: '', api_password: '', secret_key: '', environment: 'production', is_connected: 0, auto_sync: 0, token: '' }
       });
     }
     return res.status(200).json({ success: true, data: rows[0] });
@@ -4298,6 +3648,15 @@ const exportCouponsCsv = async (req, res) => {
   }
 };
 
+// Shiprocket API is not integrated: these actions previously returned simulated rates, AWB numbers,
+// pickups and tracking (and wrote fake tracking numbers into real orders). They now refuse honestly.
+// Ship manually: set courier + tracking number on the order (Orders → update status), which e-mails the customer.
+const shiprocketNotConnected = (req, res) =>
+  res.status(501).json({
+    success: false,
+    message: 'Shiprocket is not connected. Book the shipment in your Shiprocket panel, then enter the courier and tracking number on the order.',
+  });
+
 module.exports = {
   sendOtp,
   verifyOtp,
@@ -4305,6 +3664,7 @@ module.exports = {
   getAnalytics,
   uploadImage,
   getCategories,
+  getPublicCategories,
   addCategory,
   updateCategory,
   deleteCategory,
@@ -4389,18 +3749,19 @@ module.exports = {
   addShiprocketPickupLocation,
   updateShiprocketPickupLocation,
   deleteShiprocketPickupLocation,
-  calculateShippingRates,
+  calculateShippingRates: shiprocketNotConnected,
   getShiprocketShipments,
-  generateShiprocketAwb,
-  scheduleShiprocketPickup,
-  generateShiprocketLabel,
-  cancelShiprocketShipment,
-  trackShiprocketShipment,
+  generateShiprocketAwb: shiprocketNotConnected,
+  scheduleShiprocketPickup: shiprocketNotConnected,
+  generateShiprocketLabel: shiprocketNotConnected,
+  cancelShiprocketShipment: shiprocketNotConnected,
+  trackShiprocketShipment: shiprocketNotConnected,
   getShiprocketNdr,
-  resolveShiprocketNdr,
+  resolveShiprocketNdr: shiprocketNotConnected,
   getShiprocketManifests,
-  generateShiprocketManifest,
+  generateShiprocketManifest: shiprocketNotConnected,
   getHomepageBanners,
+  getPublicBanners,
   createHomepageBanner,
   updateHomepageBanner,
   deleteHomepageBanner,

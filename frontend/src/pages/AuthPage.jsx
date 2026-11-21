@@ -7,6 +7,7 @@ import {
   Leaf, RefreshCw, Award, Heart, Shield, Users
 } from 'lucide-react';
 import { userLogin, userRegister, userForgotPassword, userResetPassword } from '../services/api';
+import { sanitizeMobileInput, sanitizeNameInput, isValidMobile, isValidName, MESSAGES, fieldErrorStyle } from '../services/validation';
 import loginProductImg from '../assets/leafora_routine_showcase.jpg';
 import './AuthPage.css';
 
@@ -106,6 +107,21 @@ export default function AuthPage({ initialMode = 'login', onAuthSuccess, isModal
   const handleSignupSubmit = async (e) => {
     e.preventDefault();
     setAlert(null);
+
+    if (!isValidName(signupForm.first_name)) {
+      setAlert({ type: 'error', text: 'Please enter a valid first name (letters only).' });
+      return;
+    }
+
+    if (signupForm.last_name && !isValidName(signupForm.last_name, 1)) {
+      setAlert({ type: 'error', text: 'Please enter a valid last name (letters only).' });
+      return;
+    }
+
+    if (!isValidMobile(signupForm.mobile)) {
+      setAlert({ type: 'error', text: MESSAGES.mobile });
+      return;
+    }
 
     if (!signupForm.first_name || !signupForm.email || !signupForm.password) {
       setAlert({ type: 'error', text: 'First name, email address, and password are required.' });
@@ -392,7 +408,8 @@ export default function AuthPage({ initialMode = 'login', onAuthSuccess, isModal
                           type="text"
                           placeholder="First name"
                           value={signupForm.first_name}
-                          onChange={(e) => setSignupForm({ ...signupForm, first_name: e.target.value })}
+                          onChange={(e) => setSignupForm({ ...signupForm, first_name: sanitizeNameInput(e.target.value) })}
+                          maxLength={60}
                           required
                         />
                       </div>
@@ -406,7 +423,8 @@ export default function AuthPage({ initialMode = 'login', onAuthSuccess, isModal
                           type="text"
                           placeholder="Last name"
                           value={signupForm.last_name}
-                          onChange={(e) => setSignupForm({ ...signupForm, last_name: e.target.value })}
+                          onChange={(e) => setSignupForm({ ...signupForm, last_name: sanitizeNameInput(e.target.value) })}
+                          maxLength={60}
                         />
                       </div>
                     </div>
@@ -427,16 +445,23 @@ export default function AuthPage({ initialMode = 'login', onAuthSuccess, isModal
                   </div>
 
                   <div className="field-group">
-                    <label>Mobile Number</label>
+                    <label>Mobile Number *</label>
                     <div className="input-box">
                       <Phone size={18} className="box-icon" />
                       <input
                         type="tel"
-                        placeholder="+91 98765 43210"
+                        placeholder="10-digit mobile number"
                         value={signupForm.mobile}
-                        onChange={(e) => setSignupForm({ ...signupForm, mobile: e.target.value })}
+                        onChange={(e) => setSignupForm({ ...signupForm, mobile: sanitizeMobileInput(e.target.value) })}
+                        inputMode="numeric"
+                        maxLength={10}
+                        autoComplete="tel-national"
+                        required
                       />
                     </div>
+                    {signupForm.mobile.length === 10 && !isValidMobile(signupForm.mobile) && (
+                      <small style={fieldErrorStyle}>{MESSAGES.mobile}</small>
+                    )}
                   </div>
 
                   <div className="field-grid-row">

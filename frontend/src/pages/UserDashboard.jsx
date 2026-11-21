@@ -11,6 +11,7 @@ import {
 } from '../services/api';
 import { addToCart } from '../services/cartService';
 import { detectLiveLocation } from '../services/locationService';
+import { sanitizeMobileInput, sanitizePincodeInput, sanitizeNameInput, isValidMobile, isValidName, validateAddress, MESSAGES } from '../services/validation';
 import './UserDashboard.css';
 
 export default function UserDashboard() {
@@ -64,7 +65,7 @@ export default function UserDashboard() {
         address_line1: loc.address_line1 || prev.address_line1,
         city: loc.city || prev.city,
         state: loc.state || prev.state,
-        pincode: loc.pincode || prev.pincode
+        pincode: sanitizePincodeInput(loc.pincode) || prev.pincode
       }));
       showToast('📍 Live location detected and filled successfully!');
     } catch (err) {
@@ -90,7 +91,7 @@ export default function UserDashboard() {
         first_name: parsed.first_name || (parsed.name ? parsed.name.split(' ')[0] : ''),
         last_name: parsed.last_name || (parsed.name ? parsed.name.split(' ').slice(1).join(' ') : ''),
         email: parsed.email || '',
-        phone: parsed.phone || parsed.mobile || ''
+        phone: sanitizeMobileInput(parsed.phone || parsed.mobile || '')
       });
 
       // Fetch fresh profile from API
@@ -104,7 +105,7 @@ export default function UserDashboard() {
                 first_name: u.first_name || '',
                 last_name: u.last_name || '',
                 email: u.email || '',
-                phone: u.phone || ''
+                phone: sanitizeMobileInput(u.phone || '')
               });
               localStorage.setItem('leafora_user_profile', JSON.stringify(u));
             }
@@ -154,6 +155,14 @@ export default function UserDashboard() {
   // Update Profile Submit
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
+    if (!isValidName(profileForm.first_name)) {
+      showToast('Please enter a valid first name (letters only).');
+      return;
+    }
+    if (profileForm.phone && !isValidMobile(profileForm.phone)) {
+      showToast(MESSAGES.mobile);
+      return;
+    }
     setSavingProfile(true);
 
     try {
@@ -180,6 +189,12 @@ export default function UserDashboard() {
   // Add Address Submit
   const handleAddAddress = async (e) => {
     e.preventDefault();
+    const errors = validateAddress(newAddr);
+    const firstError = Object.values(errors)[0];
+    if (firstError) {
+      showToast(firstError);
+      return;
+    }
     setAddingAddr(true);
 
     try {
@@ -379,7 +394,8 @@ export default function UserDashboard() {
                     <input 
                       type="text" 
                       value={profileForm.first_name}
-                      onChange={(e) => setProfileForm({ ...profileForm, first_name: e.target.value })}
+                      onChange={(e) => setProfileForm({ ...profileForm, first_name: sanitizeNameInput(e.target.value) })}
+                      maxLength={60}
                       required
                     />
                   </div>
@@ -389,7 +405,8 @@ export default function UserDashboard() {
                     <input 
                       type="text" 
                       value={profileForm.last_name}
-                      onChange={(e) => setProfileForm({ ...profileForm, last_name: e.target.value })}
+                      onChange={(e) => setProfileForm({ ...profileForm, last_name: sanitizeNameInput(e.target.value) })}
+                      maxLength={60}
                     />
                   </div>
                 </div>
@@ -412,7 +429,9 @@ export default function UserDashboard() {
                       type="tel" 
                       placeholder="+91 9876543210"
                       value={profileForm.phone}
-                      onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
+                      onChange={(e) => setProfileForm({ ...profileForm, phone: sanitizeMobileInput(e.target.value) })}
+                      inputMode="numeric"
+                      maxLength={10}
                       required
                     />
                   </div>
@@ -624,7 +643,8 @@ export default function UserDashboard() {
                     type="text" 
                     placeholder="Recipient Name"
                     value={newAddr.name}
-                    onChange={(e) => setNewAddr({ ...newAddr, name: e.target.value })}
+                    onChange={(e) => setNewAddr({ ...newAddr, name: sanitizeNameInput(e.target.value) })}
+                    maxLength={60}
                     required 
                   />
                 </div>
@@ -634,7 +654,9 @@ export default function UserDashboard() {
                     type="tel" 
                     placeholder="10-digit mobile number"
                     value={newAddr.phone}
-                    onChange={(e) => setNewAddr({ ...newAddr, phone: e.target.value })}
+                    onChange={(e) => setNewAddr({ ...newAddr, phone: sanitizeMobileInput(e.target.value) })}
+                    inputMode="numeric"
+                    maxLength={10}
                     required 
                   />
                 </div>
@@ -668,7 +690,8 @@ export default function UserDashboard() {
                     type="text" 
                     placeholder="City"
                     value={newAddr.city}
-                    onChange={(e) => setNewAddr({ ...newAddr, city: e.target.value })}
+                    onChange={(e) => setNewAddr({ ...newAddr, city: sanitizeNameInput(e.target.value) })}
+                    maxLength={60}
                     required 
                   />
                 </div>
@@ -679,7 +702,8 @@ export default function UserDashboard() {
                     type="text" 
                     placeholder="State"
                     value={newAddr.state}
-                    onChange={(e) => setNewAddr({ ...newAddr, state: e.target.value })}
+                    onChange={(e) => setNewAddr({ ...newAddr, state: sanitizeNameInput(e.target.value) })}
+                    maxLength={60}
                     required 
                   />
                 </div>
@@ -690,7 +714,9 @@ export default function UserDashboard() {
                     type="text" 
                     placeholder="6-digit ZIP / Pincode"
                     value={newAddr.pincode}
-                    onChange={(e) => setNewAddr({ ...newAddr, pincode: e.target.value })}
+                    onChange={(e) => setNewAddr({ ...newAddr, pincode: sanitizePincodeInput(e.target.value) })}
+                    inputMode="numeric"
+                    maxLength={6}
                     required 
                   />
                 </div>

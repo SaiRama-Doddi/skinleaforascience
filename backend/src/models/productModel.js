@@ -46,7 +46,22 @@ class ProductModel {
     try {
       const [rows] = await pool.query('SELECT * FROM products WHERE (is_active = 1 OR is_active IS NULL) AND (deleted_at IS NULL) ORDER BY id ASC');
       if (rows && rows.length > 0) {
-        const enriched = rows.map(r => ProductModel.parseProductImages(r));
+        // Real rating + review count from approved reviews
+        let ratings = [];
+        try {
+          [ratings] = await pool.query(
+            `SELECT product_id, ROUND(AVG(rating), 1) AS rating, COUNT(*) AS reviews_count
+             FROM reviews WHERE status = 'Approved' AND deleted_at IS NULL GROUP BY product_id`
+          );
+        } catch (e) {
+          console.warn('Review summary unavailable:', e.message);
+        }
+        const byProduct = new Map(ratings.map((r) => [r.product_id, r]));
+        const enriched = rows.map(r => ({
+          ...ProductModel.parseProductImages(r),
+          rating: Number(byProduct.get(r.id)?.rating || 0),
+          reviews_count: Number(byProduct.get(r.id)?.reviews_count || 0),
+        }));
         cachedEnrichedProducts = enriched;
         lastCacheTime = now;
         return enriched;
@@ -54,13 +69,17 @@ class ProductModel {
       return [];
     } catch (error) {
       console.error('Database product query error:', error.message);
-      return [];
+      throw error; // surface as HTTP 500 instead of pretending the catalogue is empty
     }
   }
 
   static async findById(id) {
     try {
-      const [rows] = await pool.query('SELECT * FROM products WHERE id = ?', [id]);
+      // Storefront: hidden (inactive) and trashed products are not viewable
+      const [rows] = await pool.query(
+        'SELECT * FROM products WHERE id = ? AND deleted_at IS NULL AND (is_active = 1 OR is_active IS NULL)',
+        [id]
+      );
       if (rows && rows[0]) {
         const prod = ProductModel.parseProductImages(rows[0]);
         try {
@@ -77,7 +96,7 @@ class ProductModel {
       return null;
     } catch (error) {
       console.error('Database product query error:', error.message);
-      return null;
+      throw error;
     }
   }
 }

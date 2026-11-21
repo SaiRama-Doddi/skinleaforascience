@@ -7,6 +7,7 @@ const authController = require('../controllers/authController');
 const userController = require('../controllers/userController');
 const paymentController = require('../controllers/paymentController');
 const shippingController = require('../controllers/shippingController');
+const reviewController = require('../controllers/reviewController');
 const { verifyAdminToken, requireUser } = require('../middleware/authMiddleware');
 const { rateLimit } = require('../services/security');
 
@@ -28,9 +29,10 @@ router.get('/health', getHealthStatus);
 // Public Product & Category Endpoints
 router.get('/products', getAllProducts);
 router.get('/products/:id', getProductById);
-router.get('/categories', adminController.getCategories);
-router.get('/banners', adminController.getHomepageBanners);
-router.get('/homepage/banners', adminController.getHomepageBanners);
+router.get('/products/:id/reviews', reviewController.getProductReviews);
+router.get('/categories', adminController.getPublicCategories);
+router.get('/banners', adminController.getPublicBanners);
+router.get('/homepage/banners', adminController.getPublicBanners);
 router.get('/shipping-settings', shippingController.getSettings);
 
 // ─── USER AUTHENTICATION ENDPOINTS ───
@@ -49,11 +51,18 @@ router.get('/user/addresses', userController.getUserAddresses);
 router.post('/user/addresses', userController.addUserAddress);
 router.delete('/user/addresses/:id', userController.deleteUserAddress);
 router.get('/user/orders', userController.getUserOrders);
+router.get('/user/orders/:id', userController.getUserOrderDetails);
+router.get('/user/orders/:id/invoice', userController.getUserOrderInvoice);
 router.get('/user/wishlist', userController.getUserWishlist);
 router.post('/user/wishlist/toggle', userController.toggleUserWishlist);
 router.post('/user/wishlist', userController.toggleUserWishlist);
 router.delete('/user/wishlist/:id', userController.deleteWishlistItem);
 router.post('/contact', contactLimiter, userController.submitContactInquiry);
+
+// ─── PRODUCT REVIEWS (verified buyers; published after admin approval) ───
+const reviewLimiter = rateLimit({ name: 'review', max: 10, windowMs: 60 * MIN });
+router.get('/products/:id/reviews/eligibility', requireUser, reviewController.getReviewEligibility);
+router.post('/products/:id/reviews', requireUser, reviewLimiter, reviewController.submitReview);
 
 // ─── RAZORPAY PAYMENT ENDPOINTS ───
 // Orders are only ever created by verify-razorpay-payment, after signature verification.

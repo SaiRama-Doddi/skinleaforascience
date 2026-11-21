@@ -30,52 +30,16 @@ export default function Home() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const fallbackHomeProducts = [
-    {
-      id: 1,
-      name: 'LEAFORA Salicylic Acid Face Wash',
-      brand: 'Leafora Life Sciences',
-      net_quantity: '100g',
-      price: 499,
-      reviews: 40,
-      image_url: dbProduct1,
-      images: [dbProduct1, dbProduct2]
-    },
-    {
-      id: 2,
-      name: 'LEAFORA Niacinamide 10% Face Brightening Serum',
-      brand: 'Leafora Life Sciences',
-      net_quantity: '30ml',
-      price: 649,
-      reviews: 54,
-      image_url: dbProduct2,
-      images: [dbProduct2, dbProduct3]
-    },
-    {
-      id: 3,
-      name: 'LEAFORA SPF 50 PA++++ Ultra-Light Gel Sunscreen',
-      brand: 'Leafora Life Sciences',
-      net_quantity: '50g',
-      price: 649,
-      reviews: 68,
-      image_url: dbProduct3,
-      images: [dbProduct3, dbProduct1]
-    }
-  ];
-
   useEffect(() => {
     // Fetch products dynamically from backend API / database
     getProducts()
       .then((res) => {
-        if (res && res.data && Array.isArray(res.data) && res.data.length > 0) {
-          setProducts(res.data);
-        } else {
-          setProducts(fallbackHomeProducts);
-        }
+        const list = Array.isArray(res?.data) ? res.data : [];
+        // Best sellers first, then featured, then newest
+        const rank = (p) => (Number(p.is_best_seller) ? 2 : 0) + (Number(p.is_featured) ? 1 : 0);
+        setProducts([...list].sort((a, b) => rank(b) - rank(a) || b.id - a.id));
       })
-      .catch(() => {
-        setProducts(fallbackHomeProducts);
-      })
+      .catch(() => setProducts([]))
       .finally(() => setLoadingProds(false));
 
     // Fetch active banners dynamically from database table homepage_banners
@@ -318,13 +282,15 @@ export default function Home() {
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, marginBottom: 2 }}>
                       <span className="product-brand-pixel">{item.brand || 'Leafora Life Sciences'}</span>
-                      <span className="product-net-qty-badge">{item.net_quantity || '100g'}</span>
+                      {item.net_quantity && <span className="product-net-qty-badge">{item.net_quantity}</span>}
                     </div>
                     <h3 className="product-title-pixel">{item.name}</h3>
-                    <div className="product-stars-pixel">
-                      {[...Array(5)].map((_, i) => <Star key={i} size={12} fill="#A67C52" color="#A67C52" />)}
-                      <span>({item.reviews || 0})</span>
-                    </div>
+                    {Number(item.reviews_count) > 0 && (
+                      <div className="product-stars-pixel">
+                        {[...Array(5)].map((_, i) => <Star key={i} size={12} fill={i < Math.round(Number(item.rating)) ? '#A67C52' : 'none'} color="#A67C52" />)}
+                        <span>{item.rating} ({item.reviews_count})</span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="product-bottom-row-pixel">
@@ -391,9 +357,9 @@ export default function Home() {
 
       {/* 5. YOUR DAILY SKINCARE ROUTINE (3 SIMPLE STEPS) */}
       {(() => {
-        const stepCleanse = products.find(p => p.id === 1 || p.name?.toLowerCase().includes('wash') || p.category?.toLowerCase().includes('wash')) || products[0] || fallbackHomeProducts[0];
-        const stepTreat = products.find(p => p.id === 2 || p.name?.toLowerCase().includes('serum') || p.category?.toLowerCase().includes('serum')) || products[1] || fallbackHomeProducts[1];
-        const stepProtect = products.find(p => p.id === 3 || p.name?.toLowerCase().includes('sunscreen') || p.category?.toLowerCase().includes('sunscreen')) || products[2] || fallbackHomeProducts[2];
+        const stepCleanse = products.find(p => p.id === 1 || p.name?.toLowerCase().includes('wash') || p.category?.toLowerCase().includes('wash')) || products[0];
+        const stepTreat = products.find(p => p.id === 2 || p.name?.toLowerCase().includes('serum') || p.category?.toLowerCase().includes('serum')) || products[1];
+        const stepProtect = products.find(p => p.id === 3 || p.name?.toLowerCase().includes('sunscreen') || p.category?.toLowerCase().includes('sunscreen')) || products[2];
 
         const steps = [
           {
@@ -401,7 +367,7 @@ export default function Home() {
             badgeClass: 'badge-cleanse',
             podClass: 'pod-sage',
             stepTitle: 'Cleanse',
-            subtitle: 'Salicylic Acid Face Wash',
+            subtitle: stepCleanse?.name || 'Gentle daily cleanser',
             desc: 'Removes dirt & excess oil without drying.',
             product: stepCleanse,
             image: stepCleanse?.image_url || dbProduct1
@@ -411,7 +377,7 @@ export default function Home() {
             badgeClass: 'badge-treat',
             podClass: 'pod-gold',
             stepTitle: 'Treat',
-            subtitle: 'Niacinamide 10% Serum',
+            subtitle: stepTreat?.name || 'Targeted treatment serum',
             desc: 'Brightens skin & reduces dark spots.',
             product: stepTreat,
             image: stepTreat?.image_url || dbProduct2
@@ -421,7 +387,7 @@ export default function Home() {
             badgeClass: 'badge-protect',
             podClass: 'pod-coral',
             stepTitle: 'Protect',
-            subtitle: 'SPF 50 PA++++ Sunscreen',
+            subtitle: stepProtect?.name || 'Daily sun protection',
             desc: 'Shields from UVA/UVB rays for healthy, youthful skin.',
             product: stepProtect,
             image: stepProtect?.image_url || dbProduct3

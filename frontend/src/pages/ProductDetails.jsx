@@ -5,7 +5,7 @@ import {
   ChevronLeft, ChevronRight, Play, Share2, Copy, Check, 
   ChevronDown, ChevronUp, Sparkles, Leaf, Award, Eye, X
 } from 'lucide-react';
-import { getProductById, getProducts, userToggleWishlist } from '../services/api';
+import { getProductById, getProducts, userToggleWishlist, getProductReviews, getReviewEligibility, submitProductReview } from '../services/api';
 import { addToCart } from '../services/cartService';
 import SEO from '../components/SEO';
 import botanicalProductsPhoto from '../assets/login_botanical_products.jpg';
@@ -26,8 +26,13 @@ export default function ProductDetails() {
   const [activeTab, setActiveTab] = useState('details'); // 'details', 'ingredients', 'how_to_use', 'benefits', 'reviews'
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
-  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const [expandedFaqIndex, setExpandedFaqIndex] = useState(0);
+
+  // Reviews (approved only, from the database)
+  const [reviewData, setReviewData] = useState({ summary: { average: 0, count: 0, breakdown: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 } }, reviews: [] });
+  const [reviewEligibility, setReviewEligibility] = useState(null);
+  const [reviewForm, setReviewForm] = useState({ rating: 0, title: '', comment: '' });
+  const [submittingReview, setSubmittingReview] = useState(false);
 
   // Fetch product dynamically from Database (Zero default image flash)
   useEffect(() => {
@@ -62,24 +67,10 @@ export default function ProductDetails() {
             }
 
             setProduct({
-              id: data.id,
-              name: data.name || 'Botanical Skincare Formulation',
-              subtitle: data.subtitle || 'Formulated with Pure Herbal Science',
-              brand: data.brand || 'Leafora Life Sciences',
-              category: data.category || 'Skincare',
+              ...data,
               price: Number(data.price) || 0,
-              originalPrice: data.original_price ? Number(data.original_price) : (data.originalPrice ? Number(data.originalPrice) : null),
-              discount: data.discount || null,
-              rating: data.rating || 4.8,
-              reviewsCount: data.reviews_count || data.reviewsCount || 18,
-              badge: data.badge || (data.is_featured ? 'Best Seller' : 'Pure Botanical'),
-              description: data.description || 'A mild, sulfate-free natural formulation that purifies skin while keeping it soft, hydrated and balanced.',
-              size: data.size || '100 ml',
-              productType: data.productType || data.category || 'Skincare',
-              skinType: data.skinType || 'All Skin Types',
-              targetConcerns: data.targetConcerns || 'Dirt, Oil, Dullness & Balance',
-              formulation: data.formulation || 'Sulfate Free, Paraben Free, Cruelty Free',
-              shelfLife: data.shelfLife || '24 Months',
+              badge: data.is_best_seller ? 'Best Seller' : (data.is_new_arrival ? 'New Arrival' : (data.is_featured ? 'Featured' : null)),
+              inStock: Number(data.stock) > 0,
               gallery
             });
           }
@@ -92,6 +83,17 @@ export default function ProductDetails() {
         });
     } else {
       setLoadingProduct(false);
+    }
+
+    // Approved reviews and (if signed in) whether this customer may review
+    if (id) {
+      getProductReviews(id)
+        .then((res) => setReviewData({ summary: res.summary, reviews: res.reviews || [] }))
+        .catch(() => setReviewData({ summary: { average: 0, count: 0, breakdown: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 } }, reviews: [] }));
+      setReviewEligibility(null);
+      if (localStorage.getItem('leafora_user_token')) {
+        getReviewEligibility(id).then(setReviewEligibility).catch(() => setReviewEligibility(null));
+      }
     }
 
     // Fetch database products for You May Also Like section
@@ -119,6 +121,28 @@ export default function ProductDetails() {
     if (!product?.gallery || product.gallery.length <= 1) return;
     setSelectedImgIndex(prev => (prev === product.gallery.length - 1 ? 0 : prev + 1));
   };
+
+  const handleSubmitReview = async (e) => {
+    e.preventDefault();
+    if (!reviewForm.rating) { showToast('Please choose a star rating.'); return; }
+    if (reviewForm.comment.trim().length < 10) { showToast('Please write at least 10 characters.'); return; }
+    setSubmittingReview(true);
+    try {
+      const res = await submitProductReview(product.id, reviewForm);
+      showToast(res.message || 'Thank you! Your review will appear after approval.');
+      setReviewForm({ rating: 0, title: '', comment: '' });
+      setReviewEligibility({ can_review: false, has_purchased: true, existing_review_status: 'Pending' });
+    } catch (err) {
+      showToast(err.message || 'Could not submit your review.');
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
+  const renderStars = (value, size = 16) =>
+    [...Array(5)].map((_, i) => (
+      <Star key={i} size={size} fill={i < Math.round(value) ? '#A67C52' : 'none'} color="#A67C52" />
+    ));
 
   const handleShareProduct = () => {
     navigator.clipboard.writeText(window.location.href);
@@ -187,7 +211,8 @@ export default function ProductDetails() {
           "name": product.name,
           "image": [product.image_url],
           "description": product.description || 'Natural botanical formulation crafted with organic ingredients.',
-          "sku": `LEA-PROD-${product.id}`,
+          "sku": product.sku || `LEA-PROD-${product.id}`,
+          ...(reviewData.summary.count > 0 ? { "aggregateRating": { "@type": "AggregateRating", "ratingValue": reviewData.summary.average, "reviewCount": reviewData.summary.count } } : {}),
           "brand": {
             "@type": "Brand",
             "name": "LeafOra Life Sciences"
@@ -197,7 +222,7 @@ export default function ProductDetails() {
             "url": `https://leaforalifescience.com/products/${product.id}`,
             "priceCurrency": "INR",
             "price": product.price,
-            "availability": product.inStock !== false ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+            "availability": product.inStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
             "seller": {
               "@type": "Organization",
               "name": "LeafOra Life Sciences"
@@ -296,16 +321,14 @@ export default function ProductDetails() {
           {product.badge && <span className="pdp-top-badge">{product.badge}</span>}
           
           <h1 className="pdp-title">{product.name}</h1>
-          <p className="pdp-subtitle">{product.subtitle}</p>
+          {product.subtitle && <p className="pdp-subtitle">{product.subtitle}</p>}
 
           {/* Rating Row */}
           <div className="pdp-rating-row">
-            <div className="stars">
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} size={16} fill="#A67C52" color="#A67C52" />
-              ))}
-            </div>
-            <span style={{ fontWeight: 600, color: 'var(--leafora-text-dark)' }}>{product.rating} ({product.reviewsCount} reviews)</span>
+            <div className="stars">{renderStars(reviewData.summary.average)}</div>
+            <span style={{ fontWeight: 600, color: 'var(--leafora-text-dark)' }}>
+              {reviewData.summary.count > 0 ? `${reviewData.summary.average} (${reviewData.summary.count} review${reviewData.summary.count === 1 ? '' : 's'})` : 'No reviews yet'}
+            </span>
             <span>|</span>
             <button className="btn-write-review" onClick={() => setActiveTab('reviews')}>Write a review</button>
           </div>
@@ -317,12 +340,15 @@ export default function ProductDetails() {
               <span className="pdp-price-original">₹{Number(product.originalPrice).toFixed(2)}</span>
             )}
             {product.discount && <span className="pdp-discount-badge">{product.discount}</span>}
-            <span className="product-net-qty-badge" style={{ fontSize: '0.82rem', padding: '3px 10px' }}>
-              ⚖️ {product.net_quantity || '100g'}
-            </span>
+            {product.net_quantity && (
+              <span className="product-net-qty-badge" style={{ fontSize: '0.82rem', padding: '3px 10px' }}>
+                ⚖️ {product.net_quantity}
+              </span>
+            )}
           </div>
 
-          <p className="pdp-description">{product.description}</p>
+          {product.description && <p className="pdp-description">{product.description}</p>}
+          {!product.inStock && <p style={{ color: '#DC2626', fontWeight: 600, margin: '4px 0' }}>Currently out of stock</p>}
 
           {/* 5 Benefit Circles Row */}
           <div className="benefit-circles-row">
@@ -344,7 +370,7 @@ export default function ProductDetails() {
             </div>
             <div className="benefit-circle-item">
               <div className="circle-icon-box">✨</div>
-              <span className="circle-label">Suitable for<br />All Skin Types</span>
+              <span className="circle-label">{product.skin_type ? <>For<br />{product.skin_type}</> : <>Suitable for<br />All Skin Types</>}</span>
             </div>
           </div>
 
@@ -358,6 +384,8 @@ export default function ProductDetails() {
 
             <button 
               className="btn-pdp-add-cart"
+              disabled={!product.inStock}
+              style={!product.inStock ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
               onClick={() => {
                 addToCart(product, quantity);
                 showToast(`Added ${quantity} x "${product.name}" to your shopping bag!`);
@@ -369,6 +397,8 @@ export default function ProductDetails() {
 
           <button 
             className="btn-pdp-buy-now"
+            disabled={!product.inStock}
+            style={!product.inStock ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
             onClick={() => {
             addToCart(product, quantity);
             navigate('/cart');
@@ -396,7 +426,7 @@ export default function ProductDetails() {
             { id: 'ingredients', label: 'Ingredients' },
             { id: 'how_to_use', label: 'How to Use' },
             { id: 'benefits', label: 'Benefits' },
-            { id: 'reviews', label: `Reviews (${product.reviewsCount})` }
+            { id: 'reviews', label: `Reviews (${reviewData.summary.count})` }
           ].map(tab => (
             <button 
               key={tab.id}
@@ -413,22 +443,20 @@ export default function ProductDetails() {
           <div className="tab-details-grid">
             <div className="tab-left-content">
               <p style={{ margin: '0 0 14px 0', color: '#475569', fontSize: '0.92rem', lineHeight: 1.65 }}>
-                {product.description || 'Leafora formulation crafted with botanical science to nourish and revitalize your skin naturally.'}
+                {product.description}
               </p>
 
               <table className="specs-table">
                 <tbody>
-                  <tr><td>Brand</td><td>{product.brand || 'Leafora Life Sciences'}</td></tr>
-                  <tr><td>Category</td><td>{product.category || 'Botanical Skincare'}</td></tr>
-                  <tr><td>Net Quantity / Volume</td><td><strong style={{ color: '#1A3E2F' }}>{product.net_quantity || '100g'}</strong></td></tr>
-                  <tr><td>Skin Type</td><td>{product.skin_type || product.skinType || 'All Skin Types'}</td></tr>
+                  {product.brand && <tr><td>Brand</td><td>{product.brand}</td></tr>}
+                  {product.category && <tr><td>Category</td><td>{product.category}</td></tr>}
+                  {product.net_quantity && <tr><td>Net Quantity / Volume</td><td><strong style={{ color: '#1A3E2F' }}>{product.net_quantity}</strong></td></tr>}
+                  {product.skin_type && <tr><td>Skin Type</td><td>{product.skin_type}</td></tr>}
                   {product.key_ingredients && <tr><td>Key Ingredients</td><td>{product.key_ingredients}</td></tr>}
                   {product.manufacturing_date && <tr><td>Manufacturing Date</td><td>{product.manufacturing_date}</td></tr>}
                   {product.expiry_date && <tr><td>Expiry Date</td><td>{product.expiry_date}</td></tr>}
                   {product.storage && <tr><td>Storage</td><td>{product.storage}</td></tr>}
                   {product.warning && <tr><td>Warning / Caution</td><td style={{ color: '#DC2626' }}>{product.warning}</td></tr>}
-                  <tr><td>Formulation</td><td>{product.formulation || 'Sulfate Free, Paraben Free, Cruelty Free'}</td></tr>
-                  <tr><td>Shelf Life</td><td>{product.expiry_date ? `Valid till ${product.expiry_date}` : (product.shelfLife || '24 Months')}</td></tr>
                 </tbody>
               </table>
 
@@ -466,21 +494,8 @@ export default function ProductDetails() {
                   {product.ingredients}
                 </p>
               </div>
-            ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20 }}>
-                <div style={{ background: '#F8F4EE', padding: 20, borderRadius: 10 }}>
-                  <h4 style={{ color: 'var(--leafora-bronze)', marginBottom: 6 }}>🌱 Organic Aloe Vera</h4>
-                  <p style={{ fontSize: '0.88rem', color: '#475569' }}>Rich in vitamins C and E, provides instant thermal soothing and anti-inflammatory hydration.</p>
-                </div>
-                <div style={{ background: '#F8F4EE', padding: 20, borderRadius: 10 }}>
-                  <h4 style={{ color: 'var(--leafora-bronze)', marginBottom: 6 }}>🍵 Wild Green Tea Extract</h4>
-                  <p style={{ fontSize: '0.88rem', color: '#475569' }}>Potent EGCG polyphenols protect cellular lipid membranes against environmental pollution.</p>
-                </div>
-                <div style={{ background: '#F8F4EE', padding: 20, borderRadius: 10 }}>
-                  <h4 style={{ color: 'var(--leafora-bronze)', marginBottom: 6 }}>✨ Niacinamide (Vitamin B3)</h4>
-                  <p style={{ fontSize: '0.88rem', color: '#475569' }}>Refines enlarged pore architecture while regulating sebum secretion balance.</p>
-                </div>
-              </div>
+            ) : !product.key_ingredients && (
+              <p style={{ color: '#64748B', fontSize: '0.92rem', margin: 0 }}>Ingredient details for this product will be added soon.</p>
             )}
           </div>
         )}
@@ -496,20 +511,7 @@ export default function ProductDetails() {
                 </p>
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--leafora-bronze)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>1</div>
-                  <div><strong>Dampen Face:</strong> Splash lukewarm water gently over face and neck.</div>
-                </div>
-                <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--leafora-bronze)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>2</div>
-                  <div><strong>Lather & Massage:</strong> Pump 1-2 dollops onto fingertips and massage in circular upward motions for 60 seconds.</div>
-                </div>
-                <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--leafora-bronze)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>3</div>
-                  <div><strong>Rinse & Pat Dry:</strong> Rinse thoroughly with cool water and gently pat dry with a clean cotton cloth.</div>
-                </div>
-              </div>
+              <p style={{ color: '#64748B', fontSize: '0.92rem', margin: 0 }}>Usage details for this product will be added soon.</p>
             )}
           </div>
         )}
@@ -525,66 +527,101 @@ export default function ProductDetails() {
                 </div>
               </div>
             ) : (
-              <ul style={{ margin: 0, paddingLeft: 20, lineHeight: 1.8, color: '#475569', fontSize: '0.92rem' }}>
-                <li><strong>98%</strong> reported immediate removal of excess surface oils and makeup residue.</li>
-                <li><strong>95%</strong> noticed smoother skin texture and zero post-wash tightness within 7 days.</li>
-                <li>Dermatologist-tested for high tolerance on acne-prone and reactive skin.</li>
-              </ul>
+              <p style={{ color: '#64748B', fontSize: '0.92rem', margin: 0 }}>Benefit details for this product will be added soon.</p>
             )}
           </div>
         )}
 
-        {/* TAB 5: REVIEWS & RATINGS */}
+        {/* TAB 5: REVIEWS & RATINGS (approved reviews from the database) */}
         {activeTab === 'reviews' && (
           <div>
-            <div className="reviews-breakdown-box">
-              <div className="overall-score-col">
-                <div className="big-score">4.8</div>
-                <div className="stars" style={{ margin: '8px 0' }}>
-                  {[...Array(5)].map((_, i) => <Star key={i} size={18} fill="#A67C52" color="#A67C52" />)}
+            {reviewData.summary.count > 0 && (
+              <div className="reviews-breakdown-box">
+                <div className="overall-score-col">
+                  <div className="big-score">{reviewData.summary.average}</div>
+                  <div className="stars" style={{ margin: '8px 0' }}>{renderStars(reviewData.summary.average, 18)}</div>
+                  <span style={{ fontSize: '0.85rem', color: '#64748B' }}>Based on {reviewData.summary.count} review{reviewData.summary.count === 1 ? '' : 's'}</span>
                 </div>
-                <span style={{ fontSize: '0.85rem', color: '#64748B' }}>Based on 124 Reviews</span>
+                <div className="rating-bars-col">
+                  {[5, 4, 3, 2, 1].map((star) => {
+                    const pct = Math.round(((reviewData.summary.breakdown[star] || 0) / reviewData.summary.count) * 100);
+                    return (
+                      <div key={star} className="rating-bar-row">
+                        <span style={{ width: 45 }}>{star} Stars</span>
+                        <div className="bar-bg"><div className="bar-fill" style={{ width: `${pct}%` }}></div></div>
+                        <span style={{ width: 35, textAlign: 'right' }}>{pct}%</span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
+            )}
 
-              <div className="rating-bars-col">
-                {[
-                  { star: 5, pct: 85 },
-                  { star: 4, pct: 10 },
-                  { star: 3, pct: 3 },
-                  { star: 2, pct: 1 },
-                  { star: 1, pct: 1 }
-                ].map(r => (
-                  <div key={r.star} className="rating-bar-row">
-                    <span style={{ width: 45 }}>{r.star} Stars</span>
-                    <div className="bar-bg">
-                      <div className="bar-fill" style={{ width: `${r.pct}%` }}></div>
-                    </div>
-                    <span style={{ width: 35, textAlign: 'right' }}>{r.pct}%</span>
+            {/* Write a review */}
+            <div style={{ background: '#FAF9F6', border: '1px solid #EFE8DE', borderRadius: 10, padding: 18, margin: '16px 0' }}>
+              {!localStorage.getItem('leafora_user_token') ? (
+                <p style={{ margin: 0, fontSize: '0.92rem', color: '#475569' }}>
+                  <Link to={`/login?redirect=/products/${product.id}`} style={{ color: 'var(--leafora-bronze)', fontWeight: 600 }}>Sign in</Link> to review this product (available after you have purchased it).
+                </p>
+              ) : reviewEligibility?.existing_review_status ? (
+                <p style={{ margin: 0, fontSize: '0.92rem', color: '#475569' }}>
+                  Thanks for your review! {reviewEligibility.existing_review_status === 'Approved' ? 'It is published below.' : 'It will appear once approved.'}
+                </p>
+              ) : reviewEligibility && !reviewEligibility.can_review ? (
+                <p style={{ margin: 0, fontSize: '0.92rem', color: '#475569' }}>Only customers who have bought this product can review it.</p>
+              ) : reviewEligibility?.can_review ? (
+                <form onSubmit={handleSubmitReview}>
+                  <h4 style={{ margin: '0 0 10px', color: '#1E293B' }}>Write a review</h4>
+                  <div style={{ display: 'flex', gap: 4, marginBottom: 10 }} role="radiogroup" aria-label="Rating">
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <button key={n} type="button" aria-label={`${n} star${n > 1 ? 's' : ''}`} onClick={() => setReviewForm({ ...reviewForm, rating: n })}
+                        style={{ background: 'none', border: 'none', padding: 2, cursor: 'pointer' }}>
+                        <Star size={24} fill={n <= reviewForm.rating ? '#A67C52' : 'none'} color="#A67C52" />
+                      </button>
+                    ))}
                   </div>
-                ))}
-              </div>
+                  <input type="text" placeholder="Title (optional)" maxLength={120} value={reviewForm.title}
+                    onChange={(e) => setReviewForm({ ...reviewForm, title: e.target.value })}
+                    style={{ width: '100%', padding: 10, border: '1px solid #E2E8F0', borderRadius: 8, marginBottom: 8, boxSizing: 'border-box' }} />
+                  <textarea placeholder="What did you like or dislike? (min. 10 characters)" rows={4} maxLength={2000} value={reviewForm.comment}
+                    onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
+                    style={{ width: '100%', padding: 10, border: '1px solid #E2E8F0', borderRadius: 8, boxSizing: 'border-box', fontFamily: 'inherit' }} />
+                  <button type="submit" className="btn-pdp-add-cart" disabled={submittingReview} style={{ marginTop: 10, maxWidth: 220 }}>
+                    {submittingReview ? 'Submitting…' : 'Submit Review'}
+                  </button>
+                </form>
+              ) : (
+                <p style={{ margin: 0, fontSize: '0.92rem', color: '#64748B' }}>Checking whether you can review this product…</p>
+              )}
             </div>
 
             <div className="reviews-list">
-              <div className="review-card">
-                <div className="review-card-header">
-                  <div className="reviewer-info">
-                    <div className="reviewer-avatar-initials" style={{ width: 40, height: 40, borderRadius: '50%', background: '#A67C52', color: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.88rem' }}>
-                      SK
+              {reviewData.reviews.length === 0 ? (
+                <p style={{ color: '#64748B', fontSize: '0.92rem' }}>No reviews yet.</p>
+              ) : reviewData.reviews.map((r) => (
+                <div key={r.id} className="review-card">
+                  <div className="review-card-header">
+                    <div className="reviewer-info">
+                      <div className="reviewer-avatar-initials" style={{ width: 40, height: 40, borderRadius: '50%', background: '#A67C52', color: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.88rem' }}>
+                        {String(r.customer_name || '?').split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase()}
+                      </div>
+                      <div>
+                        <div className="reviewer-name">{r.customer_name}</div>
+                        {Number(r.is_verified_buyer) === 1 && <div className="verified-badge"><CheckCircle2 size={12} /> Verified Buyer</div>}
+                      </div>
                     </div>
-                    <div>
-                      <div className="reviewer-name">Samantha K.</div>
-                      <div className="verified-badge"><CheckCircle2 size={12} /> Verified Buyer</div>
+                    <div className="stars">{renderStars(r.rating, 14)}</div>
+                  </div>
+                  {r.title && <strong style={{ display: 'block', marginBottom: 4, color: '#1E293B' }}>{r.title}</strong>}
+                  <p style={{ fontSize: '0.9rem', color: '#475569', lineHeight: 1.6, whiteSpace: 'pre-line' }}>{r.comment}</p>
+                  <small style={{ color: '#94A3B8' }}>{new Date(r.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</small>
+                  {r.admin_reply && (
+                    <div style={{ marginTop: 10, padding: '10px 12px', background: '#F8F4EE', borderRadius: 8, fontSize: '0.88rem', color: '#334155' }}>
+                      <strong>Reply from Leafora:</strong> {r.admin_reply}
                     </div>
-                  </div>
-                  <div className="stars">
-                    {[...Array(5)].map((_, i) => <Star key={i} size={14} fill="#A67C52" color="#A67C52" />)}
-                  </div>
+                  )}
                 </div>
-                <p style={{ fontSize: '0.9rem', color: '#475569', lineHeight: 1.6 }}>
-                  "I've been using this face wash for 3 weeks now and my skin has never felt softer! It smells subtly of fresh green tea and doesn't leave my face feeling dry or stripped at all."
-                </p>
-              </div>
+              ))}
             </div>
           </div>
         )}
@@ -592,23 +629,17 @@ export default function ProductDetails() {
       </section>
 
       {/* 3. FREQUENTLY ASKED QUESTIONS (FAQS) ACCORDION */}
+      {(product.skin_type || product.how_to_use || product.storage || product.warning || product.expiry_date) && (
       <section className="faqs-section">
         <h2 style={{ fontFamily: 'Inter, sans-serif', fontSize: '1.8rem', color: '#1A2E22' }}>Frequently Asked Questions</h2>
         <div className="faqs-grid">
           {[
-            {
-              q: 'Is this cleanser suitable for sensitive skin?',
-              a: 'Yes, absolutely! Gentle Foaming Face Wash is 100% sulfate-free, paraben-free, and formulated at a skin-identical pH of 5.5 to ensure maximum tolerance.'
-            },
-            {
-              q: 'Can I use this twice daily in the morning and evening?',
-              a: 'Yes, it is gentle enough to be used as your daily morning cleanser as well as your second-step evening cleanse.'
-            },
-            {
-              q: 'Does it remove waterproof makeup?',
-              a: 'It effectively removes light daily makeup and sunscreen. For heavy waterproof mascara, we recommend pairing with our Botanical Cleansing Oil first.'
-            }
-          ].map((faq, idx) => (
+            product.skin_type && { q: 'Which skin type is this product for?', a: product.skin_type },
+            product.how_to_use && { q: 'How should I use it?', a: product.how_to_use },
+            product.storage && { q: 'How should I store it?', a: product.storage },
+            product.warning && { q: 'Are there any precautions?', a: product.warning },
+            product.expiry_date && { q: 'What is the expiry date?', a: product.expiry_date },
+          ].filter(Boolean).map((faq, idx) => (
             <div key={idx} className="faq-card">
               <button 
                 className="faq-question-btn"
@@ -618,7 +649,7 @@ export default function ProductDetails() {
                 {expandedFaqIndex === idx ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
               </button>
               {expandedFaqIndex === idx && (
-                <div className="faq-answer-content">
+                <div className="faq-answer-content" style={{ whiteSpace: 'pre-line' }}>
                   {faq.a}
                 </div>
               )}
@@ -626,6 +657,7 @@ export default function ProductDetails() {
           ))}
         </div>
       </section>
+      )}
 
       {/* 4. "YOU MAY ALSO LIKE" RELATED PRODUCTS GRID */}
       <section className="related-products-section">
@@ -652,7 +684,6 @@ export default function ProductDetails() {
                 style={{ cursor: 'pointer' }}
               >
                 <div className="card-img-container">
-                  <button className="btn-wishlist-heart" onClick={(e) => { e.stopPropagation(); showToast('Saved to Wishlist ♥'); }}><Heart size={16} /></button>
                   <img 
                     src={relPrimary} 
                     alt={item.name} 
@@ -676,15 +707,9 @@ export default function ProductDetails() {
               <div className="shop-card-info">
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, marginBottom: 2 }}>
                   <span className="shop-card-brand">{item.brand || 'Leafora Life Sciences'}</span>
-                  <span className="product-net-qty-badge">{item.net_quantity || '100g'}</span>
+                  {item.net_quantity && <span className="product-net-qty-badge">{item.net_quantity}</span>}
                 </div>
                 <h3 className="shop-card-title">{item.name}</h3>
-                <div className="shop-card-rating">
-                  <div className="stars-row">
-                    {[...Array(5)].map((_, i) => <Star key={i} size={12} fill="#A67C52" color="#A67C52" />)}
-                  </div>
-                  <span>({item.reviews_count || item.reviews || 12})</span>
-                </div>
                 <div className="shop-card-price-row">
                   <span className="price-main">₹{parseFloat(item.price || 0).toFixed(2)}</span>
                 </div>
@@ -704,22 +729,6 @@ export default function ProductDetails() {
           })}
         </div>
       </section>
-
-      {/* VIDEO PREVIEW MODAL */}
-      {isVideoModalOpen && (
-        <div className="video-modal-backdrop" onClick={() => setIsVideoModalOpen(false)}>
-          <div className="video-modal-box" onClick={e => e.stopPropagation()}>
-            <button className="modal-close-btn" style={{ position: 'absolute', top: 12, right: 12, zIndex: 10 }} onClick={() => setIsVideoModalOpen(false)}>
-              <X size={20} />
-            </button>
-            <div style={{ padding: 40, textAlign: 'center', color: '#fff' }}>
-              <Play size={48} color="var(--leafora-bronze)" style={{ marginBottom: 16 }} />
-              <h3>Leafora Gentle Foaming Face Wash Demonstration</h3>
-              <p style={{ color: '#94A3B8', marginTop: 8 }}>Watch how our rich botanical foam purifies skin without stripping moisture.</p>
-            </div>
-          </div>
-        </div>
-      )}
 
     </div>
   );

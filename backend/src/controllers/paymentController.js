@@ -1,9 +1,10 @@
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
 const { pool } = require('../config/db');
-const { sendOrderConfirmationEmail } = require('../services/mailer');
+const { sendOrderInvoiceEmail } = require('../services/mailer');
 const { ensureSecurityTables, safeEqual } = require('../services/security');
 const { getShippingSettings, shippingFeeFor } = require('../services/shippingSettings');
+const { validateAddress } = require('../services/validation');
 
 // Shipping charges come from the admin-editable shipping_settings table.
 const MAX_QTY_PER_ITEM = 50;
@@ -115,6 +116,14 @@ const generateOrderNumber = () =>
 const createRazorpayOrder = async (req, res) => {
   try {
     await ensureSecurityTables();
+
+    if (req.body.shipping_address !== undefined) {
+      const check = validateAddress(req.body.shipping_address);
+      if (!check.ok) {
+        return res.status(400).json({ success: false, field: check.field, message: `Delivery address: ${check.message}` });
+      }
+    }
+
     const { lines, subtotal, shipping_fee, total_amount } = await priceCart(req.body.items);
     const amountInPaise = Math.round(total_amount * 100);
 
@@ -279,11 +288,24 @@ const verifyRazorpayPayment = async (req, res) => {
 
     await connection.commit();
 
-    sendOrderConfirmationEmail(customer.email, {
-      order_number: orderNumber,
-      total_amount: parseFloat(intent.total_amount),
-      shipping_address: formattedAddress,
-    }).catch((e) => console.warn('Order confirmation email failed:', e.message));
+    // Invoice e-mail. The order is already committed, so nothing here may affect the response.
+    Promise.resolve().then(() => sendOrderInvoiceEmail(
+      {
+        order_number: orderNumber,
+        created_at: new Date(),
+        customer_name: customerName,
+        customer_email: customer.email,
+        customer_phone: customerPhone,
+        shipping_address: formattedAddress,
+        subtotal: intent.subtotal,
+        shipping_fee: intent.shipping_fee,
+        discount_amount: 0,
+        total_amount: intent.total_amount,
+        payment_method: 'Razorpay',
+        razorpay_payment_id,
+      },
+      lines.map((l) => ({ product_name: l.name, quantity: l.quantity, price: l.price, total_price: l.total_price }))
+    )).catch((e) => console.warn('Invoice email failed:', e.message));
 
     return res.status(200).json({
       success: true,
@@ -314,4 +336,5 @@ const verifyRazorpayPayment = async (req, res) => {
 module.exports = {
   createRazorpayOrder,
   verifyRazorpayPayment,
+  getRazorpayCredentials,
 };

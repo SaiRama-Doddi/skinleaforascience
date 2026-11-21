@@ -15,6 +15,16 @@ const initDb = async () => {
       );
     `);
 
+    // Columns used by admin user management (table may pre-date them)
+    for (const colDef of [
+      'phone VARCHAR(50) NULL',
+      'permissions TEXT NULL',
+      'is_active TINYINT(1) DEFAULT 1',
+      'last_login_at DATETIME NULL',
+    ]) {
+      try { await pool.query(`ALTER TABLE admin_users ADD COLUMN ${colDef}`); } catch (e) { /* already exists */ }
+    }
+
     // 2. OTP Codes Table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS otp_codes (
@@ -112,6 +122,7 @@ const initDb = async () => {
 
     // Auto-migrate missing columns for existing products table
     const prodCols = [
+      "ALTER TABLE products ADD COLUMN is_best_seller TINYINT(1) DEFAULT 0",
       "ALTER TABLE products ADD COLUMN brand VARCHAR(100) DEFAULT 'Leafora' AFTER name",
       "ALTER TABLE products ADD COLUMN sku VARCHAR(100) DEFAULT NULL AFTER brand",
       "ALTER TABLE products ADD COLUMN net_quantity VARCHAR(50) DEFAULT '100g' AFTER sku",
@@ -314,7 +325,6 @@ const initDb = async () => {
       );
     `);
 
-
     // 6. Customers Table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS customers (
@@ -424,7 +434,6 @@ const initDb = async () => {
       );
     `);
 
-
     // 7. Payments Table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS payments (
@@ -493,194 +502,14 @@ const initDb = async () => {
       );
     `);
 
-    // ─── SEED DEFAULT ADMIN ───
-    const [admins] = await pool.query('SELECT * FROM admin_users WHERE email = ?', ['hkahir46@gmail.com']);
-    if (admins.length === 0) {
-      await pool.query(
-        'INSERT INTO admin_users (email, name, role) VALUES (?, ?, ?)',
-        ['hkahir46@gmail.com', 'Primary Admin', 'SuperAdmin']
-      );
-      console.log('👤 Seeded Admin user: hkahir46@gmail.com');
-    }
-
-    // ─── SEED DEFAULT CATEGORIES IF EMPTY ───
-    const [cats] = await pool.query('SELECT COUNT(*) as cnt FROM categories');
-    if (cats[0].cnt === 0) {
-      await pool.query(`
-        INSERT INTO categories (id, parent_id, level, name, slug, description, is_active, is_featured, is_trending, display_order) VALUES
-        (1, NULL, 'category', 'Herbal Extracts', 'herbal-extracts', 'Pharma-grade pure herbal extracts', 1, 1, 1, 1),
-        (2, NULL, 'category', 'Supplements', 'supplements', 'Natural bio-vital nutraceuticals', 1, 1, 0, 2),
-        (3, NULL, 'category', 'Biotech Formulations', 'biotech-formulations', 'Active science solutions', 1, 0, 1, 3),
-        (4, NULL, 'category', 'Skin Care actives', 'skin-care-actives', 'Pure skin wellness bio-compounds', 1, 1, 1, 4),
-        (5, 4, 'sub_category', 'Facial Serums', 'facial-serums', 'Concentrated serum actives', 1, 1, 0, 5),
-        (6, 5, 'child_category', 'Vitamin C Serums', 'vitamin-c-serums', 'Botanical Vitamin C radiance serums', 1, 1, 1, 6);
-      `);
-      console.log('🌱 Seeded default categories including sub & child categories');
-    }
-
-    // ─── SEED DEFAULT PRODUCTS IF EMPTY ───
-    const [prods] = await pool.query('SELECT COUNT(*) as cnt FROM products');
-    if (prods[0].cnt === 0) {
-      await pool.query(`
-        INSERT INTO products (name, category, price, stock, description, is_active, is_featured) VALUES
-        ('LeafExtract Pharma Grade', 'Herbal Extracts', 49.99, 120, 'Pharma grade organic extract', 1, 1),
-        ('BioVital Nutraceutical', 'Supplements', 29.50, 85, 'Essential daily vitamins & minerals', 1, 1),
-        ('EcoScience Active Solution', 'Biotech Formulations', 89.00, 40, 'Advanced biotech cellular active formula', 1, 1),
-        ('Aloe Vera Pure Gel Base', 'Skin Care actives', 19.99, 8, 'Low stock item: pure organic gel base', 1, 0),
-        ('Curcumin 95% Extract', 'Herbal Extracts', 65.00, 0, 'Out of stock item: high potency extract', 1, 0);
-      `);
-      console.log('🌱 Seeded default products');
-    }
-
-    // ─── SEED DEFAULT ORDERS IF EMPTY ───
-    const [orders] = await pool.query('SELECT COUNT(*) as cnt FROM orders');
-    if (orders[0].cnt === 0) {
-      await pool.query(`
-        INSERT INTO orders (order_number, customer_name, customer_email, customer_phone, subtotal, tax_amount, shipping_fee, discount_amount, total_amount, status, payment_status, shipping_partner, warehouse, tracking_number, shipping_address, billing_address, customer_notes, admin_notes) VALUES
-        ('ORD-1001', 'Dr. Ramesh Varma', 'ramesh.v@gmail.com', '+91 9876543210', 120.00, 18.99, 15.00, 14.00, 138.99, 'Pending', 'Paid', 'BlueDart', 'Warehouse A - Hyderabad Central', 'BD-8821034', '42 Bio-Tech Park, Jubilee Hills, Hyderabad, Telangana - 500033', 'Suite 102, Medical Enclave, Hyderabad, Telangana - 500034', 'Please deliver during hospital morning hours.', 'High-priority clinical client account.'),
-        ('ORD-1002', 'Anita Sharma', 'anita.s@gmail.com', '+91 9812345678', 49.99, 5.00, 0.00, 5.00, 49.99, 'Confirmed', 'Paid', 'BlueDart', 'Warehouse A - Hyderabad Central', 'BD-9912045', '15 Green Glen Layout, Bellandur, Bengaluru, Karnataka - 560103', '15 Green Glen Layout, Bellandur, Bengaluru, Karnataka - 560103', 'Leave with security guard if not available.', 'Verified phone payment.'),
-        ('ORD-1003', 'Vikram Patel', 'vikram.p@gmail.com', '+91 9765432109', 240.00, 27.00, 20.00, 20.00, 267.00, 'Shipped', 'Paid', 'FedEx', 'Warehouse B - Bengaluru Hub', 'FX-7721908', '88 Science City Road, Ahmedabad, Gujarat - 380060', '88 Science City Road, Ahmedabad, Gujarat - 380060', 'Fragile liquid formulation, handle with care.', 'Dispatched via FedEx Express Air.'),
-        ('ORD-1004', 'Suresh Kumar', 'suresh.k@gmail.com', '+91 9654321098', 80.00, 9.00, 0.00, 0.00, 89.00, 'Processing', 'Paid', 'Delhivery', 'Warehouse C - Mumbai Logistics', 'DL-4410981', '72 Link Road, Bandra West, Mumbai, Maharashtra - 400050', '72 Link Road, Bandra West, Mumbai, Maharashtra - 400050', 'Call before arrival.', 'Item being packaged.');
-      `);
-      console.log('🌱 Seeded default orders');
-    }
-
-    // Seed Order Items if empty
-    const [oItems] = await pool.query('SELECT COUNT(*) as cnt FROM order_items');
-    if (oItems[0].cnt === 0) {
-      await pool.query(`
-        INSERT INTO order_items (order_id, product_id, product_name, product_image, sku, variant_name, price, quantity, total_price) VALUES
-        (1, 1, 'LeafExtract Pharma Grade', '/assets/vitamin_c_serum.jpg', 'LFA-VITC-01', '100ml Dropper', 49.99, 2, 99.98),
-        (1, 4, 'Aloe Vera Pure Gel Base', '/assets/face_wash.jpg', 'LFA-ALOE-04', '200g Tube', 19.99, 2, 39.98),
-        (2, 1, 'LeafExtract Pharma Grade', '/assets/vitamin_c_serum.jpg', 'LFA-VITC-01', '50ml Dropper', 49.99, 1, 49.99),
-        (3, 3, 'EcoScience Active Solution', '/assets/night_cream.jpg', 'LFA-ECO-03', '50ml Value Pack', 89.00, 3, 267.00),
-        (4, 2, 'BioVital Nutraceutical', '/assets/hydra_glow_moisturizer.jpg', 'LFA-BIO-02', '60 Capsules', 29.50, 3, 88.50);
-      `);
-      console.log('🌱 Seeded default order items');
-    }
-
-    // Seed Order Timeline if empty
-    const [oTime] = await pool.query('SELECT COUNT(*) as cnt FROM order_timeline');
-    if (oTime[0].cnt === 0) {
-      await pool.query(`
-        INSERT INTO order_timeline (order_id, title, description, status) VALUES
-        (1, 'Order Placed', 'Customer placed order #ORD-1001 successfully on storefront.', 'Pending'),
-        (1, 'Payment Confirmed', 'Payment of $138.99 received via UPI / GPay.', 'Paid'),
-        (2, 'Order Placed', 'Customer placed order #ORD-1002.', 'Pending'),
-        (2, 'Payment Confirmed', 'Payment of $49.99 received via Credit Card.', 'Paid'),
-        (2, 'Order Confirmed', 'Admin verified and confirmed order details.', 'Confirmed'),
-        (3, 'Order Placed', 'Customer placed order #ORD-1003.', 'Pending'),
-        (3, 'Payment Confirmed', 'Payment of $267.00 verified.', 'Paid'),
-        (3, 'Order Processing', 'Order items picked at Warehouse B - Bengaluru Hub.', 'Processing'),
-        (3, 'Handed to Courier', 'Package handed over to FedEx Express Air (Tracking #FX-7721908).', 'Shipped');
-      `);
-      console.log('🌱 Seeded default order timeline tracking');
-    }
-
-
-    // ─── SEED DEFAULT CUSTOMERS IF EMPTY ───
-    const [custs] = await pool.query('SELECT COUNT(*) as cnt FROM customers');
-    if (custs[0].cnt === 0) {
-      await pool.query(`
-        INSERT INTO customers (name, email, phone, status, loyalty_tier, total_spent, wallet_balance, loyalty_points, referral_earnings) VALUES
-        ('Dr. Ramesh Varma', 'ramesh.v@gmail.com', '+91 9876543210', 'Active', 'Gold', 450.00, 75.00, 450, 50.00),
-        ('Anita Sharma', 'anita.s@gmail.com', '+91 9812345678', 'Active', 'Silver', 120.00, 25.00, 120, 25.00),
-        ('Vikram Patel', 'vikram.p@gmail.com', '+91 9765432109', 'Active', 'Platinum', 1250.00, 150.00, 1250, 100.00),
-        ('Suresh Kumar', 'suresh.k@gmail.com', '+91 9654321098', 'Active', 'Silver', 89.00, 0.00, 89, 0.00);
-      `);
-      console.log('🌱 Seeded default customers');
-    }
-
-    // Seed Addresses if empty
-    const [addrs] = await pool.query('SELECT COUNT(*) as cnt FROM customer_addresses');
-    if (addrs[0].cnt === 0) {
-      await pool.query(`
-        INSERT INTO customer_addresses (customer_id, type, address_line1, city, state, pincode, is_default) VALUES
-        (1, 'Shipping', '42 Bio-Tech Park, Jubilee Hills', 'Hyderabad', 'Telangana', '500033', 1),
-        (1, 'Billing', 'Suite 102, Medical Enclave', 'Hyderabad', 'Telangana', '500034', 0),
-        (2, 'Shipping', '15 Green Glen Layout, Bellandur', 'Bengaluru', 'Karnataka', '560103', 1),
-        (3, 'Shipping', '88 Science City Road', 'Ahmedabad', 'Gujarat', '380060', 1);
-      `);
-      console.log('🌱 Seeded default customer addresses');
-    }
-
-    // Seed Wishlist if empty
-    const [wish] = await pool.query('SELECT COUNT(*) as cnt FROM customer_wishlist');
-    if (wish[0].cnt === 0) {
-      await pool.query(`
-        INSERT INTO customer_wishlist (customer_id, product_id) VALUES
-        (1, 1), (1, 3), (2, 2), (3, 1), (3, 2), (3, 3);
-      `);
-      console.log('🌱 Seeded default customer wishlist');
-    }
-
-    // Seed Cart if empty
-    const [cart] = await pool.query('SELECT COUNT(*) as cnt FROM customer_cart');
-    if (cart[0].cnt === 0) {
-      await pool.query(`
-        INSERT INTO customer_cart (customer_id, product_id, quantity) VALUES
-        (1, 2, 2), (2, 1, 1), (3, 3, 1);
-      `);
-      console.log('🌱 Seeded default customer cart');
-    }
-
-    // Seed Coupon History if empty
-    const [chist] = await pool.query('SELECT COUNT(*) as cnt FROM customer_coupon_history');
-    if (chist[0].cnt === 0) {
-      await pool.query(`
-        INSERT INTO customer_coupon_history (customer_id, coupon_code, discount_amount) VALUES
-        (1, 'LEAFORA15', 15.00), (2, 'WELCOME50', 50.00), (3, 'LEAFORA15', 25.00);
-      `);
-      console.log('🌱 Seeded default customer coupon history');
-    }
-
-
-    // ─── SEED DEFAULT PAYMENTS IF EMPTY ───
-    const [pay] = await pool.query('SELECT COUNT(*) as cnt FROM payments');
-    if (pay[0].cnt === 0) {
-      await pool.query(`
-        INSERT INTO payments (order_id, transaction_id, amount, payment_method, status) VALUES
-        (1, 'TXN_98712364', 138.99, 'UPI / GPay', 'Completed'),
-        (2, 'TXN_98712365', 49.99, 'Credit Card', 'Completed'),
-        (3, 'TXN_98712366', 267.00, 'Net Banking', 'Completed');
-      `);
-      console.log('🌱 Seeded default payments');
-    }
-
-    // ─── SEED DEFAULT REVIEWS IF EMPTY ───
-    const [rev] = await pool.query('SELECT COUNT(*) as cnt FROM reviews');
-    if (rev[0].cnt === 0) {
-      await pool.query(`
-        INSERT INTO reviews (product_id, product_name, customer_name, rating, comment, status, is_featured) VALUES
-        (1, 'LeafExtract Pharma Grade', 'Dr. Ramesh Varma', 5, 'Excellent purity and high active percentage.', 'Approved', 1),
-        (2, 'BioVital Nutraceutical', 'Anita Sharma', 4, 'Very good quality packaging and fast delivery.', 'Pending', 0),
-        (3, 'EcoScience Active Solution', 'Vikram Patel', 5, 'Substantial results in formulation stability.', 'Pending', 0);
-      `);
-      console.log('🌱 Seeded default reviews');
-    }
-
-    // ─── SEED DEFAULT COUPONS IF EMPTY ───
-    const [coup] = await pool.query('SELECT COUNT(*) as cnt FROM coupons');
-    if (coup[0].cnt === 0) {
-      await pool.query(`
-        INSERT INTO coupons (code, discount_type, discount_value, min_order, usage_limit, used_count, status, expires_at) VALUES
-        ('LEAFORA15', 'percentage', 15.00, 50.00, 200, 14, 'Active', '2026-12-31 23:59:59'),
-        ('WELCOME50', 'fixed', 50.00, 150.00, 50, 8, 'Active', '2026-12-31 23:59:59'),
-        ('SUMMER20', 'percentage', 20.00, 100.00, 100, 100, 'Expired', '2026-08-31 23:59:59');
-      `);
-      console.log('🌱 Seeded default coupons');
-    }
-
-    // ─── SEED DEFAULT REFERRALS IF EMPTY ───
-    const [ref] = await pool.query('SELECT COUNT(*) as cnt FROM referrals');
-    if (ref[0].cnt === 0) {
-      await pool.query(`
-        INSERT INTO referrals (referrer_name, referee_name, reward_amount, status) VALUES
-        ('Vikram Patel', 'Rajesh Rao', 25.00, 'Pending'),
-        ('Dr. Ramesh Varma', 'Kiran Bedi', 25.00, 'Approved'),
-        ('Anita Sharma', 'Pooja Hegde', 25.00, 'Pending');
-      `);
-      console.log('🌱 Seeded default referrals');
+    // ─── PRIMARY ADMIN (from ADMIN_EMAIL env var) ───
+    const primaryAdminEmail = String(process.env.ADMIN_EMAIL || '').trim().toLowerCase();
+    if (primaryAdminEmail) {
+      const [admins] = await pool.query('SELECT id FROM admin_users WHERE LOWER(email) = ?', [primaryAdminEmail]);
+      if (admins.length === 0) {
+        await pool.query('INSERT INTO admin_users (email, name, role) VALUES (?, ?, ?)', [primaryAdminEmail, 'Primary Admin', 'SuperAdmin']);
+        console.log('👤 Registered primary admin from ADMIN_EMAIL');
+      }
     }
 
     // ─── 12. SHIPROCKET TABLES ───
@@ -778,63 +607,6 @@ const initDb = async () => {
       );
     `);
 
-    // ─── SEED DEFAULT SHIPROCKET CONFIG IF EMPTY ───
-    const [srCfg] = await pool.query('SELECT COUNT(*) as cnt FROM shiprocket_config');
-    if (srCfg[0].cnt === 0) {
-      await pool.query(`
-        INSERT INTO shiprocket_config (api_email, api_password, secret_key, token, environment, is_connected, auto_sync) VALUES
-        ('shipping@leaforalifescience.com', 'pharma_sr_prod_2026', 'sr_sec_live_99812376', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6OTg3MjE0LCJlbWFpbCI6InNoaXBwaW5nQGxlYWZvcmFsaWZlc2NpZW5jZS5jb20iLCJpYXQiOjE3NDEyNTQ0MDAsImV4cCI6MTc3MjgwODAwMH0.sample_sr_token_signature', 'production', 1, 1);
-      `);
-      console.log('🌱 Seeded default Shiprocket configuration');
-    }
-
-    // ─── SEED DEFAULT PICKUP LOCATIONS IF EMPTY ───
-    const [srLocs] = await pool.query('SELECT COUNT(*) as cnt FROM shiprocket_pickup_locations');
-    if (srLocs[0].cnt === 0) {
-      await pool.query(`
-        INSERT INTO shiprocket_pickup_locations (location_name, contact_name, email, phone, address_line1, address_line2, city, state, pincode, is_primary, status) VALUES
-        ('Hyderabad HQ Vault', 'Rajesh K. Pharma Manager', 'dispatch.hyd@leafora.com', '+91 9876500112', 'Plot 42, Bio-Tech Corridor, Phase II', 'Jubilee Hills Extension', 'Hyderabad', 'Telangana', '500033', 1, 'Active'),
-        ('Bengaluru Distribution Hub', 'Meera Nair Logistics Lead', 'dispatch.blr@leafora.com', '+91 9876500113', 'Warehouse #12, Eco Tech Park', 'Bellandur Ring Road', 'Bengaluru', 'Karnataka', '560103', 0, 'Active'),
-        ('Mumbai Port Depot', 'Sanjay Patil Yard Head', 'dispatch.bom@leafora.com', '+91 9876500114', 'Gate 4, Cold Chain Complex', 'Bandra Kurla Logistics Zone', 'Mumbai', 'Maharashtra', '400050', 0, 'Active');
-      `);
-      console.log('🌱 Seeded default Shiprocket pickup locations');
-    }
-
-    // ─── SEED DEFAULT SHIPMENTS IF EMPTY ───
-    const [srShip] = await pool.query('SELECT COUNT(*) as cnt FROM shiprocket_shipments');
-    if (srShip[0].cnt === 0) {
-      await pool.query(`
-        INSERT INTO shiprocket_shipments (order_id, order_number, shiprocket_order_id, shipment_id, awb_code, courier_company_id, courier_name, pickup_location_id, pickup_location_name, pickup_scheduled_date, pickup_token_number, status, tracking_url, freight_charges, weight, length, width, height) VALUES
-        (1, 'ORD-1001', 'SR-ORD-9901', 'SR-SHP-8801', 'SR-AWB-987121', 1, 'BlueDart Express Air', 1, 'Hyderabad HQ Vault', '2026-09-08', 'PKP-99120', 'AWB Generated', 'https://track.shiprocket.in/SR-AWB-987121', 14.50, 0.75, 12.0, 10.0, 8.0),
-        (2, 'ORD-1002', 'SR-ORD-9902', 'SR-SHP-8802', 'SR-AWB-987122', 2, 'Delhivery Surface', 1, 'Hyderabad HQ Vault', '2026-09-08', 'PKP-99121', 'Pickup Scheduled', 'https://track.shiprocket.in/SR-AWB-987122', 8.20, 0.50, 10.0, 10.0, 5.0),
-        (3, 'ORD-1003', 'SR-ORD-9903', 'SR-SHP-8803', 'SR-AWB-987123', 3, 'FedEx Express Priority', 2, 'Bengaluru Distribution Hub', '2026-09-07', 'PKP-99119', 'In Transit', 'https://track.shiprocket.in/SR-AWB-987123', 22.00, 1.80, 20.0, 15.0, 12.0),
-        (4, 'ORD-1004', 'SR-ORD-9904', 'SR-SHP-8804', 'SR-AWB-987124', 4, 'Xpressbees Air', 3, 'Mumbai Port Depot', '2026-09-06', 'PKP-99118', 'Out for Delivery', 'https://track.shiprocket.in/SR-AWB-987124', 11.00, 0.60, 11.0, 11.0, 6.0);
-      `);
-      console.log('🌱 Seeded default Shiprocket shipments');
-    }
-
-    // ─── SEED DEFAULT NDR CASES IF EMPTY ───
-    const [srNdr] = await pool.query('SELECT COUNT(*) as cnt FROM shiprocket_ndr');
-    if (srNdr[0].cnt === 0) {
-      await pool.query(`
-        INSERT INTO shiprocket_ndr (shipment_id, order_number, awb_code, customer_name, customer_phone, ndr_reason, action_requested, action_remarks, status) VALUES
-        (2, 'ORD-1002', 'SR-AWB-987122', 'Anita Sharma', '+91 9812345678', 'Customer Unreachable on Phone - Premises Gate Locked', 'Re-attempt', 'Scheduled re-attempt after 2 PM upon customer confirmation.', 'Open'),
-        (4, 'ORD-1004', 'SR-AWB-987124', 'Suresh Kumar', '+91 9654321098', 'Address Incomplete / LandMark Missing near Bandra West', 'Buyer Contacted', 'Confirmed updated landmark: Opp. City Hospital Gate 2.', 'Resolved');
-      `);
-      console.log('🌱 Seeded default Shiprocket NDR cases');
-    }
-
-    // ─── SEED DEFAULT MANIFESTS IF EMPTY ───
-    const [srMan] = await pool.query('SELECT COUNT(*) as cnt FROM shiprocket_manifests');
-    if (srMan[0].cnt === 0) {
-      await pool.query(`
-        INSERT INTO shiprocket_manifests (manifest_number, courier_name, pickup_location, total_shipments, download_url) VALUES
-        ('MNF-2026-0908-01', 'BlueDart Express Air', 'Hyderabad HQ Vault', 2, '/manifests/MNF-2026-0908-01.pdf'),
-        ('MNF-2026-0907-04', 'FedEx Express Priority', 'Bengaluru Distribution Hub', 5, '/manifests/MNF-2026-0907-04.pdf');
-      `);
-      console.log('🌱 Seeded default Shiprocket manifests');
-    }
-
     // Auto-migrate missing columns for existing payments table
     const payCols = [
       "ALTER TABLE payments ADD COLUMN order_number VARCHAR(100) AFTER order_id",
@@ -900,68 +672,6 @@ const initDb = async () => {
       );
     `);
 
-    // ─── SEED PAYMENT GATEWAYS CONFIG IF EMPTY ───
-    const [gate] = await pool.query('SELECT COUNT(*) as cnt FROM payment_gateways_config');
-    if (gate[0].cnt === 0) {
-      await pool.query(`
-        INSERT INTO payment_gateways_config (gateway_name, key_id, key_secret, webhook_secret, environment, is_active) VALUES
-        ('Razorpay', '', '', '', 'test', 1),
-        ('Stripe', 'pk_test_51NxLEAFORA9920102', 'sk_test_51NxLEAFORASec9921', 'whsec_stripe_88120', 'test', 1),
-        ('UPI', 'leaforalifesciences@icici', 'VPA_MERCHANT_KEY_882', 'whsec_upi_7721', 'test', 1),
-        ('COD', 'COD_HANDLING_DESK', 'COD_SECRET_PIN_001', 'N/A', 'test', 1);
-      `);
-      console.log('🌱 Seeded default Payment Gateways configuration (Razorpay keys come from RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET)');
-    }
-
-    // Update existing payment rows with rich details if null
-    try {
-      await pool.query(`
-        UPDATE payments SET 
-          order_number = CASE id WHEN 1 THEN 'ORD-1001' WHEN 2 THEN 'ORD-1002' WHEN 3 THEN 'ORD-1003' ELSE CONCAT('ORD-', order_id) END,
-          customer_name = CASE id WHEN 1 THEN 'Dr. Ramesh Varma' WHEN 2 THEN 'Anita Sharma' WHEN 3 THEN 'Vikram Patel' ELSE 'Valued Customer' END,
-          customer_email = CASE id WHEN 1 THEN 'ramesh.v@gmail.com' WHEN 2 THEN 'anita.s@gmail.com' WHEN 3 THEN 'vikram.p@gmail.com' ELSE 'customer@leafora.com' END,
-          gateway = CASE id WHEN 1 THEN 'Razorpay' WHEN 2 THEN 'Stripe' WHEN 3 THEN 'UPI' ELSE 'Razorpay' END,
-          settlement_id = CASE id WHEN 1 THEN 'SETL-2026-0908-01' WHEN 2 THEN 'SETL-2026-0908-02' ELSE 'SETL-2026-0908-01' END,
-          settlement_status = 'Settled'
-        WHERE order_number IS NULL OR gateway IS NULL;
-      `);
-    } catch (e) {}
-
-    // Seed a failed payment row & COD order if payment table count <= 3
-    const [pCount] = await pool.query('SELECT COUNT(*) as cnt FROM payments');
-    if (pCount[0].cnt <= 3) {
-      await pool.query(`
-        INSERT INTO payments (order_id, order_number, customer_name, customer_email, transaction_id, amount, payment_method, gateway, status, cod_collected, settlement_id, settlement_status, failure_reason) VALUES
-        (4, 'ORD-1004', 'Suresh Kumar', 'suresh.k@gmail.com', 'TXN_98712367', 89.00, 'Cash on Delivery', 'COD', 'Completed', 1, 'SETL-2026-0908-03', 'Settled', NULL),
-        (5, 'ORD-1005', 'Rajesh Rao', 'rajesh.r@gmail.com', 'TXN_FAIL_8871', 145.00, 'UPI / GPay', 'UPI', 'Failed', 0, NULL, 'Pending', 'Bank OTP Session Timed Out / Customer Declined'),
-        (6, 'ORD-1006', 'Kiran Bedi', 'kiran.b@gmail.com', 'TXN_98712369', 210.00, 'Credit Card', 'Razorpay', 'Refunded', 0, 'SETL-2026-0907-01', 'Settled', NULL);
-      `);
-      console.log('🌱 Seeded rich demo payment transactions');
-    }
-
-    // Seed Payment Refunds if empty
-    const [pRef] = await pool.query('SELECT COUNT(*) as cnt FROM payment_refunds');
-    if (pRef[0].cnt === 0) {
-      await pool.query(`
-        INSERT INTO payment_refunds (payment_id, order_id, transaction_id, refund_id, amount, refund_type, reason) VALUES
-        (6, 6, 'TXN_98712369', 'RFD_887210', 210.00, 'Full', 'Order cancelled prior to warehouse dispatch'),
-        (1, 1, 'TXN_98712364', 'RFD_887211', 25.00, 'Partial', 'Partial customer goodwill credit for minor outer box packaging crease');
-      `);
-      console.log('🌱 Seeded default payment refunds audit log');
-    }
-
-    // Seed Settlement Batches if empty
-    const [pSetl] = await pool.query('SELECT COUNT(*) as cnt FROM payment_settlements');
-    if (pSetl[0].cnt === 0) {
-      await pool.query(`
-        INSERT INTO payment_settlements (settlement_batch_id, gateway, total_transactions, gross_amount, mdr_fee, tax_amount, net_settled_amount, settlement_date, status) VALUES
-        ('SETL-2026-0908-01', 'Razorpay', 14, 3480.00, 62.64, 11.28, 3406.08, '2026-09-08', 'Settled'),
-        ('SETL-2026-0908-02', 'Stripe', 8, 1890.50, 47.26, 8.50, 1834.74, '2026-09-08', 'Settled'),
-        ('SETL-2026-0907-01', 'UPI Direct', 22, 5120.00, 0.00, 0.00, 5120.00, '2026-09-07', 'Settled');
-      `);
-      console.log('🌱 Seeded default payment settlements batches');
-    }
-
     // ─── COUPONS SCHEMA & MIGRATIONS ───
     await pool.query(`
       CREATE TABLE IF NOT EXISTS coupon_usage_history (
@@ -1002,32 +712,6 @@ const initDb = async () => {
       try {
         await pool.query(`ALTER TABLE coupons ADD COLUMN ${colDef}`);
       } catch (e) {}
-    }
-
-    // Seed default coupons if empty
-    const [coupCount] = await pool.query('SELECT COUNT(*) as cnt FROM coupons');
-    if (coupCount[0].cnt === 0) {
-      await pool.query(`
-        INSERT INTO coupons (code, title, description, discount_type, discount_value, min_purchase_amount, max_discount_amount, start_date, expiry_date, total_usage_limit, per_user_limit, times_used, is_first_order_only, is_free_shipping, applies_to_type, is_active) VALUES
-        ('WELCOME10', 'Welcome First Order Discount', 'Get 10% off on your first order with Leafora Lifescience', 'percentage', 10.00, 20.00, 50.00, NOW(), DATE_ADD(NOW(), INTERVAL 90 DAY), 500, 1, 42, 1, 0, 'all', 1),
-        ('FREESHIP50', 'Free Express Shipping', 'Free shipping on orders above $50', 'free_shipping', 0.00, 50.00, 15.00, NOW(), DATE_ADD(NOW(), INTERVAL 60 DAY), 1000, 3, 118, 0, 1, 'all', 1),
-        ('LEAFORA20', 'Herbal Extracts Special 20%', 'Save 20% on all botanical and herbal extract formulations', 'percentage', 20.00, 40.00, 100.00, NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY), 200, 2, 65, 0, 0, 'category', 1),
-        ('VIPFLAT50', 'VIP Platinum $50 Off', 'Flat $50 off for VIP loyal customers', 'fixed_amount', 50.00, 150.00, 50.00, NOW(), DATE_ADD(NOW(), INTERVAL 45 DAY), 50, 1, 19, 0, 0, 'user', 1),
-        ('SUMMER2026-X1', 'Bulk Promo Voucher Code 1', 'Automated bulk summer promotion series', 'percentage', 15.00, 30.00, 30.00, NOW(), DATE_ADD(NOW(), INTERVAL 15 DAY), 100, 1, 4, 0, 0, 'all', 1);
-      `);
-      console.log('🌱 Seeded default enterprise coupons');
-    }
-
-    // Seed default coupon usage history if empty
-    const [cHist] = await pool.query('SELECT COUNT(*) as cnt FROM coupon_usage_history');
-    if (cHist[0].cnt === 0) {
-      await pool.query(`
-        INSERT INTO coupon_usage_history (coupon_id, coupon_code, order_id, order_number, customer_id, customer_name, customer_email, discount_applied, order_total) VALUES
-        (1, 'WELCOME10', 1, 'ORD-1001', 1, 'Dr. Ramesh Varma', 'ramesh.v@gmail.com', 14.00, 138.99),
-        (2, 'FREESHIP50', 2, 'ORD-1002', 2, 'Anita Sharma', 'anita.s@gmail.com', 5.00, 49.99),
-        (3, 'LEAFORA20', 3, 'ORD-1003', 3, 'Vikram Patel', 'vikram.p@gmail.com', 20.00, 267.00);
-      `);
-      console.log('🌱 Seeded default coupon usage history');
     }
 
     // ─── REFERRALS & WALLET SCHEMA & MIGRATIONS ───
@@ -1087,31 +771,6 @@ const initDb = async () => {
       console.log('🌱 Seeded default Referral Program settings');
     }
 
-    // Seed default referrals if empty or count <= 3
-    const [refCount] = await pool.query('SELECT COUNT(*) as cnt FROM referrals');
-    if (refCount[0].cnt <= 3) {
-      await pool.query(`
-        INSERT INTO referrals (referrer_id, referrer_name, referrer_email, referee_id, referee_name, referee_email, reward_amount, referee_discount, status, rejection_reason) VALUES
-        (1, 'Dr. Ramesh Varma', 'ramesh.v@gmail.com', 2, 'Anita Sharma', 'anita.s@gmail.com', 15.00, 10.00, 'Approved', NULL),
-        (3, 'Vikram Patel', 'vikram.p@gmail.com', 4, 'Suresh Kumar', 'suresh.k@gmail.com', 15.00, 10.00, 'Pending', NULL),
-        (1, 'Dr. Ramesh Varma', 'ramesh.v@gmail.com', 5, 'Rajesh Rao', 'rajesh.r@gmail.com', 15.00, 10.00, 'Approved', NULL),
-        (2, 'Anita Sharma', 'anita.s@gmail.com', 6, 'Kiran Bedi', 'kiran.b@gmail.com', 15.00, 10.00, 'Rejected', 'Duplicate IP address / Self-referral attempt');
-      `);
-      console.log('🌱 Seeded rich default referrals history');
-    }
-
-    // Seed default wallet transactions if empty
-    const [wCount] = await pool.query('SELECT COUNT(*) as cnt FROM wallet_transactions');
-    if (wCount[0].cnt === 0) {
-      await pool.query(`
-        INSERT INTO wallet_transactions (customer_id, customer_name, customer_email, transaction_type, amount, source, reference_id, description, balance_after) VALUES
-        (1, 'Dr. Ramesh Varma', 'ramesh.v@gmail.com', 'credit', 15.00, 'referral_bonus', 'REF-1001', 'Referral reward for inviting Anita Sharma', 140.00),
-        (1, 'Dr. Ramesh Varma', 'ramesh.v@gmail.com', 'credit', 15.00, 'referral_bonus', 'REF-1003', 'Referral reward for inviting Rajesh Rao', 155.00),
-        (2, 'Anita Sharma', 'anita.s@gmail.com', 'credit', 5.00, 'signup_bonus', 'SIGNUP-2026', 'Welcome account signup bonus credit', 45.00),
-        (3, 'Vikram Patel', 'vikram.p@gmail.com', 'debit', 20.00, 'order_payment', 'ORD-1003', 'Applied wallet balance discount on order ORD-1003', 65.00);
-      `);
-      console.log('🌱 Seeded default customer wallet transactions log');
-    }
 
     // ─── REVIEWS SCHEMA & MIGRATIONS ───
     const reviewCols = [
@@ -1132,20 +791,6 @@ const initDb = async () => {
       try {
         await pool.query(`ALTER TABLE reviews ADD COLUMN ${colDef}`);
       } catch (e) {}
-    }
-
-    // Seed default reviews if empty or count <= 2
-    const [revCount] = await pool.query('SELECT COUNT(*) as cnt FROM reviews');
-    if (revCount[0].cnt <= 2) {
-      await pool.query(`
-        INSERT INTO reviews (product_id, product_name, product_image, customer_id, customer_name, customer_email, rating, title, comment, images, status, is_featured, is_verified_buyer, is_reported_abuse, abuse_reason, admin_reply, admin_replied_at) VALUES
-        (1, 'LeafExtract Pharma Grade', '/assets/vitamin_c_serum.jpg', 1, 'Dr. Ramesh Varma', 'ramesh.v@gmail.com', 5, 'Outstanding Potency & Purity', 'Extremely high purity extract. Used this in our clinical formulation trial with wonderful results. Highly recommended for premium skincare labs!', '["/assets/vitamin_c_serum.jpg", "/assets/hydra_glow_moisturizer.jpg"]', 'Approved', 1, 1, 0, NULL, 'Thank you Dr. Varma! We take great pride in maintaining pharma-grade ISO certification standards.', NOW()),
-        (2, 'BioVital Nutraceutical', '/assets/hydra_glow_moisturizer.jpg', 2, 'Anita Sharma', 'anita.s@gmail.com', 5, 'Visible Skin Radiance in 2 Weeks', 'I have been taking these nutraceutical capsules daily for 14 days and my skin texture has become noticeably smoother and hydrated.', '["/assets/hydra_glow_moisturizer.jpg"]', 'Approved', 1, 1, 0, NULL, NULL, NULL),
-        (3, 'EcoScience Active Solution', '/assets/night_cream.jpg', 3, 'Vikram Patel', 'vikram.p@gmail.com', 4, 'Great Active Formula, Fast Delivery', 'Solid formulation quality. Bottle packaging was securely bubble wrapped. Will re-order next month.', '[]', 'Pending', 0, 1, 0, NULL, NULL, NULL),
-        (4, 'Aloe Vera Pure Gel Base', '/assets/face_wash.jpg', 4, 'Suresh Kumar', 'suresh.k@gmail.com', 2, 'Packaging Cap Leakage Issue', 'The gel quality is okay but the plastic cap was slightly loose upon unboxing causing minor leakage.', '[]', 'Approved', 0, 1, 0, NULL, 'Apologies Suresh for the packaging inconvenience. We are sending a replacement cap seal immediately!', NOW()),
-        (1, 'LeafExtract Pharma Grade', '/assets/vitamin_c_serum.jpg', 5, 'Anonymous User', 'spam.user@temp.com', 1, 'Competitor Spam Post', 'Do not buy this brand, buy competitor product X instead at website.com', '[]', 'Rejected', 0, 0, 1, 'Promotional spam / Competitor link promotion', NULL, NULL);
-      `);
-      console.log('🌱 Seeded default rich product reviews');
     }
 
     // ─── 16. HOMEPAGE CMS & LAYOUT BUILDER TABLES ───
@@ -1189,28 +834,6 @@ const initDb = async () => {
       );
     `);
 
-    // Seed default homepage banners if empty
-    const [bannerCount] = await pool.query('SELECT COUNT(*) as cnt FROM homepage_banners');
-    if (bannerCount[0].cnt === 0) {
-      await pool.query(`
-        INSERT INTO homepage_banners (banner_type, title, subtitle, desktop_image_url, mobile_image_url, link_url, button_text, flash_sale_end_time, display_order, is_active) VALUES
-        ('hero', 'Pharma-Grade Botanical Actives', '100% Pure Organic Extracts Certified by Global Herbal Labs', '/assets/heroimage.jpeg', '/assets/heroimage.jpeg', '/products', 'Explore Catalog', NULL, 1, 1),
-        ('hero', 'Clinical Skin Radiance & Hydration', 'Formulated with Vitamin C & Hyaluronic Acid Hybrids', 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=1600&auto=format&fit=crop&q=80', 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=800&auto=format&fit=crop&q=80', '/products', 'Discover Skincare', NULL, 2, 1),
-        ('offer', 'FLAT 20% OFF Summer Festival Sale', 'Use Promo Code SUMMER2026 at Checkout on Orders Above $99', 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=1600&auto=format&fit=crop&q=80', 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=800&auto=format&fit=crop&q=80', '/products', 'Claim Discount', NULL, 1, 1),
-        ('category', 'Pure Plant Extract Oils', 'Cold-pressed bioactive seed & leaf distillates', 'https://images.unsplash.com/photo-1608248597359-59750058e3ea?w=1600&auto=format&fit=crop&q=80', 'https://images.unsplash.com/photo-1608248597359-59750058e3ea?w=800&auto=format&fit=crop&q=80', '/products', 'Shop Extracts', NULL, 1, 1),
-        ('flash_sale', 'Mega Flash Sale - Up to 50% OFF', 'Limited Stock Available! Ends In:', 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=1600&auto=format&fit=crop&q=80', 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=800&auto=format&fit=crop&q=80', '/products', 'Grab Deals Now', DATE_ADD(NOW(), INTERVAL 3 DAY), 1, 1);
-      `);
-      console.log('🌱 Seeded default homepage banners with valid image assets');
-    }
-
-    // Auto-heal any broken fake image links from previous seeds
-    try {
-      await pool.query("UPDATE homepage_banners SET desktop_image_url = '/assets/heroimage.jpeg', mobile_image_url = '/assets/heroimage.jpeg' WHERE desktop_image_url LIKE '%hero_banner_1%' OR desktop_image_url LIKE '%cat_banner_extracts%'");
-      await pool.query("UPDATE homepage_banners SET desktop_image_url = 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=1600&auto=format&fit=crop&q=80' WHERE desktop_image_url LIKE '%hero_banner_2%'");
-      await pool.query("UPDATE homepage_banners SET desktop_image_url = 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=1600&auto=format&fit=crop&q=80' WHERE desktop_image_url LIKE '%offer_banner_1%'");
-      await pool.query("UPDATE homepage_banners SET desktop_image_url = 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=1600&auto=format&fit=crop&q=80' WHERE desktop_image_url LIKE '%flash_sale_banner%'");
-    } catch (_) {}
-
     // Seed default homepage layout sections if empty
     const [secCount] = await pool.query('SELECT COUNT(*) as cnt FROM homepage_sections');
     if (secCount[0].cnt === 0) {
@@ -1244,7 +867,6 @@ const initDb = async () => {
         name VARCHAR(255) NOT NULL,
         email VARCHAR(255) NOT NULL UNIQUE,
         phone VARCHAR(50) NULL,
-        password_hash VARCHAR(255) DEFAULT '$2b$10$e8w.x7W3J.W1zJ2L...demo',
         role VARCHAR(100) DEFAULT 'Store Manager',
         permissions TEXT NULL,
         is_active TINYINT(1) DEFAULT 1,
@@ -1285,50 +907,6 @@ const initDb = async () => {
       );
     `);
 
-    // Seed default system settings if empty
-    const [settingsCount] = await pool.query('SELECT COUNT(*) as cnt FROM system_settings');
-    if (settingsCount[0].cnt === 0) {
-      await pool.query(`
-        INSERT INTO system_settings (key_name, key_value, setting_group) VALUES
-        ('store_name', 'Leafora Life Sciences', 'store'),
-        ('support_email', 'support@leaforalifescience.com', 'store'),
-        ('support_phone', '+91 98765 43210', 'store'),
-        ('store_address', '104 Botanical Tech Park, HITEC City, Hyderabad, Telangana 500081', 'store'),
-        ('store_currency', 'USD ($)', 'store'),
-        ('header_logo_url', '/assets/leafora_logo_header.png', 'store'),
-        ('footer_logo_url', '/assets/leafora_logo_footer.png', 'store'),
-        ('favicon_url', '/favicon.ico', 'store'),
-        ('meta_title', 'Leafora Lifescience - Pharma-Grade Botanical Formulations', 'seo'),
-        ('meta_description', 'Discover 100% pure organic extracts, clinical skincare hybrids, and certified bioactive supplements formulated for holistic wellness.', 'seo'),
-        ('meta_keywords', 'botanical extracts, clinical skincare, organic supplements, vitamin c serum, hyaluronic acid, herbal lab', 'seo'),
-        ('google_analytics_id', 'G-LEAFORA2026', 'seo'),
-        ('gstin_number', '36AAAAA0000A1Z5', 'gst'),
-        ('hsn_code', '30049011', 'gst'),
-        ('default_tax_percent', '18.00', 'gst'),
-        ('tax_included_in_price', 'true', 'gst'),
-        ('free_shipping_threshold', '75.00', 'delivery'),
-        ('standard_shipping_fee', '5.99', 'delivery'),
-        ('express_shipping_fee', '14.99', 'delivery'),
-        ('smtp_host', 'smtp.sendgrid.net', 'email_smtp'),
-        ('smtp_port', '587', 'email_smtp'),
-        ('smtp_username', 'apikey', 'email_smtp'),
-        ('smtp_password', 'SG.981237612387126387123', 'email_smtp'),
-        ('smtp_encryption', 'TLS', 'email_smtp'),
-        ('smtp_sender_name', 'Leafora Lifescience Customer Support', 'email_smtp'),
-        ('smtp_sender_email', 'notifications@leaforalifescience.com', 'email_smtp'),
-        ('sms_provider', 'MSG91', 'sms'),
-        ('sms_api_key', 'msg91_live_sec_99812376', 'sms'),
-        ('sms_sender_id', 'LEAFOR', 'sms'),
-        ('sms_otp_template_id', 'TMP_OTP_9918', 'sms'),
-        ('enable_sms_notifications', 'true', 'sms'),
-        ('security_2fa_enabled', 'false', 'security'),
-        ('security_session_timeout_mins', '60', 'security'),
-        ('security_max_failed_attempts', '5', 'security'),
-        ('security_ip_whitelist', '127.0.0.1, 192.168.1.1', 'security');
-      `);
-      console.log('🌱 Seeded default system settings');
-    }
-
     // Seed default admin roles if empty
     const [rolesCount] = await pool.query('SELECT COUNT(*) as cnt FROM admin_roles');
     if (rolesCount[0].cnt === 0) {
@@ -1342,44 +920,6 @@ const initDb = async () => {
       console.log('🌱 Seeded default admin roles');
     }
 
-    // Seed default admin users if empty
-    const [adminUserCount] = await pool.query('SELECT COUNT(*) as cnt FROM admin_users');
-    if (adminUserCount[0].cnt === 0) {
-      await pool.query(`
-        INSERT INTO admin_users (name, email, phone, role, permissions, is_active, last_login_at) VALUES
-        ('Sai Admin', 'admin@leaforalifescience.com', '+91 98765 00001', 'Super Admin', '["all"]', 1, NOW()),
-        ('Priya Sharma', 'priya.s@leaforalifescience.com', '+91 98765 00002', 'Store Manager', '["categories", "products", "coupons", "banners", "reviews"]', 1, NOW()),
-        ('Rahul Verma', 'rahul.v@leaforalifescience.com', '+91 98765 00003', 'Fulfillment Manager', '["orders", "shiprocket", "inventory"]', 1, NOW());
-      `);
-      console.log('🌱 Seeded default admin users');
-    }
-
-    // Seed default activity logs if empty
-    const [logsCount] = await pool.query('SELECT COUNT(*) as cnt FROM activity_logs');
-    if (logsCount[0].cnt === 0) {
-      await pool.query(`
-        INSERT INTO activity_logs (admin_name, action, module, ip_address) VALUES
-        ('Sai Admin', 'System settings updated (Store Name & GSTIN)', 'Settings', '127.0.0.1'),
-        ('Priya Sharma', 'Created new discount coupon SUMMER2026', 'Coupons', '192.168.1.15'),
-        ('Rahul Verma', 'Dispatched AWB SR-AWB-99812 via BlueDart', 'Shiprocket', '192.168.1.20'),
-        ('Sai Admin', 'Approved customer review #1 by Dr. Ramesh Varma', 'Reviews', '127.0.0.1');
-      `);
-      console.log('🌱 Seeded default activity logs');
-    }
-
-    // Seed default login history if empty
-    const [loginCount] = await pool.query('SELECT COUNT(*) as cnt FROM login_history');
-    if (loginCount[0].cnt === 0) {
-      await pool.query(`
-        INSERT INTO login_history (admin_email, ip_address, browser, status) VALUES
-        ('admin@leaforalifescience.com', '127.0.0.1', 'Chrome 128.0 (Windows 11)', 'Success'),
-        ('priya.s@leaforalifescience.com', '192.168.1.15', 'Firefox 129.0 (macOS)', 'Success'),
-        ('admin@leaforalifescience.com', '127.0.0.1', 'Chrome 128.0 (Windows 11)', 'Success'),
-        ('unknown.hacker@bad.com', '45.12.89.102', 'Python-urllib/3.10', 'Failed');
-      `);
-      console.log('🌱 Seeded default login history');
-    }
-
     console.log('✅ Database initialization complete.');
   } catch (error) {
     console.error('❌ Database initialization error:', error.message);
@@ -1387,5 +927,4 @@ const initDb = async () => {
 };
 
 module.exports = { initDb };
-
 

@@ -1307,14 +1307,14 @@ export default function AdminDashboard() {
         await adminUpdateCategory(editingCategory.id, payload);
         showNotification(`Category "${payload.name}" updated successfully!`);
       } catch (err) {
-        showNotification(`Category updated!`);
+        showNotification(`⚠️ ${err?.message || "That action failed. Please try again."}`);
       }
     } else {
       try {
         await adminAddCategory(payload);
         showNotification(`Category "${payload.name}" created successfully!`);
       } catch (err) {
-        showNotification(`Category created!`);
+        showNotification(`⚠️ ${err?.message || "That action failed. Please try again."}`);
       }
     }
 
@@ -1353,7 +1353,7 @@ export default function AdminDashboard() {
       await adminDeleteCategory(catId, false);
       showNotification(`Category "${catName || catId}" moved to Trash Bin!`);
     } catch (err) {
-      showNotification(`Category moved to Trash Bin!`);
+      showNotification(`⚠️ ${err?.message || "That action failed. Please try again."}`);
     }
     setSelectedCategoryIds(prev => prev.filter(id => id !== catId));
     fetchCategories();
@@ -1365,7 +1365,7 @@ export default function AdminDashboard() {
       await adminDeleteCategory(catId, true);
       showNotification(`Category "${catName || catId}" permanently deleted!`);
     } catch (err) {
-      showNotification(`Category permanently deleted!`);
+      showNotification(`⚠️ ${err?.message || "That action failed. Please try again."}`);
     }
     setSelectedCategoryIds(prev => prev.filter(id => id !== catId));
     fetchCategories();
@@ -1376,7 +1376,7 @@ export default function AdminDashboard() {
       await adminRestoreCategory(catId);
       showNotification(`Category "${catName || catId}" restored to Active Catalog!`);
     } catch (err) {
-      showNotification(`Category restored!`);
+      showNotification(`⚠️ ${err?.message || "That action failed. Please try again."}`);
     }
     setSelectedCategoryIds(prev => prev.filter(id => id !== catId));
     fetchCategories();
@@ -1388,7 +1388,7 @@ export default function AdminDashboard() {
       await adminBulkCategoryStatus(selectedCategoryIds, action);
       showNotification(`Bulk action "${action}" completed for ${selectedCategoryIds.length} categories!`);
     } catch (err) {
-      showNotification(`Bulk action completed!`);
+      showNotification(`⚠️ ${err?.message || "That action failed. Please try again."}`);
     }
     setSelectedCategoryIds([]);
     fetchCategories();
@@ -1426,7 +1426,7 @@ export default function AdminDashboard() {
         showNotification(`Categories imported successfully from CSV!`);
         fetchCategories();
       } catch (err) {
-        showNotification(`CSV Import completed!`);
+        showNotification(`⚠️ ${err?.message || "That action failed. Please try again."}`);
         fetchCategories();
       }
     };
@@ -1727,14 +1727,14 @@ export default function AdminDashboard() {
         await adminUpdateProduct(editingProduct.id, payload);
         showNotification(`Product "${productForm.name}" updated successfully!`);
       } catch (err) {
-        showNotification(`Product updated!`);
+        showNotification(`⚠️ ${err?.message || "That action failed. Please try again."}`);
       }
     } else {
       try {
         await adminAddProduct(payload);
         showNotification(`Product "${productForm.name}" created successfully!`);
       } catch (err) {
-        showNotification(`Product created!`);
+        showNotification(`⚠️ ${err?.message || "That action failed. Please try again."}`);
       }
     }
 
@@ -1749,7 +1749,7 @@ export default function AdminDashboard() {
       await adminDeleteProduct(prodId, false);
       showNotification(`Product "${prodName || prodId}" moved to Trash Bin!`);
     } catch (err) {
-      showNotification(`Product moved to Trash!`);
+      showNotification(`⚠️ ${err?.message || "That action failed. Please try again."}`);
     }
     setSelectedProductIds(prev => prev.filter(id => id !== prodId));
     fetchProducts();
@@ -1761,7 +1761,7 @@ export default function AdminDashboard() {
       await adminDeleteProduct(prodId, true);
       showNotification(`Product "${prodName || prodId}" permanently deleted!`);
     } catch (err) {
-      showNotification(`Product permanently deleted!`);
+      showNotification(`⚠️ ${err?.message || "That action failed. Please try again."}`);
     }
     setSelectedProductIds(prev => prev.filter(id => id !== prodId));
     fetchProducts();
@@ -1772,7 +1772,7 @@ export default function AdminDashboard() {
       await adminRestoreProduct(prodId);
       showNotification(`Product "${prodName || prodId}" restored to Active Catalog!`);
     } catch (err) {
-      showNotification(`Product restored!`);
+      showNotification(`⚠️ ${err?.message || "That action failed. Please try again."}`);
     }
     setSelectedProductIds(prev => prev.filter(id => id !== prodId));
     fetchProducts();
@@ -1784,7 +1784,7 @@ export default function AdminDashboard() {
       showNotification(`Product duplicated successfully!`);
       fetchProducts();
     } catch (err) {
-      showNotification(`Product duplicated!`);
+      showNotification(`⚠️ ${err?.message || "That action failed. Please try again."}`);
     }
   };
 
@@ -1794,7 +1794,7 @@ export default function AdminDashboard() {
       await adminBulkProductAction(selectedProductIds, action, extra);
       showNotification(`Bulk action "${action}" completed for ${selectedProductIds.length} products!`);
     } catch (err) {
-      showNotification(`Bulk action completed!`);
+      showNotification(`⚠️ ${err?.message || "That action failed. Please try again."}`);
     }
     setSelectedProductIds([]);
     setShowBulkPriceModal(false);
@@ -1817,7 +1817,7 @@ export default function AdminDashboard() {
         showNotification(`Products imported successfully from CSV!`);
         fetchProducts();
       } catch (err) {
-        showNotification(`CSV Import completed!`);
+        showNotification(`⚠️ ${err?.message || "That action failed. Please try again."}`);
         fetchProducts();
       }
     };
@@ -1886,7 +1886,7 @@ export default function AdminDashboard() {
         }));
       }
     } catch (err) {
-      showNotification(`Customer status updated!`);
+      showNotification(`⚠️ ${err?.message || "That action failed. Please try again."}`);
     }
     fetchCustomers();
   };
@@ -1908,7 +1908,7 @@ export default function AdminDashboard() {
       await adminUpdateCustomerWalletPoints(walletCustomer.id, walletForm);
       showNotification(`Wallet & Points updated for "${walletCustomer.name}"!`);
     } catch (err) {
-      showNotification(`Wallet & Points updated!`);
+      showNotification(`⚠️ ${err?.message || "That action failed. Please try again."}`);
     }
     setShowWalletModal(false);
     setWalletCustomer(null);
@@ -1920,7 +1920,7 @@ export default function AdminDashboard() {
       await adminDeleteCustomer(custId, false);
       showNotification(`Customer "${custName || custId}" moved to Trash Bin!`);
     } catch (err) {
-      showNotification(`Customer moved to Trash!`);
+      showNotification(`⚠️ ${err?.message || "That action failed. Please try again."}`);
     }
     setSelectedCustomerIds(prev => prev.filter(id => id !== custId));
     fetchCustomers();
@@ -1932,7 +1932,7 @@ export default function AdminDashboard() {
       await adminDeleteCustomer(custId, true);
       showNotification(`Customer "${custName || custId}" permanently deleted!`);
     } catch (err) {
-      showNotification(`Customer permanently deleted!`);
+      showNotification(`⚠️ ${err?.message || "That action failed. Please try again."}`);
     }
     setSelectedCustomerIds(prev => prev.filter(id => id !== custId));
     fetchCustomers();
@@ -1943,7 +1943,7 @@ export default function AdminDashboard() {
       await adminRestoreCustomer(custId);
       showNotification(`Customer "${custName || custId}" restored to Active Catalog!`);
     } catch (err) {
-      showNotification(`Customer restored!`);
+      showNotification(`⚠️ ${err?.message || "That action failed. Please try again."}`);
     }
     setSelectedCustomerIds(prev => prev.filter(id => id !== custId));
     fetchCustomers();
@@ -2007,8 +2007,8 @@ export default function AdminDashboard() {
 
   const handleUpdateOrderLogistics = async (orderId, updates) => {
     try {
-      await adminUpdateOrderDetails(orderId, updates);
-      showNotification(`Order #${orderId} logistics updated successfully!`);
+      const actionRes = await adminUpdateOrderDetails(orderId, updates);
+      showNotification(actionRes?.message || `Order #${orderId} logistics updated successfully!`);
       if (orderDetailDrawer && orderDetailDrawer.order.id === orderId) {
         setOrderDetailDrawer(prev => ({
           ...prev,
@@ -2016,7 +2016,7 @@ export default function AdminDashboard() {
         }));
       }
     } catch (err) {
-      showNotification(`Order #${orderId} updated!`);
+      showNotification(`⚠️ ${err?.message || "That action failed. Please try again."}`);
     }
     fetchOrders();
   };
@@ -2026,10 +2026,10 @@ export default function AdminDashboard() {
     if (!actionPromptModal || !actionPromptModal.order) return;
     const ordId = actionPromptModal.order.id;
     try {
-      await adminCancelOrder(ordId, actionForm.reason);
-      showNotification(`Order #${ordId} has been cancelled.`);
+      const actionRes = await adminCancelOrder(ordId, actionForm.reason);
+      showNotification(actionRes?.message || `Order #${ordId} has been cancelled.`);
     } catch (err) {
-      showNotification(`Order #${ordId} cancelled.`);
+      showNotification(`⚠️ ${err?.message || "That action failed. Please try again."}`);
     }
     setActionPromptModal(null);
     setActionForm({ reason: '', amount: '', notes: '' });
@@ -2041,10 +2041,10 @@ export default function AdminDashboard() {
     if (!actionPromptModal || !actionPromptModal.order) return;
     const ordId = actionPromptModal.order.id;
     try {
-      await adminRefundOrder(ordId, actionForm.amount, actionForm.reason);
-      showNotification(`Refund of ₹${actionForm.amount || 0} processed for Order #${ordId}.`);
+      const actionRes = await adminRefundOrder(ordId, actionForm.amount, actionForm.reason);
+      showNotification(actionRes?.message || `Refund of ₹${actionForm.amount || 0} processed for Order #${ordId}.`);
     } catch (err) {
-      showNotification(`Refund processed.`);
+      showNotification(`⚠️ ${err?.message || "That action failed. Please try again."}`);
     }
     setActionPromptModal(null);
     setActionForm({ reason: '', amount: '', notes: '' });
@@ -2056,10 +2056,10 @@ export default function AdminDashboard() {
     if (!actionPromptModal || !actionPromptModal.order) return;
     const ordId = actionPromptModal.order.id;
     try {
-      await adminReturnOrder(ordId, actionForm.reason);
-      showNotification(`Return request recorded for Order #${ordId}.`);
+      const actionRes = await adminReturnOrder(ordId, actionForm.reason);
+      showNotification(actionRes?.message || `Return request recorded for Order #${ordId}.`);
     } catch (err) {
-      showNotification(`Return recorded.`);
+      showNotification(`⚠️ ${err?.message || "That action failed. Please try again."}`);
     }
     setActionPromptModal(null);
     setActionForm({ reason: '', amount: '', notes: '' });
@@ -2074,7 +2074,7 @@ export default function AdminDashboard() {
       await adminExchangeOrder(ordId, actionForm.notes);
       showNotification(`Product exchange recorded for Order #${ordId}.`);
     } catch (err) {
-      showNotification(`Exchange recorded.`);
+      showNotification(`⚠️ ${err?.message || "That action failed. Please try again."}`);
     }
     setActionPromptModal(null);
     setActionForm({ reason: '', amount: '', notes: '' });
@@ -2090,7 +2090,7 @@ export default function AdminDashboard() {
       showNotification(`Timeline log entry added for Order #${ordId}.`);
       handleOpenOrderDetails(orderDetailDrawer.order);
     } catch (err) {
-      showNotification(`Timeline entry added.`);
+      showNotification(`⚠️ ${err?.message || "That action failed. Please try again."}`);
     }
     setNewTimelineForm({ title: '', description: '', status: 'Processing' });
   };
@@ -2098,10 +2098,10 @@ export default function AdminDashboard() {
   const handleBulkOrdersAction = async (action, extra = {}) => {
     if (selectedOrderIds.length === 0) return;
     try {
-      await adminBulkOrdersAction(selectedOrderIds, action, extra);
-      showNotification(`Bulk action "${action}" completed for ${selectedOrderIds.length} orders!`);
+      const actionRes = await adminBulkOrdersAction(selectedOrderIds, action, extra);
+      showNotification(actionRes?.message || `Bulk action "${action}" completed for ${selectedOrderIds.length} orders!`);
     } catch (err) {
-      showNotification(`Bulk action completed!`);
+      showNotification(`⚠️ ${err?.message || "That action failed. Please try again."}`);
     }
     setSelectedOrderIds([]);
     fetchOrders();
@@ -2123,15 +2123,7 @@ export default function AdminDashboard() {
 
   // ─── SHIPROCKET SHIPPING MANAGEMENT STATE & HANDLERS ───
   const [shiprocketSubTab, setShiprocketSubTab] = useState('shipments'); // 'shipments' | 'calculator' | 'pickup' | 'tracking' | 'ndr' | 'manifest' | 'config'
-  const [shiprocketConfig, setShiprocketConfig] = useState({
-    api_email: 'shipping@leaforalifescience.com',
-    api_password: '••••••••••••',
-    secret_key: 'sr_sec_live_99812376',
-    environment: 'production',
-    is_connected: 1,
-    auto_sync: 1,
-    token: ''
-  });
+  const [shiprocketConfig, setShiprocketConfig] = useState({ api_email: '', api_password: '', secret_key: '', environment: 'production', is_connected: 0, auto_sync: 0, token: '' });
   const [shiprocketLocations, setShiprocketLocations] = useState([]);
   const [shiprocketShipments, setShiprocketShipments] = useState([]);
   const [shiprocketNdrList, setShiprocketNdrList] = useState([]);
@@ -2204,7 +2196,7 @@ export default function AdminDashboard() {
       await adminUpdateShiprocketConfig(shiprocketConfig);
       showNotification('Shiprocket API credentials & webhooks updated successfully!');
     } catch (err) {
-      showNotification('Shiprocket credentials updated!');
+      showNotification(`⚠️ ${err?.message || "That action failed. Please try again."}`);
     }
     fetchShiprocketData();
   };
@@ -2218,7 +2210,7 @@ export default function AdminDashboard() {
         showNotification(`Calculated rates for Pincode ${shiprocketCalcForm.delivery_pincode}!`);
       }
     } catch (err) {
-      showNotification('Rate calculation completed.');
+      showNotification(`⚠️ ${err?.message || "That action failed. Please try again."}`);
     }
   };
 
@@ -2235,7 +2227,7 @@ export default function AdminDashboard() {
         showNotification(`Pickup location "${pickupLocForm.location_name}" added!`);
       }
     } catch (err) {
-      showNotification('Pickup location saved.');
+      showNotification(`⚠️ ${err?.message || "That action failed. Please try again."}`);
     }
     setShowPickupLocationModal(null);
     fetchShiprocketData();
@@ -2247,7 +2239,7 @@ export default function AdminDashboard() {
       await adminDeleteShiprocketPickupLocation(locId);
       showNotification(`Pickup location "${locName}" deleted!`);
     } catch (err) {
-      showNotification('Pickup location deleted.');
+      showNotification(`⚠️ ${err?.message || "That action failed. Please try again."}`);
     }
     fetchShiprocketData();
   };
@@ -2275,7 +2267,7 @@ export default function AdminDashboard() {
         showNotification(`Shiprocket AWB ${res.awb_code} generated for Order #${ord.order_number || ord.id}!`);
       }
     } catch (err) {
-      showNotification(`AWB generated!`);
+      showNotification(`⚠️ ${err?.message || "That action failed. Please try again."}`);
     }
     setShowAwbModal(null);
     fetchShiprocketData();
@@ -2291,7 +2283,7 @@ export default function AdminDashboard() {
         showNotification(`Pickup scheduled! ${res.message}`);
       }
     } catch (err) {
-      showNotification('Pickup scheduled successfully.');
+      showNotification(`⚠️ ${err?.message || "That action failed. Please try again."}`);
     }
     setShowPickupScheduleModal(null);
     fetchShiprocketData();
@@ -2338,7 +2330,7 @@ export default function AdminDashboard() {
       await adminCancelShiprocketShipment(shp.id);
       showNotification(`Shipment AWB ${shp.awb_code} cancelled!`);
     } catch (err) {
-      showNotification('Shipment cancelled.');
+      showNotification(`⚠️ ${err?.message || "That action failed. Please try again."}`);
     }
     fetchShiprocketData();
   };
@@ -2373,7 +2365,7 @@ export default function AdminDashboard() {
       await adminResolveShiprocketNdr(showNdrModal.id, ndrForm);
       showNotification(`NDR action "${ndrForm.action_requested}" submitted for AWB ${showNdrModal.awb_code}!`);
     } catch (err) {
-      showNotification('NDR resolved.');
+      showNotification(`⚠️ ${err?.message || "That action failed. Please try again."}`);
     }
     setShowNdrModal(null);
     fetchShiprocketData();
@@ -2387,7 +2379,7 @@ export default function AdminDashboard() {
         showNotification(`Manifest #${res.manifest_number} generated!`);
       }
     } catch (err) {
-      showNotification('Manifest generated.');
+      showNotification(`⚠️ ${err?.message || "That action failed. Please try again."}`);
     }
     setShowManifestModal(false);
     fetchShiprocketData();
@@ -2454,7 +2446,7 @@ export default function AdminDashboard() {
       await adminUpdatePaymentGatewayConfig(gatewayForm);
       showNotification(`${gatewayForm.gateway_name} credentials and environment updated!`);
     } catch (err) {
-      showNotification('Gateway credentials updated!');
+      showNotification(`⚠️ ${err?.message || "That action failed. Please try again."}`);
     }
     setShowGatewayConfigModal(null);
     fetchPaymentsData();
@@ -2470,7 +2462,7 @@ export default function AdminDashboard() {
         showNotification(res.message);
       }
     } catch (err) {
-      showNotification('Refund processed.');
+      showNotification(`⚠️ ${err?.message || "That action failed. Please try again."}`);
     }
     setShowPartialRefundModal(null);
     fetchPaymentsData();
@@ -2484,7 +2476,7 @@ export default function AdminDashboard() {
         showNotification(res.message);
       }
     } catch (err) {
-      showNotification(`Payment retry link sent to ${pay.customer_email}!`);
+      showNotification(`⚠️ ${err?.message || "That action failed. Please try again."}`);
     }
     fetchPaymentsData();
   };
@@ -2496,7 +2488,7 @@ export default function AdminDashboard() {
         showNotification(res.message);
       }
     } catch (err) {
-      showNotification(`COD collection marked as collected!`);
+      showNotification(`⚠️ ${err?.message || "That action failed. Please try again."}`);
     }
     fetchPaymentsData();
     fetchOrders();

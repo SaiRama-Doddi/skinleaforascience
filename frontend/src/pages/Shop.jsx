@@ -9,9 +9,6 @@ import { addToCart } from '../services/cartService';
 import SEO from '../components/SEO';
 import skincareStoryPhoto from '../assets/skincare_story_showcase.jpg';
 import botanicalProductsPhoto from '../assets/login_botanical_products.jpg';
-import dbProduct1 from '../assets/db_product_1.jpg';
-import dbProduct2 from '../assets/db_product_2.jpg';
-import dbProduct3 from '../assets/db_product_3.jpg';
 import './Shop.css';
 
 export default function Shop() {
@@ -19,6 +16,7 @@ export default function Shop() {
   const [searchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
 
   // Sort and Search
@@ -40,96 +38,29 @@ export default function Shop() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 24;
 
-  const fallbackShopProducts = [
-    {
-      id: 1,
-      name: 'LEAFORA Salicylic Acid Face Wash',
-      brand: 'Leafora Life Sciences',
-      net_quantity: '100ml',
-      category: 'Face Cleanser',
-      price: 499,
-      rating: '4.9',
-      reviews: 58,
-      badge: 'Best Seller',
-      badgeType: 'bestseller',
-      skinType: ['Oily', 'Acne-prone', 'All Skin Types'],
-      inStock: true,
-      image_url: botanicalProductsPhoto,
-      image: botanicalProductsPhoto,
-      description: 'Salicylic acid face wash enriched with Vitamin E, Zinc PCA and botanical leaf extracts for radiant, blemish-free skin.'
-    },
-    {
-      id: 2,
-      name: 'LeafExtract Pharma Grades',
-      brand: 'Leafora Life Sciences',
-      net_quantity: '100g',
-      category: 'Herbal Extracts',
-      price: 49.99,
-      rating: '4.8',
-      reviews: 34,
-      badge: 'Certified',
-      badgeType: 'new',
-      skinType: ['All Skin Types'],
-      inStock: true,
-      image_url: skincareStoryPhoto,
-      image: skincareStoryPhoto,
-      description: 'Pharma-grade botanical extracts produced under laboratory environments.'
-    },
-    {
-      id: 3,
-      name: 'BioVital Nutraceutical Solution',
-      brand: 'Leafora Life Sciences',
-      net_quantity: '100ml',
-      category: 'Nutraceuticals',
-      price: 29.50,
-      rating: '4.7',
-      reviews: 42,
-      badge: null,
-      badgeType: null,
-      skinType: ['All Skin Types'],
-      inStock: true,
-      image_url: botanicalProductsPhoto,
-      image: botanicalProductsPhoto,
-      description: 'Natural bio-vital nutraceutical active blend for youthful cellular rejuvenation.'
-    }
-  ];
-
-  // Load API products from Database
+  // Load products from the database (rating / reviews_count come from approved reviews)
   useEffect(() => {
     getProducts()
       .then(res => {
-        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
-          const apiMerged = res.data.map((p, i) => {
-            const hasValidImage = p.image_url && typeof p.image_url === 'string' && p.image_url.trim() !== '' && !p.image_url.includes('data:image/svg+xml');
-            const resolvedImg = hasValidImage ? p.image_url : (i % 2 === 0 ? botanicalProductsPhoto : skincareStoryPhoto);
-
-            return {
-              id: p.id,
-              name: p.name,
-              brand: p.brand || 'Leafora Life Sciences',
-              net_quantity: p.net_quantity || '100g',
-              category: p.category || 'Skincare',
-              price: Number(p.price) || 0,
-              rating: (4.7 + (i % 4) * 0.1).toFixed(1),
-              reviews: 40 + i * 14,
-              badge: i % 4 === 0 ? 'Best Seller' : i % 3 === 0 ? 'New' : null,
-              badgeType: i % 4 === 0 ? 'bestseller' : i % 3 === 0 ? 'new' : null,
-              skinType: ['Normal', 'Dry'],
-              concerns: ['Hydration'],
-              inStock: true,
-              image_url: resolvedImg,
-              image: resolvedImg,
-              description: p.description || 'Natural botanical formulation crafted with organic ingredients.'
-            };
-          });
-          setProducts(apiMerged);
-        } else {
-          setProducts(fallbackShopProducts);
-        }
+        const list = Array.isArray(res?.data) ? res.data : [];
+        setProducts(list.map((p) => {
+          const hasValidImage = p.image_url && typeof p.image_url === 'string' && p.image_url.trim() !== '' && !p.image_url.includes('data:image/svg+xml');
+          const resolvedImg = hasValidImage ? p.image_url : botanicalProductsPhoto;
+          return {
+            ...p,
+            price: Number(p.price) || 0,
+            rating: Number(p.rating) || 0,
+            reviews: Number(p.reviews_count) || 0,
+            badge: p.is_best_seller ? 'Best Seller' : (p.is_new_arrival ? 'New' : null),
+            badgeType: p.is_best_seller ? 'bestseller' : (p.is_new_arrival ? 'new' : null),
+            inStock: Number(p.stock) > 0,
+            image_url: resolvedImg,
+            image: resolvedImg,
+            description: p.description || ''
+          };
+        }));
       })
-      .catch(() => {
-        setProducts(fallbackShopProducts);
-      })
+      .catch(() => setLoadError(true))
       .finally(() => setLoadingProducts(false));
   }, []);
 
@@ -212,7 +143,7 @@ export default function Shop() {
       if (sortBy === 'rating') return b.rating - a.rating;
       if (sortBy === 'newest') return b.id - a.id;
       if (sortBy === 'popularity') return b.reviews - a.reviews;
-      return 0; // Featured
+      return (Number(b.is_featured) || 0) - (Number(a.is_featured) || 0); // Featured first
     });
   }, [products, searchQuery, sortBy]);
 
@@ -304,18 +235,21 @@ export default function Shop() {
                   <div className="shop-card-info">
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, marginBottom: 2 }}>
                       <span className="shop-card-brand">{product.brand || 'Leafora Life Sciences'}</span>
-                      <span className="product-net-qty-badge">{product.net_quantity || '100g'}</span>
+                      {product.net_quantity && <span className="product-net-qty-badge">{product.net_quantity}</span>}
                     </div>
                     <h3 className="shop-card-title">{product.name}</h3>
 
-                    <div className="shop-card-rating">
-                      <div className="stars-row">
-                        {[...Array(5)].map((_, i) => (
-                          <Star key={i} size={13} fill="#A67C52" color="#A67C52" />
-                        ))}
+                    {product.reviews > 0 && (
+                      <div className="shop-card-rating">
+                        <div className="stars-row">
+                          {[...Array(5)].map((_, i) => (
+                            <Star key={i} size={13} fill={i < Math.round(product.rating) ? '#A67C52' : 'none'} color="#A67C52" />
+                          ))}
+                        </div>
+                        <span>{product.rating} ({product.reviews})</span>
                       </div>
-                      <span>({product.reviews})</span>
-                    </div>
+                    )}
+                    {!product.inStock && <span style={{ color: '#DC2626', fontSize: '0.8rem', fontWeight: 600 }}>Out of stock</span>}
 
                     <div className="shop-card-price-row">
                       <span className="price-main">₹{Number(product.price).toFixed(2)}</span>
@@ -329,7 +263,8 @@ export default function Shop() {
                   <div className={viewMode === 'list' ? 'list-card-actions' : ''} onClick={(e) => e.stopPropagation()}>
                     <button 
                       className="btn-card-add-cart"
-                      onClick={(e) => { e.stopPropagation(); addToCart(product, 1); showToast(`Added "${product.name}" to your botanical shopping bag!`); }}
+                      disabled={!product.inStock}
+                      onClick={(e) => { e.stopPropagation(); if (!product.inStock) return; addToCart(product, 1); showToast(`Added "${product.name}" to your botanical shopping bag!`); }}
                     >
                       <ShoppingBag size={15} /> Add to Cart
                     </button>
@@ -351,10 +286,10 @@ export default function Shop() {
             <div style={{ background: '#FFFFFF', padding: 48, borderRadius: 12, textAlign: 'center', border: '1px solid var(--leafora-border)' }}>
               <Leaf size={32} color="var(--leafora-bronze)" style={{ marginBottom: 12 }} />
               <h3 style={{ fontFamily: 'Inter, sans-serif', fontSize: '1.4rem', color: 'var(--leafora-text-dark)', marginBottom: 8 }}>
-                No products match your selected filters
+                {loadError ? 'We could not load products right now' : products.length === 0 ? 'No products available yet' : 'No products match your search'}
               </h3>
               <p style={{ color: 'var(--leafora-text-muted)', fontSize: '0.9rem', marginBottom: 20 }}>
-                Try loosening your price range or clearing active skin type filters.
+                {loadError ? 'Please check your connection and refresh the page.' : products.length === 0 ? 'Please check back soon.' : 'Try a different search term.'}
               </p>
               <button className="btn-card-add-cart" style={{ width: 'auto', margin: '0 auto' }} onClick={handleClearFilters}>
                 Reset All Filters
@@ -412,16 +347,18 @@ export default function Shop() {
               <div className="quickview-info">
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 4 }}>
                   <span className="shop-card-brand">{quickViewProduct.brand || 'Leafora Life Sciences'} • {quickViewProduct.category}</span>
-                  <span className="product-net-qty-badge">{quickViewProduct.net_quantity || '100g'}</span>
+                  {quickViewProduct.net_quantity && <span className="product-net-qty-badge">{quickViewProduct.net_quantity}</span>}
                 </div>
                 <h2 style={{ fontFamily: 'Inter, sans-serif', fontSize: '1.6rem', marginTop: 4, marginBottom: 8 }}>{quickViewProduct.name}</h2>
                 
-                <div className="shop-card-rating" style={{ marginBottom: 16 }}>
-                  <div className="stars-row">
-                    {[...Array(5)].map((_, i) => <Star key={i} size={14} fill="#A67C52" color="#A67C52" />)}
+                {quickViewProduct.reviews > 0 && (
+                  <div className="shop-card-rating" style={{ marginBottom: 16 }}>
+                    <div className="stars-row">
+                      {[...Array(5)].map((_, i) => <Star key={i} size={14} fill={i < Math.round(quickViewProduct.rating) ? '#A67C52' : 'none'} color="#A67C52" />)}
+                    </div>
+                    <span>{quickViewProduct.rating} ({quickViewProduct.reviews} review{quickViewProduct.reviews === 1 ? '' : 's'})</span>
                   </div>
-                  <span>({quickViewProduct.reviews} verified reviews)</span>
-                </div>
+                )}
 
                 <div className="price-main" style={{ fontSize: '1.6rem', color: 'var(--leafora-text-dark)', marginBottom: 16 }}>
                   ₹{Number(quickViewProduct.price).toFixed(2)}
@@ -432,7 +369,7 @@ export default function Shop() {
                 </p>
 
                 <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                  <button className="btn-card-add-cart" onClick={() => { addToCart(quickViewProduct, 1); showToast(`Added "${quickViewProduct.name}" to your bag!`); setQuickViewProduct(null); }}>
+                  <button className="btn-card-add-cart" disabled={!quickViewProduct.inStock} onClick={() => { if (!quickViewProduct.inStock) return; addToCart(quickViewProduct, 1); showToast(`Added "${quickViewProduct.name}" to your bag!`); setQuickViewProduct(null); }}>
                     <ShoppingBag size={16} /> Add to Cart
                   </button>
                   <button 

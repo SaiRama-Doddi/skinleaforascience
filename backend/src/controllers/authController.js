@@ -12,6 +12,7 @@ const {
 } = require('../services/security');
 
 const { sendWelcomeRegistrationEmail } = require('../services/mailer');
+const { normalizeMobile, isValidMobile, isValidName, MESSAGES } = require('../services/validation');
 
 // 1. REGISTER USER
 const registerUser = async (req, res) => {
@@ -21,10 +22,18 @@ const registerUser = async (req, res) => {
     const fn = first_name || (name ? name.split(' ')[0] : '');
     const ln = last_name || (name ? name.split(' ').slice(1).join(' ') : '');
     const fullName = (name || `${fn} ${ln}`).trim();
-    const userPhone = mobile || phone || '';
+    const userPhone = normalizeMobile(mobile || phone || '');
 
     if (!email || !password || !fn) {
       return res.status(400).json({ success: false, message: 'First name, email address, and password are required.' });
+    }
+
+    if (!isValidName(fn) || (ln && !isValidName(ln, 1))) {
+      return res.status(400).json({ success: false, message: 'Please enter a valid name (letters only).' });
+    }
+
+    if (!isValidMobile(userPhone)) {
+      return res.status(400).json({ success: false, message: MESSAGES.mobile });
     }
 
     if (confirm_password && password !== confirm_password) {
@@ -56,13 +65,14 @@ const registerUser = async (req, res) => {
     }
 
     const hashed = await hashPassword(password);
-    const signupBonus = 10.00; // Welcome reward
+    // Wallet credit isn't redeemable at checkout, so accounts start at zero (no fake balance).
+    const signupBonus = 0;
 
     let insertId = null;
     try {
       const [result] = await pool.query(
         `INSERT INTO customers (name, first_name, last_name, email, phone, password_hash, terms_accepted_at, wallet_balance, loyalty_points, status)
-         VALUES (?, ?, ?, ?, ?, ?, NOW(), ?, 100, 'Active')`,
+         VALUES (?, ?, ?, ?, ?, ?, NOW(), ?, 0, 'Active')`,
         [fullName, fn, ln, email.trim().toLowerCase(), userPhone, hashed, signupBonus]
       );
       if (result && result.insertId) {
@@ -73,7 +83,7 @@ const registerUser = async (req, res) => {
       try {
         const [result] = await pool.query(
           `INSERT INTO customers (name, email, phone, password_hash, terms_accepted_at, wallet_balance, loyalty_points, status)
-           VALUES (?, ?, ?, ?, NOW(), ?, 100, 'Active')`,
+           VALUES (?, ?, ?, ?, NOW(), ?, 0, 'Active')`,
           [fullName, email.trim().toLowerCase(), userPhone, hashed, signupBonus]
         );
         if (result && result.insertId) {
@@ -113,7 +123,7 @@ const registerUser = async (req, res) => {
       email: email.trim().toLowerCase(),
       phone: userPhone,
       wallet_balance: signupBonus,
-      loyalty_points: 100,
+      loyalty_points: 0,
       loyalty_tier: 'Silver',
       avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(fullName)}`,
       token

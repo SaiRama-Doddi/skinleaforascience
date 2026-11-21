@@ -72,6 +72,11 @@ export const getProducts = async (forceRefresh = false) => {
 
 export const getProductById = (id) => api.get(`/products/${id}`);
 
+// Product reviews (approved only) and verified-buyer review submission
+export const getProductReviews = (id) => api.get(`/products/${id}/reviews`);
+export const getReviewEligibility = (id) => api.get(`/products/${id}/reviews/eligibility`);
+export const submitProductReview = (id, data) => api.post(`/products/${id}/reviews`, data);
+
 export const getCategories = async (params, forceRefresh = false) => {
   const now = Date.now();
   if (!forceRefresh && !params && categoriesCache && (now - categoriesCacheTime < API_CACHE_TTL)) {
@@ -269,6 +274,9 @@ export const userGetAddresses = (email) => api.get('/user/addresses', { params: 
 export const userAddAddress = (data) => api.post('/user/addresses', data);
 export const userDeleteAddress = (id) => api.delete(`/user/addresses/${id}`);
 export const userGetOrders = (email) => api.get('/user/orders', { params: { email } });
+export const userGetOrderDetails = (id) => api.get(`/user/orders/${id}`);
+// Returns the invoice as an HTML string (printable / save as PDF)
+export const userGetOrderInvoice = (id) => api.get(`/user/orders/${id}/invoice`, { responseType: 'text' });
 export const userGetWishlist = (email) => api.get('/user/wishlist', { params: { email } });
 export const userToggleWishlist = (data) => api.post('/user/wishlist/toggle', data);
 export const userDeleteWishlistItem = (id) => api.delete(`/user/wishlist/${id}`);
